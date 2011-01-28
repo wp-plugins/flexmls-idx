@@ -3,7 +3,7 @@
 class flexmlsApiWP {
 
 	private $is_ready = false;
-	private $api_base = "api.alpha.flexmls.com"; // no trailing slash
+	private $api_base = "api.flexmls.com"; // no trailing slash
 	private $location_search_url = "http://www.flexmls.com"; // http://www.flexmls.com
 	public $last_error_code = null;
 	public $last_error_mess = null;
