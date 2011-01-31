@@ -240,108 +240,110 @@ class fmcPhotos extends fmcWidget {
 		$rand = mt_rand();
 
 		$total_listings = 0;
-		foreach ($api_listings as $li) {
-			$total_listings++;
-			$show_idx_badge = "";
-			
-			$listing = $li['StandardFields'];
-			$one_line_address = "{$listing['StreetNumber']} {$listing['StreetDirPrefix']} {$listing['StreetName']} ";
-			$one_line_address .= "{$listing['StreetSuffix']} {$listing['StreetDirSuffix']}";
-			$one_line_address = flexmlsConnect::clean_spaces_and_trim($one_line_address);
-			$first_line_address = $one_line_address;
-			$one_line_address .= ", {$listing['City']}, ";
-			$one_line_address .= "{$listing['StateOrProvince']}  {$listing['PostalCode']}";
-			$one_line_address = flexmlsConnect::clean_spaces_and_trim($one_line_address);
+		if (is_array($api_listings)) {
+			foreach ($api_listings as $li) {
+				$total_listings++;
+				$show_idx_badge = "";
 
-			$price = '$'. number_format($listing['ListPrice'], 0);
+				$listing = $li['StandardFields'];
+				$one_line_address = "{$listing['StreetNumber']} {$listing['StreetDirPrefix']} {$listing['StreetName']} ";
+				$one_line_address .= "{$listing['StreetSuffix']} {$listing['StreetDirSuffix']}";
+				$one_line_address = flexmlsConnect::clean_spaces_and_trim($one_line_address);
+				$first_line_address = $one_line_address;
+				$one_line_address .= ", {$listing['City']}, ";
+				$one_line_address .= "{$listing['StateOrProvince']}  {$listing['PostalCode']}";
+				$one_line_address = flexmlsConnect::clean_spaces_and_trim($one_line_address);
 
-			if ($source != "my" && $source != "my_office") {
-				if (array_key_exists('IdxLogoSmall', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogoSmall'])) {
-					$show_idx_badge = "<img src='{$api_system_info['Configuration'][0]['IdxLogoSmall']}' class='flexmls_connect__badge_image' title='{$listing['ListOfficeName']}' />\n";
+				$price = '$'. number_format($listing['ListPrice'], 0);
+
+				if ($source != "my" && $source != "my_office") {
+					if (array_key_exists('IdxLogoSmall', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogoSmall'])) {
+						$show_idx_badge = "<img src='{$api_system_info['Configuration'][0]['IdxLogoSmall']}' class='flexmls_connect__badge_image' title='{$listing['ListOfficeName']}' />\n";
+					}
+					else {
+						$show_idx_badge = "<span class='flexmls_connect__badge' title='{$listing['ListOfficeName']}'>IDX</span>\n";
+					}
+				}
+
+				$relevant_info_line = "";
+
+				if ($display == "open_houses") {
+					$relevant_info_line = $listing['OpenHouses'][0]['Date'] . " " . $listing['OpenHouses'][0]['StartTime'];
 				}
 				else {
-					$show_idx_badge = "<span class='flexmls_connect__badge' title='{$listing['ListOfficeName']}'>IDX</span>\n";
+					$relevant_info_line = $price;
 				}
-			}
 
-			$relevant_info_line = "";
-
-			if ($display == "open_houses") {
-				$relevant_info_line = $listing['OpenHouses'][0]['Date'] . " " . $listing['OpenHouses'][0]['StartTime'];
-			}
-			else {
-				$relevant_info_line = $price;
-			}
-
-			$link_to_start = "<a>";
-			$link_to_end = "</a>";
-			$this_link = "";
-			$this_target = "";
-
-			if (!empty($destination_link)) {
-				$this_link = flexmlsConnect::make_destination_link("{$destination_link}&start=details&start_id={$listing['ListingKey']}");
-				if (flexmlsConnect::get_destination_window_pref() == "new") {
-					$this_target = " target='_blank'";
-				}
-				$link_to_start = "<a href='{$this_link}'{$this_target}>";
+				$link_to_start = "<a>";
 				$link_to_end = "</a>";
-			}
-			
-			$main_photo_uri300 = "";
-			$main_photo_caption = "";
-			$main_photo_urilarge = "";
-			
-			$photo_return = '';
+				$this_link = "";
+				$this_target = "";
 
-			$photo_count = 0;
-			foreach ($listing['Photos'] as $photo) {
-				$photo_count++;
-				if ($photo_count == 1) {
-					continue;
-				}
-				$caption = htmlspecialchars($photo['Caption'], ENT_QUOTES);
-				$photo_return .= "<a href='{$photo['UriLarge']}' class='popup' rel='{$rand}-{$listing['ListingKey']}' title='{$caption}'></a>\n";
-
-				if ($photo['Primary'] == true) {
-					$main_photo_caption = $caption;
-					$main_photo_uri300 = $photo['Uri300'];
-					$main_photo_urilarge = $photo['UriLarge'];
+				if (!empty($destination_link)) {
+					$this_link = flexmlsConnect::make_destination_link("{$destination_link}&start=details&start_id={$listing['ListingKey']}");
+					if (flexmlsConnect::get_destination_window_pref() == "new") {
+						$this_target = " target='_blank'";
+					}
+					$link_to_start = "<a href='{$this_link}'{$this_target}>";
+					$link_to_end = "</a>";
 				}
 
+				$main_photo_uri300 = "";
+				$main_photo_caption = "";
+				$main_photo_urilarge = "";
+
+				$photo_return = '';
+
+				$photo_count = 0;
+				foreach ($listing['Photos'] as $photo) {
+					$photo_count++;
+					if ($photo_count == 1) {
+						continue;
+					}
+					$caption = htmlspecialchars($photo['Caption'], ENT_QUOTES);
+					$photo_return .= "<a href='{$photo['UriLarge']}' class='popup' rel='{$rand}-{$listing['ListingKey']}' title='{$caption}'></a>\n";
+
+					if ($photo['Primary'] == true) {
+						$main_photo_caption = $caption;
+						$main_photo_uri300 = $photo['Uri300'];
+						$main_photo_urilarge = $photo['UriLarge'];
+					}
+
+				}
+
+				// default to the first photo given if the primary isn't set
+				if (empty($main_photo_urilarge)) {
+					$main_photo_caption = htmlspecialchars($listing['Photos'][0]['Caption'], ENT_QUOTES);
+					$main_photo_uri300 = $listing['Photos'][0]['Uri300'];
+					$main_photo_urilarge = $listing['Photos'][0]['UriLarge'];
+				}
+
+				if (empty($main_photo_uri300)) {
+					$main_photo_uri300 = "{$fmc_plugin_url}/images/nophoto.gif";
+					$listing['Photos'][0]['UriLarge'] = $main_photo_uri300;
+					$main_photo_caption = "No Photo Available";
+				}
+
+				$return .= "<!-- Listing -->
+						<div title='{$first_line_address}, {$listing['City']}, {$listing['StateOrProvince']} {$listing['PostalCode']} | MLS #: {$listing['ListingId']} | {$price}' link='{$this_link}' target=\"{$this_target}\">
+							<a href='{$listing['Photos'][0]['UriLarge']}' class='popup' rel='{$rand}-{$listing['ListingKey']}' title='{$main_photo_caption}'>
+								<img src='{$main_photo_uri300}' style='width:134px;height:100px' alt='' />
+							</a>
+							<p class='caption'>
+								{$link_to_start}
+									{$relevant_info_line}
+								<small>{$first_line_address}<br />{$listing['City']}, {$listing['StateOrProvince']} {$listing['PostalCode']}</small>
+								{$link_to_end}
+							</p>
+							{$show_idx_badge}
+							<div class='flexmls_connect__hidden'>
+								";
+
+							$return .= $photo_return;
+
+				$return .= "			</div>
+						</div>\n\n";
 			}
-
-			// default to the first photo given if the primary isn't set
-			if (empty($main_photo_urilarge)) {
-				$main_photo_caption = htmlspecialchars($listing['Photos'][0]['Caption'], ENT_QUOTES);
-				$main_photo_uri300 = $listing['Photos'][0]['Uri300'];
-				$main_photo_urilarge = $listing['Photos'][0]['UriLarge'];
-			}
-
-			if (empty($main_photo_uri300)) {
-				$main_photo_uri300 = "{$fmc_plugin_url}/images/nophoto.gif";
-				$listing['Photos'][0]['UriLarge'] = $main_photo_uri300;
-				$main_photo_caption = "No Photo Available";
-			}
-
-			$return .= "<!-- Listing -->
-					<div title='{$first_line_address}, {$listing['City']}, {$listing['StateOrProvince']} {$listing['PostalCode']} | MLS #: {$listing['ListingId']} | {$price}' link='{$this_link}' target=\"{$this_target}\">
-						<a href='{$listing['Photos'][0]['UriLarge']}' class='popup' rel='{$rand}-{$listing['ListingKey']}' title='{$main_photo_caption}'>
-							<img src='{$main_photo_uri300}' style='width:134px;height:100px' alt='' />
-						</a>
-						<p class='caption'>
-							{$link_to_start}
-								{$relevant_info_line}
-							<small>{$first_line_address}<br />{$listing['City']}, {$listing['StateOrProvince']} {$listing['PostalCode']}</small>
-							{$link_to_end}
-						</p>
-						{$show_idx_badge}
-						<div class='flexmls_connect__hidden'>
-							";
-
-						$return .= $photo_return;
-			
-			$return .= "			</div>
-					</div>\n\n";
 		}
 
 		if ($fmc_api->last_count > count($api_listings) && !empty($destination_link)) {

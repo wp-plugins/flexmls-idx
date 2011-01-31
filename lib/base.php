@@ -74,10 +74,6 @@ class flexmlsConnect {
 
 	function plugin_deactivate() {
 		
-		// delete the page this plugin automatically created initially
-		$options = get_option('fmc_settings');
-		wp_delete_post($options['autocreatedpage'], false);
-
 		// delete all of the saved options and cache information stored since the site owner has deactivated us
 		delete_option('fmc_settings');
 
@@ -95,14 +91,28 @@ class flexmlsConnect {
 
 	function plugin_activate() {
 
-		$new_page = array(
-				'post_title' => "Search",
-				'post_content' => "[idx_frame width='100%' height='600']",
-				'post_type' => 'page',
-				'post_status' => 'publish'
-		);
+		$options = get_option('fmc_persistent_settings');
 
-		$new_page_id = wp_insert_post($new_page);
+		// check if we've created this page in a previous life
+		if (is_array($options) && array_key_exists('autocreatedpage', $options) && !empty($options['autocreatedpage'])) {
+			// page was created previously so we'll re-use that one rather than creating a new one
+			$new_page_id = $options['autocreatedpage'];
+		}
+		else {
+			// no previous page detected so we must be activating for the first time.
+
+			$new_page = array(
+					'post_title' => "Search",
+					'post_content' => "[idx_frame width='100%' height='600']",
+					'post_type' => 'page',
+					'post_status' => 'publish'
+			);
+
+			$new_page_id = wp_insert_post($new_page);
+			
+			add_option('fmc_persistent_settings', array('autocreatedpage' => $new_page_id));
+
+		}
 
 		$options = array(
 				'default_titles' => true,
@@ -113,6 +123,7 @@ class flexmlsConnect {
 				);
 
 		add_option('fmc_settings', $options);
+
 	}
 
 
