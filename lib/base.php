@@ -33,7 +33,7 @@ class flexmlsConnect {
 			wp_enqueue_script('jquery-ui-core');
 			wp_enqueue_script('jquery-ui-sortable');
 
-			wp_register_script('fmc_connect', $fmc_plugin_url .'/includes/connect_admin.min.js', array('jquery'));
+			wp_register_script('fmc_connect', $fmc_plugin_url .'/includes/connect_admin.min.js', array('jquery','jquery-ui-core'));
 			wp_enqueue_script('fmc_connect');
 
 			wp_register_style('fmc_connect', $fmc_plugin_url .'/includes/connect_admin.min.css');
@@ -74,9 +74,6 @@ class flexmlsConnect {
 
 	function plugin_deactivate() {
 		
-		// delete all of the saved options and cache information stored since the site owner has deactivated us
-		delete_option('fmc_settings');
-
 		// get list of transient items to clear
 		$cache_tracker = get_transient('fmc_cache_tracker');
 		if (is_array($cache_tracker)) {
@@ -86,20 +83,16 @@ class flexmlsConnect {
 		}
 		delete_transient('fmc_cache_tracker');
 		delete_transient('fmc_api');
+		
 	}
 
 
 	function plugin_activate() {
 
-		$options = get_option('fmc_persistent_settings');
+		$options = get_option('fmc_settings');
 
-		// check if we've created this page in a previous life
-		if (is_array($options) && array_key_exists('autocreatedpage', $options) && !empty($options['autocreatedpage'])) {
-			// page was created previously so we'll re-use that one rather than creating a new one
-			$new_page_id = $options['autocreatedpage'];
-		}
-		else {
-			// no previous page detected so we must be activating for the first time.
+		if ($options === false) {
+			// plugin install is brand new
 
 			$new_page = array(
 					'post_title' => "Search",
@@ -109,20 +102,21 @@ class flexmlsConnect {
 			);
 
 			$new_page_id = wp_insert_post($new_page);
-			
-			add_option('fmc_persistent_settings', array('autocreatedpage' => $new_page_id));
+
+			$options = array(
+					'default_titles' => true,
+					'enable_cache' => true,
+					'destpref' => 'page',
+					'destlink' => $new_page_id,
+					'autocreatedpage' => $new_page_id
+					);
+
+			add_option('fmc_settings', $options);
 
 		}
-
-		$options = array(
-				'default_titles' => true,
-				'enable_cache' => true,
-				'destpref' => 'page',
-				'destlink' => $new_page_id,
-				'autocreatedpage' => $new_page_id
-				);
-
-		add_option('fmc_settings', $options);
+		else {
+			// plugin is only be re-activated with previous settings.
+		}
 
 	}
 
@@ -421,7 +415,7 @@ class flexmlsConnect {
 		echo "<p>In order for this feature to work, the page you point your links to must have the following shortcode in the body of the page:</p>";
 		echo "<blockquote><pre>[idx_frame width='100%' height='600']</pre></blockquote>";
 		echo "<p>By using this shortcode, it allows the flexmls&reg; IDX plugin to catch links and show the appropriate pages to your users.  If the page with this shortcode is viewed and no link is provided, the 'Default IDX Link' (below) will be displayed.</p>";
-		echo "<p><b>Note:</b> When you activated this plugin, a page with this shortcode in the body <a href='".get_permalink($options['autocreatedpage'])."'>was created automatically</a>.  If you choose to deactivate this plugin, this page will automatically be deleted.</p>";
+		echo "<p><b>Note:</b> When you activated this plugin, a page with this shortcode in the body <a href='".get_permalink($options['autocreatedpage'])."'>was created automatically</a>.</p>";
 		echo "<p><b>Another Note:</b> If you're using a SEO plugin, you may need to disable Permalink Cleaning for this feature to work.</p>";
 		echo "</div>";
 
