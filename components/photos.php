@@ -256,8 +256,8 @@ class fmcPhotos extends fmcWidget {
 			$price = '$'. number_format($listing['ListPrice'], 0);
 
 			if ($source != "my" && $source != "my_office") {
-				if (array_key_exists('IdxLogo', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogo'])) {
-					$show_idx_badge = "<img src='{$api_system_info['Configuration'][0]['IdxLogo']}' class='flexmls_connect__badge_image' title='{$listing['ListOfficeName']}' />\n";
+				if (array_key_exists('IdxLogoSmall', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogoSmall'])) {
+					$show_idx_badge = "<img src='{$api_system_info['Configuration'][0]['IdxLogoSmall']}' class='flexmls_connect__badge_image' title='{$listing['ListOfficeName']}' />\n";
 				}
 				else {
 					$show_idx_badge = "<span class='flexmls_connect__badge' title='{$listing['ListOfficeName']}'>IDX</span>\n";
@@ -363,8 +363,8 @@ class fmcPhotos extends fmcWidget {
 			if ($source != "my" && $source != "my_office") {
 				$return .= "<p class='flexmls_connect__disclaimer'>\n";
 
-				if (array_key_exists('IdxLogo', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogo'])) {
-					$return .= "<img src='{$api_system_info['Configuration'][0]['IdxLogo']}' class='flexmls_connect__badge_image' title='Read the full IDX Listings Disclosure' />\n";
+				if (array_key_exists('IdxLogoSmall', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogoSmall'])) {
+					$return .= "<img src='{$api_system_info['Configuration'][0]['IdxLogoSmall']}' class='flexmls_connect__badge_image' title='Read the full IDX Listings Disclosure' />\n";
 				}
 				else {
 					$return .= "  <span class='flexmls_connect__badge' title='Read the full IDX Listings Disclosure'>IDX</span>\n";
