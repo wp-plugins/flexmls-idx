@@ -16,6 +16,20 @@ class flexmlsApiWP {
 
 
 	function __construct() {
+		global $fmc_plugin_dir;
+
+		$api_ini_file = $fmc_plugin_dir . '/lib/api.ini';
+
+		if (file_exists($api_ini_file)) {
+			$local_settings = parse_ini_file($api_ini_file);
+			if (array_key_exists('api_base', $local_settings)) {
+				$this->api_base = trim($local_settings['api_base']);
+			}
+			if (array_key_exists('location_search_url', $local_settings)) {
+				$this->location_search_url = trim($local_settings['location_search_url']);
+			}
+		}
+
 		$options = get_option('fmc_settings');
 
 		if ( !empty($options['api_key']) && !empty($options['api_secret']) ) {

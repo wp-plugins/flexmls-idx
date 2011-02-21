@@ -136,6 +136,9 @@ class fmcPhotos extends fmcWidget {
 
 			$uniq_location_field_names = array_unique($location_field_names);
 
+			if (count($location_conditions) > 1) {
+				return "<span style='color:red;'>flexmls&reg; IDX: This IDX slideshow widget is configured with too many location search criteria options.  Please reduce to 1.</span>";
+			}
 
 			if (count($location_conditions) > 0) {
 				$filter_conditions[] = implode(" Or ", $location_conditions);

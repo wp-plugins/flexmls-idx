@@ -74,14 +74,7 @@ class flexmlsConnect {
 
 	function plugin_deactivate() {
 		
-		// get list of transient items to clear
-		$cache_tracker = get_transient('fmc_cache_tracker');
-		if (is_array($cache_tracker)) {
-			foreach ($cache_tracker as $key => $value) {
-				delete_transient('fmc_cache_'. $key);
-			}
-		}
-		delete_transient('fmc_cache_tracker');
+		flexmlsConnect::clear_temp_cache();
 		delete_transient('fmc_api');
 		
 	}
@@ -89,6 +82,7 @@ class flexmlsConnect {
 
 	function plugin_activate() {
 
+		flexmlsConnect::clear_temp_cache();
 		$options = get_option('fmc_settings');
 
 		if ($options === false) {
@@ -270,14 +264,7 @@ class flexmlsConnect {
 			// since clear_cache is checked, wipe out the contents of the fmc_cache_* transient items
 			// but don't do anything else since we aren't saving the state of this particular checkbox
 
-			// get list of transient items to clear
-			$cache_tracker = get_transient('fmc_cache_tracker');
-			if (is_array($cache_tracker)) {
-				foreach ($cache_tracker as $key => $value) {
-					delete_transient('fmc_cache_'. $key);
-				}
-			}
-			delete_transient('fmc_cache_tracker');
+			flexmlsConnect::clear_temp_cache();
 		}
 
 		if ($input['default_titles'] == "y") {
@@ -563,7 +550,7 @@ class flexmlsConnect {
 	function widget_missing_requirements($widget, $reqs_missing) {
 
 		if (is_user_logged_in()) {
-			return "<span style='color:red;'>flexmls&reg; Connect: {$reqs_missing} are required settings for the {$widget} widget.</span>";
+			return "<span style='color:red;'>flexmls&reg; IDX: {$reqs_missing} are required settings for the {$widget} widget.</span>";
 		}
 		else {
 			return false;
@@ -750,17 +737,27 @@ class flexmlsConnect {
 	}
 
 	function is_ie() {
-    if (
-				isset($_SERVER['HTTP_USER_AGENT']) &&
-				(strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE') !== false) &&
-				(strpos($_SERVER['HTTP_USER_AGENT'], 'Opera') === false)
-				) {
+
+		$this_ua = getenv('HTTP_USER_AGENT');
+
+		if ($this_ua && (strpos($this_ua, 'MSIE') !== false) && (strpos($this_ua, 'Opera') === false) ) {
 			return true;
 		}
-    else {
+		else {
 			return false;
 		}
 
+	}
+	
+	function clear_temp_cache() {
+		// get list of transient items to clear
+		$cache_tracker = get_transient('fmc_cache_tracker');
+		if (is_array($cache_tracker)) {
+			foreach ($cache_tracker as $key => $value) {
+				delete_transient('fmc_cache_'. $key);
+			}
+		}
+		delete_transient('fmc_cache_tracker');
 	}
 
 }

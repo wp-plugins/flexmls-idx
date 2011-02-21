@@ -144,7 +144,7 @@ class fmcMarketStats extends fmcWidget {
 	<div class="flexmls_connect__market_stats">
 
     <div class="flexmls_connect__market_stats_graph" style="width:'.$width.'px;height:'.$height.'px;"></div>
-    <div class="flexmls_connect__market_stats_legend"></div>
+    <div class="flexmls_connect__market_stats_legend" style="width:'.$width.'px;"></div>
     <ul>';
 
 		foreach ($all_stat_types[$stat_type] as $opt) {

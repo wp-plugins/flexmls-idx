@@ -4,7 +4,7 @@ Plugin Name: flexmls&reg; IDX
 Plugin URI: http://www.flexmls.com/products/flexmls-IDX/wpplugin
 Description: Provides flexmls&reg; Customers with flexmls&reg; IDX features on their WordPress blog. <strong>Tips:</strong> <a href="options-general.php?page=flexmls_connect">Activate your flexmls IDX plugin</a> on the settings page; <a href="widgets.php">add widgets to your sidebar</a> using the Widgets Admin under Appearance; and include widgets on your posts or pages using the flexmls IDX Widget Short-Code Generator on the Visual page editor.
 Author: FBS
-Version: 0.9.4
+Version: 0.9.5
 Author URI: http://www.flexmls.com/
 */
 
