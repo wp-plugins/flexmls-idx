@@ -200,6 +200,14 @@ class fmcLeadGen extends fmcWidget {
 		$success = true;
 		$message = "";
 
+		if (is_array($api_prefs) && !array_key_exists('RequiredFields', $api_prefs)) {
+			$api_prefs['RequiredFields'] = array();
+		}
+		
+		if (!is_array($api_prefs['RequiredFields'])) {
+			$api_prefs['RequiredFields'] = array();
+		}
+
 		// check to see if all of the required fields were provided to us filled out
 		if ( in_array('name', $api_prefs['RequiredFields']) && empty($_REQUEST['name']) ) {
 			$success = false;
