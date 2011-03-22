@@ -41,10 +41,10 @@ class flexmlsConnect {
 
 			wp_register_style('fmc_jquery_ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.6/themes/ui-lightness/jquery-ui.css');
 			wp_enqueue_style('fmc_jquery_ui');
-
-			wp_localize_script('fmc_connect', 'fmcAjax', array( 'ajaxurl' => admin_url('admin-ajax.php'), 'pluginurl' => $fmc_plugin_url ) );
 			
 		}
+
+		wp_localize_script('fmc_connect', 'fmcAjax', array( 'ajaxurl' => admin_url('admin-ajax.php'), 'pluginurl' => $fmc_plugin_url ) );
 
 		add_shortcode("idx_frame", array('flexmlsConnect', 'shortcode'));
 		
@@ -60,8 +60,17 @@ class flexmlsConnect {
 		foreach ($fmc_widgets as $class => $wdg) {
 			if ( file_exists($fmc_plugin_dir . "/components/{$wdg['component']}") ) {
 				require_once($fmc_plugin_dir . "/components/{$wdg['component']}");
-				if ( class_exists($class, false) && ($wdg['requires_key'] == false || ($wdg['requires_key'] == true && flexmlsConnect::has_api_saved())) ) {
+
+				$meets_key_reqs = false;
+				if ($wdg['requires_key'] == false || ($wdg['requires_key'] == true && flexmlsConnect::has_api_saved())) {
+					$meets_key_reqs = true;
+				}
+
+				if ( class_exists($class, false) && $meets_key_reqs && $wdg['widget'] == true) {
 					register_widget($class);
+				}
+				if ($wdg['widget'] == false) {
+					new $class();
 				}
 			}
 		}
@@ -126,9 +135,130 @@ class flexmlsConnect {
 			add_options_page('flexmls&reg; IDX Settings', 'flexmls&reg; IDX', 'manage_options', 'flexmls_connect', array('flexmlsConnect', 'settings_page') );
 		}
 
+		add_submenu_page('edit.php?post_type=page','Add New Neighborhood Page', 'Add Neighborhood', 'manage_options', 'flexmls_connect', array('flexmlsConnect', 'neighborhood_page') );
+
 	}
 
-	
+	function neighborhood_page() {
+		echo "<div class='wrap'>\n";
+		screen_icon('page');
+		echo "<h2>flexmls&reg; IDX: Add New Neighborhood Page</h2>\n";
+
+		if ($_REQUEST['action'] == "save") {
+
+			if (empty($_REQUEST['template'])) {
+				$_REQUEST['template'] = "default";
+			}
+
+			$loc = flexmlsConnect::parse_location_search_string( flexmlsConnect::unescape_request_var($_REQUEST['location']) );
+			$loc_title = $loc[0]['l'];
+			$loc_raw = $loc[0]['r'];
+
+			$shortcode = "[neighborhood_page title=\"{$loc_title}\" location=\"{$loc_raw}\" template=\"{$_REQUEST['template']}\"]";
+
+			$new_page = array(
+				'post_title' => "{$loc_title}",
+				'post_content' => $shortcode,
+				'post_type' => 'page',
+				'post_status' => 'publish',
+				'post_parent' => $_REQUEST['parent']
+			);
+
+			$new_page_id = wp_insert_post($new_page);
+
+			$template_page_template = get_post_meta( flexmlsConnect::get_neighborhood_template_id($_REQUEST['template']), '_wp_page_template', true );
+			update_post_meta( $new_page_id, '_wp_page_template', $template_page_template);
+
+			echo "<p><b>Congratulations!</b>  You just created a new neighborhood page.  Now what?</p>";
+
+			echo "<p>";
+			echo "<a href='edit.php?post_type=page&page=flexmls_connect'>Create Another</a> &nbsp; or &nbsp; ";
+			echo "<a href='post.php?post={$new_page_id}&action=edit'>Edit Your New Page</a>";
+			echo "</p>";
+
+		}
+		else {
+
+			echo "<p>To create a new neighborhood page automatically, select your location and template below.</p>";
+			echo "<p>&nbsp;</p>";
+			echo "<h3>Neighborhood Page Details</h3>";
+
+			echo "<form action='edit.php?post_type=page&page=flexmls_connect' method='post'>\n";
+			echo "<input type='hidden' name='action' value='save' />";
+
+			$fmc_api = new flexmlsApiWP();
+			$api_system_info = $fmc_api->SystemInfo();
+			$api_location_search_api = $fmc_api->GetLocationSearchApiUrl();
+
+			echo "
+
+				<p>
+					<label for='parent'>Parent Page:</label>
+				";
+
+				$args = array(
+					'name' => 'parent',
+					'post_status' => 'publish',
+					'echo' => true,
+					'show_option_none' => __('(no parent)')
+				);
+
+				wp_dropdown_pages($args);
+
+
+			echo "
+
+				</p>
+
+				<p>
+					<label for='template'>Neighborhood Template:</label>
+					";
+
+
+				$args = array(
+					'name' => 'template',
+					'post_status' => 'draft',
+					'echo' => false,
+					'show_option_none' => '(Use Saved Default)'
+				);
+
+				$page_selection = wp_dropdown_pages($args);
+				if (!empty($page_selection)) {
+					echo $page_selection;
+				}
+				else {
+					echo "Please create a page as a draft to select it here.";
+				}
+
+			echo "
+				</p>
+
+				<div class='flexmls_connect__location'>
+					<p>
+					<label for='location'>Location:</label>
+					<input type='text' name='location_input' data-connect-url='{$api_location_search_api}' class='flexmls_connect__location_search' autocomplete='off' value='City, Postal Code, etc.' />
+					<a href='javascript:void(0);' title='Click here to browse through available locations' class='flexmls_connect__location_browse'>Browse &raquo;</a>
+					<div class='flexmls_connect__location_list' data-connect-multiple='false'>
+						<p>All Locations Included</p>
+					</div>
+					<input type='hidden' name='tech_id' class='flexmls_connect__tech_id' value=\"x'{$api_system_info['Id']}'\" />
+					<input type='hidden' name='ma_tech_id' class='flexmls_connect__ma_tech_id' value=\"x'{$api_system_info['MlsId']}'\" />
+					<input fmc-field='location' fmc-type='text' type='hidden' name='location' class='flexmls_connect__location_fields' value=\"\" />
+					</p>
+				</div>
+
+				<img src='x' class='flexmls_connect__bootloader' onerror='flexmls_connect.location_setup(this);' />
+			";
+
+
+			echo "<br/><input type='submit' value='Create Page' />\n";
+
+			echo "</form>\n";
+
+		}
+
+		echo "</div>\n";
+	}
 
 	function filter_mce_button($buttons) {
 		array_push( $buttons, '|', 'fmc_button' );
@@ -211,6 +341,7 @@ class flexmlsConnect {
 		add_settings_field('fmc_default_titles', 'Use Default Widget Titles', array('flexmlsConnect', 'settings_field_default_titles') , 'flexmls_connect', 'fmc_settings_plugin');
 		add_settings_field('fmc_destlink', 'Open IDX Links', array('flexmlsConnect', 'settings_field_destlink') , 'flexmls_connect', 'fmc_settings_plugin');
 		add_settings_field('fmc_default_link', 'Default IDX Link', array('flexmlsConnect', 'settings_field_default_link') , 'flexmls_connect', 'fmc_settings_plugin');
+		add_settings_field('fmc_neigh_template', 'Neighborhood Page Template', array('flexmlsConnect', 'settings_field_neigh_template') , 'flexmls_connect', 'fmc_settings_plugin');
 
 	}
 
@@ -278,6 +409,7 @@ class flexmlsConnect {
 		$options['destlink'] = $input['destlink'];
 		$options['destwindow'] = $input['destwindow'];
 		$options['default_link'] = $input['default_link'];
+		$options['neigh_template'] = $input['neigh_template'];
 
 		return $options;
 
@@ -442,6 +574,31 @@ class flexmlsConnect {
 		else {
 			echo "<span class='description'>You must enter API key information to select this option.</span><input type='hidden' name='fmc_settings[default_link]' value='{$selected_default_link}' />";
 		}
+
+	}
+
+
+	function settings_field_neigh_template() {
+		$options = get_option('fmc_settings');
+
+		$selected_neigh_template = $options['neigh_template'];
+
+		$args = array(
+				'name' => 'fmc_settings[neigh_template]',
+				'selected' => $selected_neigh_template,
+				'post_status' => 'draft',
+				'echo' => false
+		);
+
+		$page_selection = wp_dropdown_pages($args);
+		if (!empty($page_selection)) {
+			echo $page_selection;
+		}
+		else {
+			echo "Please create a page as a draft to select it here.";
+		}
+		
+		echo "<br/><span class='description'>Select the page to use as your default neighborhood page template.</span>";
 
 	}
 
@@ -710,6 +867,22 @@ class flexmlsConnect {
 		
 	}
 
+	function get_idx_link_details($my_link) {
+		$fmc_api = new flexmlsApiWP;
+		$api_links = $fmc_api->GetIDXLinks();
+
+		if (is_array($api_links)) {
+			foreach ($api_links as $link) {
+				if ($link['LinkId'] == $my_link) {
+					return $link;
+				}
+			}
+		}
+
+		return false;
+
+	}
+
 	function get_default_idx_link_url() {
 		$default_link = flexmlsConnect::get_default_idx_link();
 		$fmc_api = new flexmlsApiWP;
@@ -758,6 +931,171 @@ class flexmlsConnect {
 			}
 		}
 		delete_transient('fmc_cache_tracker');
+	}
+
+	function greatest_fitting_number($num, $slide, $max) {
+		if (($num * ($slide + 1)) <= $max) {
+			return flexmlsConnect::greatest_fitting_number($num, $slide + 1, $max);
+		}
+		else {
+			return $num * $slide;
+		}
+	}
+
+	/**
+	 *
+	 * Used to calculate the API limit needed to fill as many
+	 * slides as possible without having any partially filled.
+	 */
+	function generate_api_limit_value($hor, $ver) {
+
+		// _limit number to shoot for if we can
+		$kind_limit = 10;
+
+		// maximum _limit is allowed to be
+		$max_limit = 25;
+
+		if (empty($hor)) {
+			$hor = 1;
+		}
+		if (empty($ver)) {
+			$ver = 1;
+		}
+
+		$total = $hor * $ver;
+
+		if ($total < $kind_limit) {
+			return flexmlsConnect::greatest_fitting_number($total, 1, $kind_limit);
+		}
+		elseif ($total >= $kind_limit && $total <= $max_limit) {
+			return $total;
+		}
+		else {
+			return $max_limit;
+		}
+
+	}
+
+
+	function generate_appropriate_dimensions($hor, $ver) {
+		$new_horizontal = $hor;
+
+		if ($new_horizontal > 25) {
+			$new_horizontal = 25;
+		}
+
+		$initial_total = ($hor * $ver);
+
+		if ($initial_total > 25) {
+			$room_to_grow = true;
+			$new_vertical = 1;
+			while ($room_to_grow) {
+				if (($new_horizontal * ($new_vertical + 1)) >= 25) {
+					$room_to_grow = false;
+				}
+				else {
+					$new_vertical++;
+				}
+			}
+		}
+		else {
+			// the grid is fine as-is
+			$new_vertical = $ver;
+		}
+
+		return array( $new_horizontal, $new_vertical );
+	}
+
+
+    function parse_location_search_string($location) {
+        $locations = array();
+        if (!empty($location)) {
+            if (preg_match('/\|/', $location)) {
+                $locations = explode("|", $location);
+            }
+            else {
+                $locations[] = $location;
+            }
+        }
+
+        $return = array();
+
+        foreach ($locations as $loc) {
+            list($loc_name, $loc_value) = explode("=", $loc, 2);
+            list($loc_value, $loc_display) = explode("&", $loc_value);
+            $loc_value_nice = preg_replace('/^\'(.*)\'$/', "$1", $loc_value);
+            // if there weren't any single quotes, just use the original value
+			if (empty($loc_value_nice)) {
+				$loc_value_nice = $loc_value;
+			}
+            $loc_value_nice = flexmlsConnect::remove_starting_equals($loc_value_nice);
+            $return[] = array(
+				'r' => $loc,
+                'f' => $loc_name,
+                'v' => $loc_value_nice,
+                'l' => $loc_display
+            );
+        }
+
+        return $return;
+    }
+
+    function cache_turned_on() {
+        $options = get_option('fmc_settings');
+        if ($options['enable_cache'] == true) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+
+	function get_neighborhood_template_content($page_id = false) {
+
+		$neigh_template_page_id = flexmlsConnect::get_neighborhood_template_id($page_id);
+
+		if (!$neigh_template_page_id) {
+			return false;
+		}
+		
+		$content = get_page($neigh_template_page_id);
+		return $content->post_content;
+
+	}
+
+
+	function get_neighborhood_template_id($page_id = false) {
+
+		if (!$page_id || $page_id == "default") {
+			$options = get_option('fmc_settings');
+			$neigh_template_page_id = $options['neigh_template'];
+		}
+		else {
+			$neigh_template_page_id = $page_id;
+		}
+
+		if (empty($neigh_template_page_id)) {
+			return false;
+		}
+
+		return $neigh_template_page_id;
+
+	}
+
+
+	function unescape_request_var($string) {
+		if (get_magic_quotes_gpc()) {
+			return stripslashes($string);
+		}
+		else {
+			return $string;
+		}
+	}
+
+
+	function special_location_tag_text() {
+		return "<br /><span class='description'>You can use <code>{Location}</code> on neighborhood templates to customize.</span>";
 	}
 
 }

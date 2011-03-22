@@ -8,7 +8,7 @@ class fmcWidget extends WP_Widget {
 
 		$widget_info = $fmc_widgets[ get_class($this) ];
 
-		$settings_content = $this->settings_form( array() );
+		$settings_content = $this->settings_form( array('_instance_type' => 'shortcode') );
 		$settings_content = $settings_content;
 
 		$response = array(
@@ -31,7 +31,7 @@ class fmcWidget extends WP_Widget {
 		$cache_item_name = md5(get_class($this) .'_'. serialize($instance) . $type);
 		$cache = get_transient('fmc_cache_'. $cache_item_name);
 
-		if (!empty($cache)) {
+		if (!empty($cache) && flexmlsConnect::cache_turned_on() == true) {
 			$return = $cache;
 		}
 		else {

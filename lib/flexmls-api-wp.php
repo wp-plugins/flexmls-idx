@@ -8,6 +8,7 @@ class flexmlsApiWP {
 	public $last_error_code = null;
 	public $last_error_mess = null;
 	public $last_count = 0;
+	public $last_count_pages = 0;
 	public $api_roles = null;
 	private $last_token = null;
 	private $last_token_expire = null;
@@ -201,9 +202,49 @@ class flexmlsApiWP {
 
 	}
 
+
+	function ListingPhotos($id) {
+
+		$args = array();
+
+		$result = $this->MakeAPIRequest("GET", "/v1/listings/".$id."/photos", $args, $data = array(), $auth = false, $cache_time = 10);
+
+		if ($result === false) {
+			return false;
+		}
+
+		return $result;
+
+	}
+
+
 	function MyListings($args = array()) {
 
 		$result = $this->MakeAPIRequest("GET", "/v1/my/listings", $args, $data = array(), $auth = false, $cache_time = 10);
+
+		if ($result === false) {
+			return false;
+		}
+
+		return $result;
+
+	}
+
+	function OfficeListings($args = array()) {
+
+		$result = $this->MakeAPIRequest("GET", "/v1/office/listings", $args, $data = array(), $auth = false, $cache_time = 10);
+
+		if ($result === false) {
+			return false;
+		}
+
+		return $result;
+
+	}
+	
+	function CompanyListings($args = array()) {
+
+		$result = $this->MakeAPIRequest("GET", "/v1/company/listings", $args, $data = array(), $auth = false, $cache_time = 10);
 
 		if ($result === false) {
 			return false;
@@ -266,6 +307,7 @@ class flexmlsApiWP {
 	function MakeAPIRequest($method, $uri, $args = array(), $data = array(), $is_auth_request = false, $cache_time = 0, $a_retry = false) {
 		global $fmc_token;
 		global $fmc_instance_cache;
+		global $fmc_version;
 
 		if (!is_array($args)) {
 			$args = array();
@@ -324,7 +366,7 @@ class flexmlsApiWP {
 		$http_args['timeout'] = 20;
 		$http_args['sslverify'] = false;
 		$http_args['headers']['User-Agent'] = "flexmls API WP PHP Client/1.0";
-		$http_args['headers']['X-flexmlsApi-User-Agent'] = "flexmls WordPress Plugin/1.0";
+		$http_args['headers']['X-flexmlsApi-User-Agent'] = "flexmls WordPress Plugin/{$fmc_version}";
 
 		if ($is_auth_request == true) {
 			$http_proto = "https://";
@@ -352,7 +394,7 @@ class flexmlsApiWP {
 			$http_args['body'] = $post_body;
 			$http_args['headers']['Content-Type'] = "application/json";
 		}
-		
+
 		$cache_item_name = md5($cache_url);
 
 		// innocent until proven guilty
@@ -403,6 +445,7 @@ class flexmlsApiWP {
 
 		if ( array_key_exists('Pagination', $json['D']) ) {
 			$this->last_count = $json['D']['Pagination']['TotalRows'];
+			$this->last_count_pages = $json['D']['Pagination']['TotalPages'];
 		}
 
 		if ( $json['D']['Success'] == true) {

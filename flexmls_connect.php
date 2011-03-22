@@ -4,10 +4,11 @@ Plugin Name: flexmls&reg; IDX
 Plugin URI: http://www.flexmls.com/products/flexmls-IDX/wpplugin
 Description: Provides flexmls&reg; Customers with flexmls&reg; IDX features on their WordPress blog. <strong>Tips:</strong> <a href="options-general.php?page=flexmls_connect">Activate your flexmls IDX plugin</a> on the settings page; <a href="widgets.php">add widgets to your sidebar</a> using the Widgets Admin under Appearance; and include widgets on your posts or pages using the flexmls IDX Widget Short-Code Generator on the Visual page editor.
 Author: FBS
-Version: 0.9.6
+Version: 2.0
 Author URI: http://www.flexmls.com/
 */
 
+$fmc_version = 2.0;
 $fmc_plugin_dir = dirname(realpath(__FILE__));
 $fmc_plugin_url = get_option('siteurl') .'/wp-content/plugins/flexmls-idx';
 
@@ -22,7 +23,8 @@ $fmc_widgets = array(
 				'description' => "Show market statistics on your blog",
 				'requires_key' => true,
 				'shortcode' => 'market_stats',
-				'max_cache_time' => 0
+				'max_cache_time' => 0,
+				'widget' => true
 				),
 		'fmcPhotos' => array(
 				'component' => 'photos.php',
@@ -30,7 +32,8 @@ $fmc_widgets = array(
 				'description' => "Show photos of selected listings",
 				'requires_key' => true,
 				'shortcode' => 'idx_slideshow',
-				'max_cache_time' => 600
+				'max_cache_time' => 600,
+				'widget' => true
 				),
 		'fmcSearch' => array(
 				'component' => 'search.php',
@@ -38,7 +41,8 @@ $fmc_widgets = array(
 				'description' => "Allow users to search for listings",
 				'requires_key' => true,
 				'shortcode' => 'idx_search',
-				'max_cache_time' => 0
+				'max_cache_time' => 0,
+				'widget' => true
 				),
 		'fmcLocationLinks' => array(
 				'component' => 'location-links.php',
@@ -46,7 +50,8 @@ $fmc_widgets = array(
 				'description' => "Allow users to view listings from a custom search narrowed to a specific area",
 				'requires_key' => true,
 				'shortcode' => 'idx_location_links',
-				'max_cache_time' => 0
+				'max_cache_time' => 0,
+				'widget' => true
 				),
 		'fmcIDXLinks' => array(
 				'component' => 'idx-links.php',
@@ -54,7 +59,8 @@ $fmc_widgets = array(
 				'description' => "Share popular searches with your users",
 				'requires_key' => true,
 				'shortcode' => 'idx_custom_links',
-				'max_cache_time' => 0
+				'max_cache_time' => 0,
+				'widget' => true
 				),
 		'fmcLeadGen' => array(
 				'component' => 'lead-generation.php',
@@ -62,8 +68,18 @@ $fmc_widgets = array(
 				'description' => "Allow users to share information with you",
 				'requires_key' => true,
 				'shortcode' => 'lead_generation',
-				'max_cache_time' => 0
+				'max_cache_time' => 0,
+				'widget' => true
 				),
+		'fmcNeighborhoods' => array(
+				'component' => 'neighborhoods.php',
+				'title' => "flexmls&reg;: Neighborhood Page",
+				'description' => "Create a neighborhood page from a template",
+				'requires_key' => true,
+				'shortcode' => 'neighborhood_page',
+				'max_cache_time' => 0,
+				'widget' => false
+				)
 		);
 
 

@@ -56,13 +56,7 @@ class fmcLocationLinks extends fmcWidget {
 		}
 
 		// break the Location Search string into separate pieces
-		$locations = array();
-		if (preg_match('/\|/', $my_locations)) {
-			$locations = explode("|", $my_locations);
-		}
-		else {
-			$locations[] = $my_locations;
-		}
+		$locations = flexmlsConnect::parse_location_search_string($my_locations);
 
 		// re-arrange the structure a bit for easier testing
 		$valid_links = array();
@@ -78,9 +72,7 @@ class fmcLocationLinks extends fmcWidget {
 		// make a list of all of the standard field names used in the Location Search value
 		$location_field_names = array();
 		foreach ($locations as $loc) {
-			list($loc_name, $loc_value) = explode("=", $loc, 2);
-			list($loc_value, $loc_display) = explode("&", $loc_value);
-			$location_field_names[] = $loc_name;
+			$location_field_names[] = $loc['f'];
 		}
 
 
@@ -101,18 +93,10 @@ class fmcLocationLinks extends fmcWidget {
 		$outbound_link = $fmc_api->GetTransformedIDXLink($my_link, $link_transform_params);
 
 		foreach ($locations as $loc) {
-			// break the name and value into separate pieces
-			list($loc_name, $loc_value) = explode("=", $loc, 2);
-			list($loc_value, $loc_display) = explode("&", $loc_value);
-			// clean off surrounding single quotes from the value
-			$loc_value_nice = preg_replace('/^\'(.*)\'$/', "$1", $loc_value);
-			// if there weren't any single quotes, just use the original value
-			if (empty($loc_value_nice)) {
-				$loc_value_nice = $loc_value;
-			}
+
 			// start replacing the placeholders in the link with the real values for this link
 			$this_link = $outbound_link;
-			$this_link = preg_replace('/\*'.preg_quote($loc_name).'\*/', $loc_value_nice, $this_link);
+			$this_link = preg_replace('/\*'.preg_quote($loc['f']).'\*/', $loc['v'], $this_link);
 			$this_link = preg_replace('/\*PropertyType\*/', $property_type, $this_link);
 			// replace all remaining placeholders with a blank value since it doesn't apply to this link
 			$this_link = preg_replace('/\*(.*?)\*/', "", $this_link);
@@ -120,10 +104,7 @@ class fmcLocationLinks extends fmcWidget {
 			if (flexmlsConnect::get_destination_window_pref() == "new") {
 				$this_target = " target='_blank'";
 			}
-			if (preg_match('/^\=/', $loc_display)) {
-				$loc_display = substr($loc_display, 1);
-			}
-			$links_to_show .= "<li><a href=\"".flexmlsConnect::make_destination_link($this_link)."\" title=\"{$valid_links[$my_link]['Name']} - {$loc_display}\"{$this_target}>{$loc_display}</a></li>\n";
+			$links_to_show .= "<li><a href=\"".flexmlsConnect::make_destination_link($this_link)."\" title=\"{$valid_links[$my_link]['Name']} - {$loc['l']}\"{$this_target}>{$loc['l']}</a></li>\n";
 		}
 
 		if (empty($links_to_show)) {

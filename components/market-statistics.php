@@ -87,19 +87,14 @@ class fmcMarketStats extends fmcWidget {
 			return flexmlsConnect::widget_missing_requirements("Market Statistics", "Type and Display");
 		}
 
+		$locations = flexmlsConnect::parse_location_search_string($location);
+
 		$loc_name = "";
 		$loc_value_nice = "";
-		$loc_display = "";
-		
-		if (!empty($location)) {
-			list($loc_name, $loc_value) = explode("=", $location, 2);
-			list($loc_value, $loc_display) = explode("&", $loc_value);
-			// clean off surrounding single quotes from the value
-			$loc_value_nice = preg_replace('/^\'(.*)\'$/', "$1", $loc_value);
-			// if there weren't any single quotes, just use the original value
-			if (empty($loc_value_nice)) {
-				$loc_value_nice = $loc_value;
-			}
+
+		foreach ($locations as $loc) {
+				$loc_name = $loc['f'];
+				$loc_value_nice = $loc['v'];
 		}
 
 		$return = '';
@@ -242,6 +237,10 @@ class fmcMarketStats extends fmcWidget {
 			$display_options[$opt['value']] = $opt['label'];
 		}
 
+		if (array_key_exists('_instance_type', $instance) && $instance['_instance_type'] == "shortcode") {
+			$special_neighborhood_title_ability = flexmlsConnect::special_location_tag_text();
+		}
+
 		$return = "";
 
 		$return .= "
@@ -249,6 +248,7 @@ class fmcMarketStats extends fmcWidget {
 			<p>
 				<label for='".$this->get_field_id('title')."'>" . __('Title:') . "</label>
 				<input fmc-field='title' fmc-type='text' type='text' class='widefat' id='".$this->get_field_id('title')."' name='".$this->get_field_name('title')."' value='{$title}' />
+				$special_neighborhood_title_ability
 			</p>
 
 			<p>

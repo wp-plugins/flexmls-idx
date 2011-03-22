@@ -137,6 +137,10 @@ class fmcLeadGen extends fmcWidget {
 		$success = esc_attr($instance['success']);
 		$buttontext = esc_attr($instance['buttontext']);
 
+		if (array_key_exists('_instance_type', $instance) && $instance['_instance_type'] == "shortcode") {
+			$special_neighborhood_title_ability = flexmlsConnect::special_location_tag_text();
+		}
+
 		$return = "";
 
 		$return .= "
@@ -144,6 +148,7 @@ class fmcLeadGen extends fmcWidget {
 			<p>
 				<label for='".$this->get_field_id('title')."'>" . __('Title:') . "
 					<input fmc-field='title' fmc-type='text' type='text' class='widefat' id='".$this->get_field_id('title')."' name='".$this->get_field_name('title')."' value='{$title}'>
+					$special_neighborhood_title_ability
 				</label>
 			</p>
 			<p>
