@@ -22,7 +22,7 @@ class flexmlsConnect {
 			wp_register_style('fmc_connect', $fmc_plugin_url .'/includes/connect.min.css');
 			wp_enqueue_style('fmc_connect');
 
-			if (flexmlsConnect::is_ie()) {
+			if (flexmlsConnect::is_ie() && flexmlsConnect::ie_version() < 9) {
 				wp_register_script('fmc_excanvas', $fmc_plugin_url .'/includes/excanvas.min.js');
 				wp_enqueue_script('fmc_excanvas');
 			}
@@ -729,13 +729,15 @@ class flexmlsConnect {
 			$attr['height'] = 500;
 		}
 
-		$show_link = $attr['default'];
+		$show_link = flexmlsConnect::get_default_idx_link_url();
 
-		if (array_key_exists('url', $_GET) && !empty($_GET['url'])) {
-			$show_link = $_GET['url'];
+		$query_url = flexmlsConnect::get_var('url');
+
+		if (!empty($query_url)) {
+			$show_link = $query_url;
 		}
 		else {
-			$default_link = flexmlsConnect::get_default_idx_link_url();
+			$default_link = $attr['default'];
 			if (!empty($default_link)) {
 				$show_link = $default_link;
 			}
@@ -745,8 +747,8 @@ class flexmlsConnect {
 			return;
 		}
 		
-		if (!empty($_GET['url'])) {
-			$show_link = $_GET['url'];
+		if (!empty($query_url)) {
+			$show_link = $query_url;
 		}
 
 		return "<iframe src='{$show_link}' width='{$attr['width']}' height='{$attr['height']}' frameborder='0'></iframe>";
@@ -922,6 +924,16 @@ class flexmlsConnect {
 
 	}
 	
+	function ie_version() {
+		ereg('MSIE ([0-9]\.[0-9])',$_SERVER['HTTP_USER_AGENT'],$reg);
+		if(!isset($reg[1])) {
+			return -1;
+		} else {
+			return floatval($reg[1]);
+		}
+	}
+	
+	
 	function clear_temp_cache() {
 		// get list of transient items to clear
 		$cache_tracker = get_transient('fmc_cache_tracker');
@@ -1096,6 +1108,31 @@ class flexmlsConnect {
 
 	function special_location_tag_text() {
 		return "<br /><span class='description'>You can use <code>{Location}</code> on neighborhood templates to customize.</span>";
+	}
+
+
+	function get_var($key) {
+
+		if (isset($_GET) && is_array($_GET) && array_key_exists($key, $_GET)) {
+			return $_GET[$key];
+		}
+		else {
+			// parse the query string manually.  some kind of internal redirect
+			// or protection is keeping PHP from knowing what $_GET is
+			$query_string = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+			$query_parts = explode("&", $query_string);
+			$manual = array();
+			foreach ($query_parts as $p) {
+				list($k, $v) = @explode("=", $p, 2);
+				if (array_key_exists($k, $manual)) {
+					$manual[$k] .= ",".urldecode($v);
+				}
+				else {
+					$manual[$k] = urldecode($v);
+				}
+			}
+			return $manual[$key];
+		}
 	}
 
 }
