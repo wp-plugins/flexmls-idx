@@ -235,15 +235,18 @@ class flexmlsConnect {
 
 				<div class='flexmls_connect__location'>
 					<p>
-					<label for='location'>Location:</label>
-					<input type='text' name='location_input' data-connect-url='{$api_location_search_api}' class='flexmls_connect__location_search' autocomplete='off' value='City, Postal Code, etc.' />
-					<a href='javascript:void(0);' title='Click here to browse through available locations' class='flexmls_connect__location_browse'>Browse &raquo;</a>
-					<div class='flexmls_connect__location_list' data-connect-multiple='false'>
-						<p>All Locations Included</p>
-					</div>
-					<input type='hidden' name='tech_id' class='flexmls_connect__tech_id' value=\"x'{$api_system_info['Id']}'\" />
-					<input type='hidden' name='ma_tech_id' class='flexmls_connect__ma_tech_id' value=\"x'{$api_system_info['MlsId']}'\" />
-					<input fmc-field='location' fmc-type='text' type='hidden' name='location' class='flexmls_connect__location_fields' value=\"\" />
+  					<label for='location'>Location:</label>
+  					<input type='text' name='location_input' data-connect-url='{$api_location_search_api}' class='flexmls_connect__location_search' autocomplete='off' value='City, Postal Code, etc.' />
+  					<a href='javascript:void(0);' title='Click here to browse through available locations' class='flexmls_connect__location_browse'>Browse &raquo;</a>
+  					<div class='flexmls_connect__location_list' data-connect-multiple='false'>
+  						<p>All Locations Included</p>
+  					</div>
+  					<input type='hidden' name='tech_id' class='flexmls_connect__tech_id' value=\"x'{$api_system_info['Id']}'\" />
+  					<input type='hidden' name='ma_tech_id' class='flexmls_connect__ma_tech_id' value=\"x'{$api_system_info['MlsId']}'\" />
+  					<input fmc-field='location' fmc-type='text' type='hidden' name='location' class='flexmls_connect__location_fields' value=\"\" />
+  					<select style='display:none;' fmc-field='property_type' class='flexmls_connect__property_type' fmc-type='select' id='property_type' name='property_type'>
+    			    <option value='A' selected='selected'></option>
+    			  </select>
 					</p>
 				</div>
 

@@ -166,6 +166,9 @@ class fmcNeighborhoods extends fmcWidget {
 				<input type='hidden' name='tech_id' class='flexmls_connect__tech_id' value=\"x'{$api_system_info['Id']}'\" />
 				<input type='hidden' name='ma_tech_id' class='flexmls_connect__ma_tech_id' value=\"x'{$api_system_info['MlsId']}'\" />
 				<input fmc-field='location' fmc-type='text' type='hidden' name='".$this->get_field_name('location')."' class='flexmls_connect__location_fields' value=\"{$location}\" />
+				<select style='display:none;' fmc-field='property_type' class='flexmls_connect__property_type' fmc-type='select' id='".$this->get_field_id('property_type')."' name='".$this->get_field_name('property_type')."'>
+			    <option value='A' selected='selected'></option>
+			  </select>
 			</p>
 
 			<img src='x' class='flexmls_connect__bootloader' onerror='flexmls_connect.location_setup(this);' />
