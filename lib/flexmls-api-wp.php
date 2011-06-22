@@ -139,8 +139,11 @@ class flexmlsApiWP {
 	function SendContact($contact_data) {
 		$args = array();
 
-		$data = array('Contacts' => array($contact_data));
-
+		$data = array(
+		    'Contacts' => array($contact_data),
+		    'Notify' => flexmlsConnect::send_notification()
+		);
+		
 		$result = $this->MakeAPIRequest("POST", "/v1/contacts", $args, $data, $auth = false);
 
 		if ($result === false) {
@@ -332,7 +335,7 @@ class flexmlsApiWP {
 
 		if ($method == "POST" && count($data) > 0) {
 			// the request is to post some JSON data back to the API (like adding a contact)
-			$post_body = $this->jsObj->encode( array('D' => $data ) );
+			$post_body = $this->json_encode( array('D' => $data ) );
 		}
 		
 		if ($is_auth_request) {
@@ -401,7 +404,7 @@ class flexmlsApiWP {
 		$served_from_cache = null;
 
 		// check if we should retrieve from cache
-		if ($method == "GET" && $cache_time > 0 && $options['enable_cache'] == true && $a_retry == false) {
+		if ($method == "GET" && $cache_time > 0 && $a_retry == false) {
 			// retrieve the cache data for this particular request
 			$cache = get_transient('fmc_cache_'. $cache_item_name);
 
@@ -451,7 +454,7 @@ class flexmlsApiWP {
 		if ( $json['D']['Success'] == true) {
 
 			// check a couple of conditions to see if we should update the cache
-			if ($cache_time > 0 && $options['enable_cache'] == true && $data_source == "live" && $method == "GET" && !empty($return)) {
+			if ($cache_time > 0 && $data_source == "live" && $method == "GET" && !empty($return)) {
 
 				// update transient item which tracks cache items
 				$cache_tracker = get_transient('fmc_cache_tracker');
@@ -533,6 +536,14 @@ class flexmlsApiWP {
 
 		return $result;
 
+	}
+	
+	function json_encode($obj) {
+		$return = $this->jsObj->encode( $obj );
+		
+		// Moxiecode's JSON encoder escapes single quotes when it shouldn't, so unescape those
+		$return = str_replace("\'", "'", $return);
+		return $return;
 	}
 
 

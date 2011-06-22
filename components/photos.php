@@ -802,7 +802,7 @@ class fmcPhotos extends fmcWidget {
 
     function additional_photos() {
 
-		$full_id = $_REQUEST['id'];
+		$full_id = flexmlsConnect::wp_input_get_post('id');
 		$id = $full_id;
 		$id = substr($id, -26, 26);
 
@@ -834,14 +834,11 @@ class fmcPhotos extends fmcWidget {
 		// no arguments need to be passed for prepping the AJAX response
 		$args = array();
 
-		$settings_string = $_REQUEST['settings'];
-		if (get_magic_quotes_gpc()) {
-			$settings_string = stripslashes($settings_string);
-		}
+		$settings_string = flexmlsConnect::wp_input_get_post('settings');
 
 		// these get parsed from the sent AJAX response
 		$settings = unserialize($settings_string);
-		$listings_from = $_REQUEST['page'];
+		$listings_from = flexmlsConnect::wp_input_get_post('page');
 
 		$horizontal = $settings['horizontal'];
 		$vertical = $settings['vertical'];

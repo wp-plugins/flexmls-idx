@@ -108,10 +108,10 @@ class flexmlsConnect {
 
 			$options = array(
 					'default_titles' => true,
-					'enable_cache' => true,
 					'destpref' => 'page',
 					'destlink' => $new_page_id,
-					'autocreatedpage' => $new_page_id
+					'autocreatedpage' => $new_page_id,
+					'contact_notifications' => true
 					);
 
 			add_option('fmc_settings', $options);
@@ -337,7 +337,6 @@ class flexmlsConnect {
 		// add some setting fields to the fmc_settings_api section of the settings page
 		add_settings_field('fmc_api_key', 'API Key', array('flexmlsConnect', 'settings_field_api_key') , 'flexmls_connect', 'fmc_settings_api');
 		add_settings_field('fmc_api_secret', 'API Secret', array('flexmlsConnect', 'settings_field_api_secret') , 'flexmls_connect', 'fmc_settings_api');
-		add_settings_field('fmc_plugin_cache', 'Enable API Cache', array('flexmlsConnect', 'settings_field_plugin_cache') , 'flexmls_connect', 'fmc_settings_api');
 		add_settings_field('fmc_clear_cache', 'Clear Cache?', array('flexmlsConnect', 'settings_field_clear_cache') , 'flexmls_connect', 'fmc_settings_api');
 
 		add_settings_section('fmc_settings_plugin', '<br/>Plugin Behavior', array('flexmlsConnect', 'settings_overview_plugin') , 'flexmls_connect');
@@ -345,6 +344,7 @@ class flexmlsConnect {
 		add_settings_field('fmc_destlink', 'Open IDX Links', array('flexmlsConnect', 'settings_field_destlink') , 'flexmls_connect', 'fmc_settings_plugin');
 		add_settings_field('fmc_default_link', 'Default IDX Link', array('flexmlsConnect', 'settings_field_default_link') , 'flexmls_connect', 'fmc_settings_plugin');
 		add_settings_field('fmc_neigh_template', 'Neighborhood Page Template', array('flexmlsConnect', 'settings_field_neigh_template') , 'flexmls_connect', 'fmc_settings_plugin');
+		add_settings_field('fmc_contact_notifications', 'When a new lead is created', array('flexmlsConnect', 'settings_field_contact_notifications') , 'flexmls_connect', 'fmc_settings_plugin');
 
 	}
 
@@ -386,14 +386,6 @@ class flexmlsConnect {
 		$options['api_key'] = trim($input['api_key']);
 		$options['api_secret'] = trim($input['api_secret']);
 
-		// save the state of the Enable API Cache selection
-		if ($input['enable_cache'] == "y") {
-			$options['enable_cache'] = true;
-		}
-		else {
-			$options['enable_cache'] = false;
-		}
-
 		if ($input['clear_cache'] == "y") {
 			// since clear_cache is checked, wipe out the contents of the fmc_cache_* transient items
 			// but don't do anything else since we aren't saving the state of this particular checkbox
@@ -413,6 +405,13 @@ class flexmlsConnect {
 		$options['destwindow'] = $input['destwindow'];
 		$options['default_link'] = $input['default_link'];
 		$options['neigh_template'] = $input['neigh_template'];
+		
+		if ($input['contact_notifications'] == "y") {
+			$options['contact_notifications'] = true;
+		}
+		else {
+			$options['contact_notifications'] = false;
+		}
 
 		return $options;
 
@@ -457,23 +456,6 @@ class flexmlsConnect {
 	function settings_field_api_secret() {
 		$options = get_option('fmc_settings');
 		echo "<input type='password' id='fmc_api_secret' name='fmc_settings[api_secret]' value='{$options['api_secret']}' size='14' maxlength='25' />\n";
-	}
-
-	function settings_field_plugin_cache() {
-		$options = get_option('fmc_settings');
-
-		$checked = "";
-
-		if ($options['enable_cache'] == true) {
-			$checked_yes = " checked='checked'";
-		}
-		else {
-			$checked_no = " checked='checked'";
-		}
-		
-		echo "<label><input type='radio' name='fmc_settings[enable_cache]' value='y'{$checked_yes} /> Yes</label> &nbsp; ";
-		echo "<label><input type='radio' name='fmc_settings[enable_cache]' value='n'{$checked_no} /> No</label><br />\n";
-		echo "<span class='description'>Speed up your site by caching certain flexmls&reg; API calls every few minutes.</span>\n";
 	}
 
 	function settings_field_default_titles() {
@@ -604,6 +586,28 @@ class flexmlsConnect {
 		echo "<br/><span class='description'>Select the page to use as your default neighborhood page template.</span>";
 
 	}
+	
+	
+	function settings_field_contact_notifications() {
+		$options = get_option('fmc_settings');
+
+		$checked_code = " checked='checked'";
+
+		if (!array_key_exists('contact_notifications', $options)) {
+			$checked_yes = $checked_code;
+		}
+		elseif ($options['contact_notifications'] === true) {
+			$checked_yes = $checked_code;
+		}
+		else {
+			$checked_no = $checked_code;
+		}
+
+		
+		echo "<label><input type='radio' name='fmc_settings[contact_notifications]' value='y'{$checked_yes} /> Notify me within flexmls&reg;</label> &nbsp; ";
+		echo "<label><input type='radio' name='fmc_settings[contact_notifications]' value='n'{$checked_no} /> Don't send any notification</label><br />\n";
+		
+	}
 
 
 	function settings_helpful_proptypes() {
@@ -664,9 +668,7 @@ class flexmlsConnect {
 
 
 	function strip_quotes($value) {
-		if (get_magic_quotes_gpc()) {
-			$value = stripslashes($value);
-		}
+		$value = stripslashes($value);
 
 		if (preg_match('/^\'(.*?)\'$/', $value)) {
 			return substr($value, 1, -1);
@@ -734,7 +736,7 @@ class flexmlsConnect {
 
 		$show_link = flexmlsConnect::get_default_idx_link_url();
 
-		$query_url = flexmlsConnect::get_var('url');
+		$query_url = flexmlsConnect::wp_input_get('url');
 
 		if (!empty($query_url)) {
 			$show_link = $query_url;
@@ -1056,13 +1058,7 @@ class flexmlsConnect {
     }
 
     function cache_turned_on() {
-        $options = get_option('fmc_settings');
-        if ($options['enable_cache'] == true) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return true;
     }
 
 
@@ -1099,13 +1095,8 @@ class flexmlsConnect {
 	}
 
 
-	function unescape_request_var($string) {
-		if (get_magic_quotes_gpc()) {
-			return stripslashes($string);
-		}
-		else {
-			return $string;
-		}
+	function unescape_request_var($string) {	
+		return stripslashes($string);
 	}
 
 
@@ -1114,15 +1105,19 @@ class flexmlsConnect {
 	}
 
 
-	function get_var($key) {
-
+	function wp_input_get($key) {
+		
 		if (isset($_GET) && is_array($_GET) && array_key_exists($key, $_GET)) {
-			return $_GET[$key];
+			return self::wp_input_clean($_GET[$key]);
 		}
 		else {
 			// parse the query string manually.  some kind of internal redirect
 			// or protection is keeping PHP from knowing what $_GET is
-			$query_string = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+			
+			$full_requested_url = (preg_match('/^HTTP\//', $_SERVER['SERVER_PROTOCOL'])) ? "http" : "https";
+			$full_requested_url .= "://". $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+			
+			$query_string = parse_url($full_requested_url, PHP_URL_QUERY);
 			$query_parts = explode("&", $query_string);
 			$manual = array();
 			foreach ($query_parts as $p) {
@@ -1136,6 +1131,56 @@ class flexmlsConnect {
 			}
 			return $manual[$key];
 		}
+	}
+	
+	
+	function wp_input_post($key) {
+		if (isset($_POST) && is_array($_POST) && array_key_exists($key, $_POST)) {
+			return self::wp_input_clean($_POST[$key]);
+		}
+		else {
+			return null;
+		}
+	}
+	
+	
+	function wp_input_get_post($key) {
+		$via_post = self::wp_input_post($key);
+		if ($via_post !== null) {
+			return $via_post;
+		}
+		
+		$via_get = self::wp_input_get($key);
+		if ($via_get !== null) {
+			return $via_get;
+		}
+		
+		return null;
+	}
+	
+	
+	function wp_input_clean($string) {
+		
+		$string = stripslashes($string);
+		return $string;
+		
+	}
+	
+	
+	function send_notification() {
+	
+		$options = get_option('fmc_settings');
+
+		if (!array_key_exists('contact_notifications', $options)) {
+			return true;
+		}
+		elseif ($options['contact_notifications'] === true) {
+			return true;
+		}
+		else {
+			return false;
+		}
+		
 	}
 
 }

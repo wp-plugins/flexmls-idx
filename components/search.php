@@ -413,8 +413,8 @@ class fmcSearch extends fmcWidget {
 				'square_footage' => 'BuildingAreaTotal'
 		);
 
-		$query = $_POST['query'];
-		$my_link = $_POST['link'];
+		$query = stripslashes($_POST['query']);
+		$my_link = stripslashes($_POST['link']);
 
 		$query_conditions = array();
 		$std_query_conditions = array();
@@ -492,7 +492,7 @@ class fmcSearch extends fmcWidget {
 
 		$outbound_link = urlencode($outbound_link);
 
-		$permalink = $_POST['destlink'];
+		$permalink = stripslashes($_POST['destlink']);
 
 		if (strpos($permalink, '?') !== false) {
 			$outbound_link = $permalink . '&url=' . $outbound_link;

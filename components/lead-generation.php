@@ -204,6 +204,8 @@ class fmcLeadGen extends fmcWidget {
 		
 		$success = true;
 		$message = "";
+		
+
 
 		if (is_array($api_prefs) && !array_key_exists('RequiredFields', $api_prefs)) {
 			$api_prefs['RequiredFields'] = array();
@@ -214,60 +216,46 @@ class fmcLeadGen extends fmcWidget {
 		}
 
 		// check to see if all of the required fields were provided to us filled out
-		if ( in_array('name', $api_prefs['RequiredFields']) && empty($_REQUEST['name']) ) {
+		$data['DisplayName'] = flexmlsConnect::wp_input_get_post('name');
+		if ( in_array('name', $api_prefs['RequiredFields']) && empty($data['DisplayName'] ) ) {
 			$success = false;
 			$message = "Name is a required field.";
 		}
-		else {
-			$data['DisplayName'] = $_REQUEST['name'];
-		}
 		
-		if ( in_array('email', $api_prefs['RequiredFields']) && empty($_REQUEST['email']) ) {
+		$data['PrimaryEmail'] = flexmlsConnect::wp_input_get_post('email');
+		if ( in_array('email', $api_prefs['RequiredFields']) && empty($data['PrimaryEmail']) ) {
 			$success = false;
 			$message = "Email Address is a required field.";
 		}
-		else {
-			$data['PrimaryEmail'] = $_REQUEST['email'];
-		}
 		
-		if ( in_array('address', $api_prefs['RequiredFields']) && empty($_REQUEST['address']) ) {
+		$data['HomeStreetAddress'] = flexmlsConnect::wp_input_get_post('address');
+		if ( in_array('address', $api_prefs['RequiredFields']) && empty($data['HomeStreetAddress']) ) {
 			$success = false;
 			$message = "Home Address is a required field.";
 		}
-		else {
-			$data['HomeStreetAddress'] = $_REQUEST['address'];
-		}
 
-		if ( in_array('address', $api_prefs['RequiredFields']) && empty($_REQUEST['city']) ) {
+		$data['HomeLocality'] = flexmlsConnect::wp_input_get_post('city');
+		if ( in_array('address', $api_prefs['RequiredFields']) && empty($data['HomeLocality']) ) {
 			$success = false;
 			$message = "City is a required field.";
 		}
-		else {
-			$data['HomeLocality'] = $_REQUEST['city'];
-		}
 
-		if ( in_array('address', $api_prefs['RequiredFields']) && empty($_REQUEST['state']) ) {
+		$data['HomeRegion'] = flexmlsConnect::wp_input_get_post('state');
+		if ( in_array('address', $api_prefs['RequiredFields']) && empty($data['HomeRegion']) ) {
 			$success = false;
 			$message = "State is a required field.";
 		}
-		else {
-			$data['HomeRegion'] = $_REQUEST['state'];
-		}
 
-		if ( in_array('address', $api_prefs['RequiredFields']) && empty($_REQUEST['zip']) ) {
+		$data['HomePostalCode'] = flexmlsConnect::wp_input_get_post('zip');
+		if ( in_array('address', $api_prefs['RequiredFields']) && empty($data['HomePostalCode']) ) {
 			$success = false;
 			$message = "Zip is a required field.";
 		}
-		else {
-			$data['HomePostalCode'] = $_REQUEST['zip'];
-		}
 		
-		if ( in_array('phone', $api_prefs['RequiredFields']) && empty($_REQUEST['phone']) ) {
+		$data['PrimaryPhoneNumber'] = flexmlsConnect::wp_input_get_post('phone');
+		if ( in_array('phone', $api_prefs['RequiredFields']) && empty($data['PrimaryPhoneNumber']) ) {
 			$success = false;
 			$message = "Phone Number is a required field.";
-		}
-		else {
-			$data['PrimaryPhoneNumber'] = $_REQUEST['phone'];
 		}
 
 		if ($success == true) {
