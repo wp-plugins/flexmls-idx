@@ -147,6 +147,7 @@ class fmcPhotos extends fmcWidget {
 
 
 		$api_system_info = $fmc_api->SystemInfo();
+		$apply_property_type = false;
 
 		if ($source == "my") {
 			$outbound_criteria .= "&my_listings=true";
@@ -160,9 +161,13 @@ class fmcPhotos extends fmcWidget {
 			$api_listings = $fmc_api->CompanyListings( $params );
 		}
 		else {
+			
+			// set this to true since only GetListings() calls can have _filter's applied
+			$apply_property_type = true;
+			
 			// parse the given Locations for the _filter
 
-            $locations = flexmlsConnect::parse_location_search_string($location);
+			$locations = flexmlsConnect::parse_location_search_string($location);
 
 			$location_conditions = array();
 			$location_field_names = array();
@@ -212,7 +217,9 @@ class fmcPhotos extends fmcWidget {
 			$link_transform_params["{$loc_name}"] = "*{$loc_name}*";
 		}
 
-		$link_transform_params["PropertyType"] = "*PropertyType*";
+		if ($apply_property_type) {
+			$link_transform_params["PropertyType"] = "*PropertyType*";
+		}
 
 		// make the API call to translate standard field names
 		$outbound_link = $fmc_api->GetTransformedIDXLink($link, $link_transform_params);
@@ -223,7 +230,10 @@ class fmcPhotos extends fmcWidget {
 			$this_link = preg_replace('/\*'.preg_quote($loc['f']).'\*/', $loc['v'], $this_link);
 		}
 
-		$this_link = preg_replace('/\*PropertyType\*/', $property_type, $this_link);
+		if ($apply_property_type) {
+			$this_link = preg_replace('/\*PropertyType\*/', $property_type, $this_link);
+		}
+
 		// replace all remaining placeholders with a blank value since it doesn't apply to this link
 		$this_link = preg_replace('/\*(.*?)\*/', "", $this_link);
 		$this_link .= $outbound_criteria;

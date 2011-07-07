@@ -60,11 +60,23 @@ class fmcWidget extends WP_Widget {
 		$widget_info = $fmc_widgets[ get_class($this) ];
 
 		$shortcode = "[{$widget_info['shortcode']}";
+		
+		$is_service_lacking_filter_support = false;
+		$shortcode_source = flexmlsConnect::wp_input_get_post('source');
+		if ($shortcode_source != "location") {
+			$is_service_lacking_filter_support = true;
+		}
+		$is_slideshow_widget = ($widget_info['shortcode'] == "idx_slideshow") ? true : false;
 
 		foreach ($_REQUEST as $k => $v) {
 			if ($k == "action") {
 				continue;
 			}
+			
+			if ($is_slideshow_widget && $is_service_lacking_filter_support && ($k == "property_type" || $k == "location")) {
+				continue;
+			}
+			
 			if (!empty($v)) {
 				$v = htmlentities(stripslashes($v), ENT_QUOTES);
 				$shortcode .= " {$k}=\"{$v}\"";
