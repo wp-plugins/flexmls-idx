@@ -191,12 +191,10 @@ class fmcLeadGen extends fmcWidget {
 
 
 	function submit_lead() {
+		global $fmc_api;
 
 		// verify that the AJAX hit is legit.  returns -1 and stops if not
 		check_ajax_referer('fmcLeadGen', 'nonce');
-
-		$fmc_api = new flexmlsApiWp();
-		$fmc_api->Authenticate(true);
 		
 		$api_prefs = $fmc_api->ConnectPrefs();
 
@@ -205,7 +203,6 @@ class fmcLeadGen extends fmcWidget {
 		$success = true;
 		$message = "";
 		
-
 
 		if (is_array($api_prefs) && !array_key_exists('RequiredFields', $api_prefs)) {
 			$api_prefs['RequiredFields'] = array();
@@ -267,13 +264,7 @@ class fmcLeadGen extends fmcWidget {
 		}
 
 
-		// the JSON parser included with TinyMCE is favored over PHP's built-in json_encode and json_decode functions
-		// because json_encode/decode weren't included with PHP until 5.2 and TinyMCE's implementation works on earlier
-		// versions of PHP.  see http://themocracy.com/2010/02/json-wordpress/
-		require_once(ABSPATH . "/wp-includes/js/tinymce/plugins/spellchecker/classes/utils/JSON.php");
-
-		$this->jsObj = new Moxiecode_JSON();
-		echo $this->jsObj->encode($return);
+		echo flexmlsJSON::json_encode($return);
 
 		die();
 

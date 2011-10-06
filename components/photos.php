@@ -50,7 +50,7 @@ class fmcPhotos extends fmcWidget {
 		$display = trim($settings['display']);
 		$property_type = trim($settings['property_type']);
 		$link = trim($settings['link']);
-		$location = html_entity_decode(FlexmlsApiWp::clean_comma_list($settings['location']));
+		$location = html_entity_decode(flexmlsApiWP::clean_comma_list($settings['location']));
 		$sort = trim($settings['sort']);
 		$page = trim($settings['page']);
 		$additional_fields = trim($settings['additional_fields']);
@@ -501,6 +501,8 @@ class fmcPhotos extends fmcWidget {
 
 
 	function settings_form($instance) {
+		global $fmc_api;
+
 		$title = esc_attr($instance['title']);
 		$horizontal = esc_attr($instance['horizontal']);
 		$vertical = esc_attr($instance['vertical']);
@@ -570,7 +572,6 @@ class fmcPhotos extends fmcWidget {
 			$additional_fields_selected = explode(",", $additional_fields);
 		}
 
-		$fmc_api = new FlexmlsApiWp;
 		$api_property_type_options = $fmc_api->PropertyTypes();
 		$api_system_info = $fmc_api->SystemInfo();
 		$api_location_search_api = $fmc_api->GetLocationSearchApiUrl();
@@ -810,15 +811,12 @@ class fmcPhotos extends fmcWidget {
 	}
 
 
-    function additional_photos() {
+	function additional_photos() {
+		global $fmc_api;
 
 		$full_id = flexmlsConnect::wp_input_get_post('id');
 		$id = $full_id;
 		$id = substr($id, -26, 26);
-
-		$jsObj = new Moxiecode_JSON();
-
-		$fmc_api = new flexmlsApiWp();
 
 		$photos = $fmc_api->ListingPhotos($id);
 
@@ -826,12 +824,12 @@ class fmcPhotos extends fmcWidget {
 
 		if (is_array($photos)) {
 			foreach ($photos as $photo) {
-				$return[] = array('photo' => $photo['UriLarge'], 'caption' => $photo['Caption']);
+				$return[] = array('photo' => $photo['UriLarge'], 'caption' => htmlspecialchars($photo['Caption'], ENT_QUOTES) );
 			}
-			echo $jsObj->encode($return);
+			echo flexmlsJSON::json_encode($return);
 		}
 		else {
-			echo $jsObj->encode( false );
+			echo flexmlsJSON::json_encode( false );
 		}
 
 		die();

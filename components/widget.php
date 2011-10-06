@@ -16,8 +16,8 @@ class fmcWidget extends WP_Widget {
 				'body' => flexmlsConnect::shortcode_header() . $settings_content . flexmlsConnect::shortcode_footer()
 		);
 
-		$js = new Moxiecode_JSON();
-		echo str_replace("\'", "'", $js->encode($response));
+		echo flexmlsJSON::json_encode($response);
+
 		exit;
 
 	}
@@ -89,8 +89,8 @@ class fmcWidget extends WP_Widget {
 				'body' => $shortcode
 		);
 
-		$js = new Moxiecode_JSON();
-		echo $js->encode($response);
+		echo flexmlsJSON::json_encode($response);
+		
 		exit;
 
 	}

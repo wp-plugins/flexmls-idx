@@ -4,11 +4,11 @@ Plugin Name: flexmls&reg; IDX
 Plugin URI: http://www.flexmls.com/wpdemo/
 Description: Provides flexmls&reg; Customers with flexmls&reg; IDX features on their WordPress blog. <strong>Tips:</strong> <a href="options-general.php?page=flexmls_connect">Activate your flexmls IDX plugin</a> on the settings page; <a href="widgets.php">add widgets to your sidebar</a> using the Widgets Admin under Appearance; and include widgets on your posts or pages using the flexmls IDX Widget Short-Code Generator on the Visual page editor.
 Author: FBS
-Version: 2.3.3
+Version: 2.4
 Author URI: http://www.flexmls.com/
 */
 
-$fmc_version = '2.3.3';
+$fmc_version = '2.4';
 $fmc_plugin_dir = dirname(realpath(__FILE__));
 $fmc_plugin_url = get_option('siteurl') .'/wp-content/plugins/flexmls-idx';
 
@@ -89,17 +89,14 @@ $fmc_widgets = array(
  * Load in the basics
  */
 
-// the JSON parser included with TinyMCE is favored over PHP's built-in json_encode and json_decode functions
-// because json_encode/decode weren't included with PHP until 5.2 and TinyMCE's implementation works on earlier
-// versions of PHP.  see http://themocracy.com/2010/02/json-wordpress/
-require_once(ABSPATH . "/wp-includes/js/tinymce/plugins/spellchecker/classes/utils/JSON.php");
-
 require_once('lib/base.php');
+require_once('lib/flexmls-json.php');
 require_once('lib/flexmls-api-wp.php');
 require_once('components/widget.php');
 
 
-$fmc_api = new flexmlsApiWP();
+$fmc_api = new flexmlsApiWP;
+$fmc_api->last_token = get_transient('fmc_last_authtoken');
 
 $fmc_instance_cache = array();
 

@@ -224,6 +224,7 @@ class fmcSearch extends fmcWidget {
 
 
 	function settings_form($instance) {
+		global $fmc_api;
 
 		$title = esc_attr($instance['title']);
 		$width = esc_attr($instance['width']);
@@ -249,8 +250,6 @@ class fmcSearch extends fmcWidget {
 				'off' => 'Off'
 				);
 
-
-		$fmc_api = new FlexmlsApiWp;
 		$api_property_type_options = $fmc_api->PropertyTypes();
 		$api_links = $fmc_api->GetIDXLinks();
 

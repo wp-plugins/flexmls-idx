@@ -36,7 +36,7 @@ class fmcNeighborhoods extends fmcWidget {
 		$return = '';
 
 		$title = trim($settings['title']);
-		$location = html_entity_decode(FlexmlsApiWp::clean_comma_list($settings['location']));
+		$location = html_entity_decode(flexmlsApiWP::clean_comma_list($settings['location']));
 		$template = trim($settings['template']);
 
 		$page_content = flexmlsConnect::get_neighborhood_template_content($template);
@@ -114,11 +114,12 @@ class fmcNeighborhoods extends fmcWidget {
 
 
 	function settings_form($instance) {
+		global $fmc_api;
+
 		$title = esc_attr($instance['title']);
 		$location = $instance['location'];
 		$template = $instance['template'];
 
-		$fmc_api = new flexmlsApiWP();
 		$api_system_info = $fmc_api->SystemInfo();
 		$api_location_search_api = $fmc_api->GetLocationSearchApiUrl();
 

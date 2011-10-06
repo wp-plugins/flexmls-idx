@@ -37,7 +37,7 @@ class fmcLocationLinks extends fmcWidget {
 		$title = trim($settings['title']);
 		$my_link = trim($settings['link']);
 		$property_type = trim($settings['property_type']);
-		$my_locations = html_entity_decode(FlexmlsApiWp::clean_comma_list($settings['locations']));
+		$my_locations = html_entity_decode(flexmlsApiWP::clean_comma_list($settings['locations']));
 
 		// check if required parameters were given
 		if (empty($my_link) || empty($my_locations) || empty($property_type)) {
@@ -151,6 +151,7 @@ class fmcLocationLinks extends fmcWidget {
 
 
 	function settings_form($instance) {
+		global $fmc_api;
 
 		$title = esc_attr($instance['title']);
 		$link = esc_attr($instance['link']);
@@ -159,7 +160,6 @@ class fmcLocationLinks extends fmcWidget {
 
 		$selected_code = " selected='selected'";
 
-		$fmc_api = new FlexmlsApiWp;
 		$api_links = $fmc_api->GetIDXLinks();
 		$api_property_type_options = $fmc_api->PropertyTypes();
 		$api_system_info = $fmc_api->SystemInfo();

@@ -113,6 +113,7 @@ class fmcIDXLinks extends fmcWidget {
 
 
 	function settings_form($instance) {
+		global $fmc_api;
 
 		$title = esc_attr($instance['title']);
 		$links = esc_attr($instance['links']);
@@ -121,7 +122,6 @@ class fmcIDXLinks extends fmcWidget {
 
 		$selected_code = " checked='checked'";
 
-		$fmc_api = new FlexmlsApiWp;
 		$api_links = $fmc_api->GetIDXLinks();
 
 		if ($api_links === false) {

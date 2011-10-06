@@ -194,6 +194,8 @@ class fmcMarketStats extends fmcWidget {
 
 
 	function settings_form($instance) {
+		global $fmc_api;
+
 		$title = esc_attr($instance['title']);
 		$width = esc_attr($instance['width']);
 		$height = esc_attr($instance['height']);
@@ -215,8 +217,6 @@ class fmcMarketStats extends fmcWidget {
 				"volume" => "Volume"
 		);
 
-		
-		$fmc_api = new FlexmlsApiWp;
 		$api_property_type_options = $fmc_api->PropertyTypes();
 		$api_system_info = $fmc_api->SystemInfo();
 		$api_location_search_api = $fmc_api->GetLocationSearchApiUrl();

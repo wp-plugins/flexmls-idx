@@ -2,8 +2,8 @@
 Tags: flexmls, IDX, MLS search
 Contributors: flexmls
 Requires at least: 3.0.0
-Tested up to: 3.2
-Stable tag: 2.3.3
+Tested up to: 3.2.1
+Stable tag: 2.4
 
 Add flexmls IDX listings, market statistics, IDX searches, and a contact form on your web site.
 
@@ -55,6 +55,15 @@ Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a hre
 
 
 == Changelog ==
+
+= 2.4 =
+
+* More minor updates to the IDX slideshow widget to better integrate with Facebook pages
+* Fix to slideshow for broader IE compatibility
+* Improved internal API session management to speed up requests and reduce session collisions (and associated errors)
+* Plugin now correctly handles browser pre-fetching for those that support it
+* Improved JSON parsing code.  Now automatically uses native PHP functions if available for much faster JSON parsing
+
 
 = 2.3.3 =
 

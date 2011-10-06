@@ -140,6 +140,8 @@ class flexmlsConnect {
 	}
 
 	function neighborhood_page() {
+		global $fmc_api;
+
 		echo "<div class='wrap'>\n";
 		screen_icon('page');
 		echo "<h2>flexmls&reg; IDX: Add New Neighborhood Page</h2>\n";
@@ -186,7 +188,6 @@ class flexmlsConnect {
 			echo "<form action='edit.php?post_type=page&page=flexmls_connect' method='post'>\n";
 			echo "<input type='hidden' name='action' value='save' />";
 
-			$fmc_api = new flexmlsApiWP();
 			$api_system_info = $fmc_api->SystemInfo();
 			$api_location_search_api = $fmc_api->GetLocationSearchApiUrl();
 
@@ -295,8 +296,7 @@ class flexmlsConnect {
 
 		$response['title'] = "";
 		$response['body'] = $return;
-		$js = new Moxiecode_JSON();
-		echo str_replace("\'", "'", $js->encode($response));
+		echo flexmlsJSON::json_encode($response);
 		exit;
 	}
 
@@ -433,13 +433,14 @@ class flexmlsConnect {
 	}
 
 	function settings_field_api_key() {
+		global $fmc_api;
 		global $fmc_plugin_url;
+
 		$options = get_option('fmc_settings');
 
 		$api_status_info = "";
 
 		if (flexmlsConnect::has_api_saved()) {
-			$fmc_api = new flexmlsApiWP;
 			$api_auth = $fmc_api->Authenticate(true);
 
 			if ($api_auth === false) {
@@ -527,13 +528,13 @@ class flexmlsConnect {
 
 
 	function settings_field_default_link() {
+		global $fmc_api;
 		$options = get_option('fmc_settings');
 
 		$selected_default_link = $options['default_link'];
 
 		if (flexmlsConnect::has_api_saved()) {
 
-			$fmc_api = new flexmlsApiWP;
 			$api_links = $fmc_api->GetIDXLinks();
 
 			if ($api_links === false) {
@@ -611,8 +612,8 @@ class flexmlsConnect {
 
 
 	function settings_helpful_proptypes() {
+		global $fmc_api;
 		
-		$fmc_api = new flexmlsApiWP;
 		$api_prop_types = $fmc_api->PropertyTypes();
 		$api_system_info = $fmc_api->SystemInfo();
 		
@@ -631,8 +632,8 @@ class flexmlsConnect {
 	}
 
 	function settings_helpful_idxlinks() {
+		global $fmc_api;
 
-		$fmc_api = new flexmlsApiWP;
 		$api_links = $fmc_api->GetIDXLinks();
 
 		if ($api_links === false) {
@@ -861,13 +862,14 @@ class flexmlsConnect {
 	}
 
 	function get_default_idx_link() {
+		global $fmc_api;
+
 		$options = get_option('fmc_settings');
 		
 		if (array_key_exists('default_link', $options) && !empty($options['default_link'])) {
 			return $options['default_link'];
 		}
 		else {
-			$fmc_api = new flexmlsApiWP;
 			$api_links = $fmc_api->GetIDXLinks();
 			return $api_links[0]['LinkId'];
 		}
@@ -875,7 +877,8 @@ class flexmlsConnect {
 	}
 
 	function get_idx_link_details($my_link) {
-		$fmc_api = new flexmlsApiWP;
+		global $fmc_api;
+
 		$api_links = $fmc_api->GetIDXLinks();
 
 		if (is_array($api_links)) {
@@ -891,8 +894,9 @@ class flexmlsConnect {
 	}
 
 	function get_default_idx_link_url() {
+		global $fmc_api;
+
 		$default_link = flexmlsConnect::get_default_idx_link();
-		$fmc_api = new flexmlsApiWP;
 		$api_links = $fmc_api->GetIDXLinks();
 
 		$valid_links = array();
@@ -1184,3 +1188,4 @@ class flexmlsConnect {
 	}
 
 }
+

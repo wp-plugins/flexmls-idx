@@ -10,10 +10,10 @@ class flexmlsApiWP {
 	public $last_count = 0;
 	public $last_count_pages = 0;
 	public $api_roles = null;
-	private $last_token = null;
-	private $last_token_expire = null;
+	public $last_token = null;
+	public $last_token_expire = null;
+	private $last_response_from = null;
 	private $send_debug = false;
-	private $jsObj;
 
 
 	function __construct() {
@@ -37,12 +37,6 @@ class flexmlsApiWP {
 			$this->is_ready = true;
 		}
 
-		// don't do any API calls for Mozilla's prefetch page function
-		if (isset($_SERVER['HTTP_X_MOZ']) && $_SERVER['HTTP_X_MOZ'] == 'prefetch') {
-			$this->is_ready = false;
-		}
-
-		$this->jsObj = new Moxiecode_JSON();
 
 	}
 
@@ -121,18 +115,17 @@ class flexmlsApiWP {
 	function Authenticate($force = false) {
 		global $fmc_token;
 
-		if ($fmc_token == null || $force == true) {
-			$result = $this->MakeAPIRequest("POST", "/v1/session", $args, $data = array(), $auth = true, $cache_time = 0, $force);
+		$result = $this->MakeAPIRequest("POST", "/v1/session", $args, $data = array(), $auth = true, $cache_time = 0, $force);
 
-			if ($result === false) {
-				return false;
-			}
-
-			$this->last_token = $result[0]['AuthToken'];
-			$this->last_token_expire = $result[0]['Expires'];
-			set_transient('fmc_api', $result[0], 60*60*24*7);
-
+		if ($result === false) {
+			return false;
 		}
+
+		$this->last_token = $result[0]['AuthToken'];
+		$this->last_token_expire = $result[0]['Expires'];
+		set_transient('fmc_api', $result[0], 60*60*24*7);
+		set_transient('fmc_last_authtoken', $this->last_token, 60*60*24);
+
 	}
 
 
@@ -335,7 +328,7 @@ class flexmlsApiWP {
 
 		if ($method == "POST" && count($data) > 0) {
 			// the request is to post some JSON data back to the API (like adding a contact)
-			$post_body = $this->json_encode( array('D' => $data ) );
+			$post_body = flexmlsJSON::json_encode( array('D' => $data ) );
 		}
 		
 		if ($is_auth_request) {
@@ -425,11 +418,13 @@ class flexmlsApiWP {
 		if ($served_from_cache == null) {
 			$return = wp_remote_request($full_url, $http_args);
 			$data_source = "live";
+			$this->last_response_from = "live";
 		}
 		else {
 			// act like the API returned data when it was really the cache
 			$return = $served_from_cache;
 			$data_source = "cache";
+			$this->last_response_from = "cache";
 		}
 
 		if ( is_wp_error($return) ) {
@@ -441,7 +436,7 @@ class flexmlsApiWP {
 
 		// start handling the response
 
-		$json = $this->jsObj->decode($return['body']);
+		$json = flexmlsJSON::json_decode($return['body']);
 
 		$this->last_error_code = $json['D']['Code'];
 		$this->last_error_mess = $json['D']['Message'];
@@ -537,14 +532,5 @@ class flexmlsApiWP {
 		return $result;
 
 	}
-	
-	function json_encode($obj) {
-		$return = $this->jsObj->encode( $obj );
-		
-		// Moxiecode's JSON encoder escapes single quotes when it shouldn't, so unescape those
-		$return = str_replace("\'", "'", $return);
-		return $return;
-	}
-
 
 }
