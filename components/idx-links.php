@@ -42,7 +42,7 @@ class fmcIDXLinks extends fmcWidget {
 
 		$links_to_show = "";
 
-		$api_links = $fmc_api->GetIDXLinks();
+		$api_links = flexmlsConnect::get_all_idx_links();
 
 		if ($api_links === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, false, $args, $settings);
@@ -122,7 +122,7 @@ class fmcIDXLinks extends fmcWidget {
 
 		$selected_code = " checked='checked'";
 
-		$api_links = $fmc_api->GetIDXLinks();
+		$api_links = flexmlsConnect::get_all_idx_links();
 
 		if ($api_links === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, true);

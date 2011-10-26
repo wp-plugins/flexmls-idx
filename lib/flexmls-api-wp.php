@@ -9,6 +9,7 @@ class flexmlsApiWP {
 	public $last_error_mess = null;
 	public $last_count = 0;
 	public $last_count_pages = 0;
+	public $last_current_page = 0;
 	public $api_roles = null;
 	public $last_token = null;
 	public $last_token_expire = null;
@@ -251,9 +252,7 @@ class flexmlsApiWP {
 	}
 
 
-	function GetIDXLinks($tags = "") {
-
-		$args = array();
+	function GetIDXLinks($tags = "", $args = array()) {
 
 		$tags = trim($tags);
 		if ( !empty($tags) ) {
@@ -444,6 +443,12 @@ class flexmlsApiWP {
 		if ( array_key_exists('Pagination', $json['D']) ) {
 			$this->last_count = $json['D']['Pagination']['TotalRows'];
 			$this->last_count_pages = $json['D']['Pagination']['TotalPages'];
+			$this->last_current_page = $json['D']['Pagination']['CurrentPage'];
+		}
+		else {
+			$this->last_count = 0;
+			$this->last_count_pages = 0;
+			$this->last_current_page = 0;
 		}
 
 		if ( $json['D']['Success'] == true) {

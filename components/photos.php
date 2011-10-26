@@ -199,6 +199,13 @@ class fmcPhotos extends fmcWidget {
 
 			$api_listings = $fmc_api->Listings( $params );
 		}
+		
+		if ($fmc_api->last_count == 1) {
+			$show_count = "1 Listing";
+		}
+		else {
+			$show_count = number_format($fmc_api->last_count) . " Listings";
+		}
 
 		if ($api_listings === false || $api_system_info === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, false, $args, $settings);
@@ -265,13 +272,6 @@ class fmcPhotos extends fmcWidget {
 			}
 			else {
 				$return .= $div_box . $title_line;
-			}
-			
-			if ($fmc_api->last_count == 1) {
-				$show_count = "1 Listing";
-			}
-			else {
-				$show_count = number_format($fmc_api->last_count) . " Listings";
 			}
 
 			$this_target = "";
@@ -606,7 +606,7 @@ class fmcPhotos extends fmcWidget {
 				";
 
 		if (!$fmc_api->HasBasicRole()) {
-			$api_links = $fmc_api->GetIDXLinks();
+			$api_links = flexmlsConnect::get_all_idx_links();
 
 			$return .= "
 				<p>

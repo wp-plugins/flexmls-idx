@@ -49,7 +49,7 @@ class fmcLocationLinks extends fmcWidget {
 		}
 		
 		// make API call
-		$api_links = $fmc_api->GetIDXLinks();
+		$api_links = flexmlsConnect::get_all_idx_links();
 
 		if ($api_links === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, false, $args, $settings);
@@ -160,7 +160,7 @@ class fmcLocationLinks extends fmcWidget {
 
 		$selected_code = " selected='selected'";
 
-		$api_links = $fmc_api->GetIDXLinks();
+		$api_links = flexmlsConnect::get_all_idx_links();
 		$api_property_type_options = $fmc_api->PropertyTypes();
 		$api_system_info = $fmc_api->SystemInfo();
 		$api_location_search_api = $fmc_api->GetLocationSearchApiUrl();

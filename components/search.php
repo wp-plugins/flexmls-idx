@@ -49,7 +49,7 @@ class fmcSearch extends fmcWidget {
 		$api_prop_types = $fmc_api->PropertyTypes();
 		$api_system_info = $fmc_api->SystemInfo();
 		$api_location_search_api = $fmc_api->GetLocationSearchApiUrl();
-		$api_links = $fmc_api->GetIDXLinks();
+		$api_links = flexmlsConnect::get_all_idx_links();
 
 		if ($api_prop_types === false || $api_system_info === false || $api_location_search_api === false || $api_links === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, false, $args, $settings);
@@ -251,7 +251,7 @@ class fmcSearch extends fmcWidget {
 				);
 
 		$api_property_type_options = $fmc_api->PropertyTypes();
-		$api_links = $fmc_api->GetIDXLinks();
+		$api_links = flexmlsConnect::get_all_idx_links();
 
 		if ($api_property_type_options === false || $api_links === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, true);

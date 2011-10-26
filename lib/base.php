@@ -535,7 +535,7 @@ class flexmlsConnect {
 
 		if (flexmlsConnect::has_api_saved()) {
 
-			$api_links = $fmc_api->GetIDXLinks();
+			$api_links = flexmlsConnect::get_all_idx_links();
 
 			if ($api_links === false) {
 				if ($fmc_api->last_error_code == 1500) {
@@ -634,7 +634,7 @@ class flexmlsConnect {
 	function settings_helpful_idxlinks() {
 		global $fmc_api;
 
-		$api_links = $fmc_api->GetIDXLinks();
+		$api_links = flexmlsConnect::get_all_idx_links();
 
 		if ($api_links === false) {
 			if ($fmc_api->last_error_code == 1500) {
@@ -870,7 +870,7 @@ class flexmlsConnect {
 			return $options['default_link'];
 		}
 		else {
-			$api_links = $fmc_api->GetIDXLinks();
+			$api_links = flexmlsConnect::get_all_idx_links();
 			return $api_links[0]['LinkId'];
 		}
 		
@@ -879,7 +879,7 @@ class flexmlsConnect {
 	function get_idx_link_details($my_link) {
 		global $fmc_api;
 
-		$api_links = $fmc_api->GetIDXLinks();
+		$api_links = flexmlsConnect::get_all_idx_links();
 
 		if (is_array($api_links)) {
 			foreach ($api_links as $link) {
@@ -897,7 +897,7 @@ class flexmlsConnect {
 		global $fmc_api;
 
 		$default_link = flexmlsConnect::get_default_idx_link();
-		$api_links = $fmc_api->GetIDXLinks();
+		$api_links = flexmlsConnect::get_all_idx_links();
 
 		$valid_links = array();
 		foreach ($api_links as $link) {
@@ -1185,6 +1185,45 @@ class flexmlsConnect {
 			return false;
 		}
 		
+	}
+	
+	
+	
+	static function get_all_idx_links() {
+		global $fmc_api;
+		
+		$return = array();
+		
+		$current_page = 0;
+		$total_pages = 1;
+		
+		while ($current_page < $total_pages) {
+			
+			$current_page++;
+			
+			$params = array(
+			    '_pagination' => 1,
+			    '_page' => $current_page
+			);
+			
+			$result = $fmc_api->GetIDXLinks($params);
+			
+			if ( is_array($result) ) {
+				foreach ($result as $r) {
+					$return[] = $r;
+				}
+			}
+			
+			if ( $fmc_api->total_pages == null ) {
+				break;
+			}
+			else {
+				$current_page = $fmc_api->last_current_page;
+				$total_pages = $fmc_api->last_count_pages;
+			}
+		}
+		
+		return $return;		
 	}
 
 }
