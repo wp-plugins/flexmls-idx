@@ -200,6 +200,8 @@ class fmcPhotos extends fmcWidget {
 			$api_listings = $fmc_api->Listings( $params );
 		}
 		
+		$total_js_pages = ceil($fmc_api->last_count / ($horizontal * $vertical));
+		
 		if ($fmc_api->last_count == 1) {
 			$show_count = "1 Listing";
 		}
@@ -261,7 +263,7 @@ class fmcPhotos extends fmcWidget {
 
 
 		if ($type != "ajax") {
-			$div_box = "<div class='{$carousel_class}' data-connect-vertical='{$vertical}' data-connect-horizontal='{$horizontal}' data-connect-autostart='{$auto_rotate}' data-connect-settings=\"{$encoded_settings}\" data-connect-total-pages='{$fmc_api->last_count}'>\n";
+			$div_box = "<div class='{$carousel_class}' data-connect-vertical='{$vertical}' data-connect-horizontal='{$horizontal}' data-connect-autostart='{$auto_rotate}' data-connect-settings=\"{$encoded_settings}\" data-connect-total-pages='{$total_js_pages}'>\n";
 
 			if ( !empty($title) ) {
 				$title_line = "\t" . $before_title . $title . $after_title . "\n";
