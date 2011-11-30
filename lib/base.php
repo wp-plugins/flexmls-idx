@@ -2,7 +2,7 @@
 
 
 class flexmlsConnect {
-
+	
 
 	function __construct() {
 		
@@ -11,8 +11,32 @@ class flexmlsConnect {
 
 	function initial_init() {
 		global $fmc_plugin_url;
-	
+		global $fmc_api;
+		
+		// turn on PHP sessions handling if they aren't on already
+		if (!session_id()) {
+			session_start();
+		}
+		
+
 		if (!is_admin()) {
+			
+			// check if the user appears to be logged in.  if so, switch to OAuth mode
+			if ( array_key_exists('fmc_oauth_logged_in', $_SESSION) and $_SESSION['fmc_oauth_logged_in'] === true ) {
+				$temp_api = flexmlsConnect::new_oauth_client();
+				$temp_api->SetAccessToken($_SESSION['fmc_oauth_access_token']);
+				$temp_api->SetRefreshToken($_SESSION['fmc_oauth_refresh_token']);
+				
+				$ping = $temp_api->Ping();
+				if ($ping) {
+					// ping to the live API succeded so change API mode to OAuth for the rest of this process
+					$fmc_api = $temp_api;
+				}
+				else {
+					// ping failed so leave API in APIAuth mode and set the session variable to save a ping later
+					$_SESSION['fmc_oauth_logged_in'] = false;
+				}
+			}
 			
 			wp_enqueue_script('jquery');
 
@@ -47,6 +71,9 @@ class flexmlsConnect {
 		wp_localize_script('fmc_connect', 'fmcAjax', array( 'ajaxurl' => admin_url('admin-ajax.php'), 'pluginurl' => $fmc_plugin_url ) );
 
 		add_shortcode("idx_frame", array('flexmlsConnect', 'shortcode'));
+
+		$options = get_option('fmc_settings');
+		add_rewrite_rule( $options['permabase'] .'/([^/]+)?' , 'index.php?plugin=flexmls-idx&fmc_tag=$matches[1]&page_id='. $options['destlink'] , 'top' );
 		
 	}
 
@@ -80,6 +107,24 @@ class flexmlsConnect {
 
 	}
 	
+	function wp_init() {
+		// handle form submission actions from the plugin
+		if ( array_key_exists('fmc_do', $_POST) ) {
+			switch($_POST['fmc_do']) {
+				case "fmc_search":
+					$handle = new fmcSearch();
+					$handle->submit_search();
+					break;
+			}
+		}
+	}
+
+
+	function query_vars_init($qvars) {
+		$qvars[] = 'fmc_tag';
+		return $qvars;
+	}
+	
 
 	function plugin_deactivate() {
 		
@@ -111,14 +156,23 @@ class flexmlsConnect {
 					'destpref' => 'page',
 					'destlink' => $new_page_id,
 					'autocreatedpage' => $new_page_id,
-					'contact_notifications' => true
+					'contact_notifications' => true,
+					'permabase' => 'idx'
 					);
 
 			add_option('fmc_settings', $options);
+			
+			add_option('fmc_cache_version', 1);
 
 		}
 		else {
 			// plugin is only be re-activated with previous settings.
+			
+			if ( !array_key_exists('permabase', $options) ) {
+				$options['permabase'] = 'idx';
+				update_option('fmc_settings', $options);
+			}
+			
 		}
 
 	}
@@ -132,7 +186,7 @@ class flexmlsConnect {
 		}
 
 		if ( function_exists('add_options_page') ) {
-			add_options_page('flexmls&reg; IDX Settings', 'flexmls&reg; IDX', 'manage_options', 'flexmls_connect', array('flexmlsConnect', 'settings_page') );
+			add_options_page('flexmls&reg; IDX Settings', 'flexmls&reg; IDX', 'manage_options', 'flexmls_connect', array('flexmlsConnectSettings', 'settings_page') );
 		}
 
 		add_submenu_page('edit.php?post_type=page','Add New Neighborhood Page', 'Add Neighborhood', 'manage_options', 'flexmls_connect', array('flexmlsConnect', 'neighborhood_page') );
@@ -146,7 +200,7 @@ class flexmlsConnect {
 		screen_icon('page');
 		echo "<h2>flexmls&reg; IDX: Add New Neighborhood Page</h2>\n";
 
-		if ($_REQUEST['action'] == "save") {
+		if (array_key_exists('action', $_REQUEST) and $_REQUEST['action'] == "save") {
 
 			if (empty($_REQUEST['template'])) {
 				$_REQUEST['template'] = "default";
@@ -188,8 +242,8 @@ class flexmlsConnect {
 			echo "<form action='edit.php?post_type=page&page=flexmls_connect' method='post'>\n";
 			echo "<input type='hidden' name='action' value='save' />";
 
-			$api_system_info = $fmc_api->SystemInfo();
-			$api_location_search_api = $fmc_api->GetLocationSearchApiUrl();
+			$api_system_info = $fmc_api->GetSystemInfo();
+			$api_location_search_api = flexmlsConnect::get_locationsearch_url();
 
 			echo "
 
@@ -319,343 +373,6 @@ class flexmlsConnect {
 
 		return $return;
 	}
-
-
-	function settings_init() {
-
-		if ( current_user_can( 'edit_posts' ) && current_user_can( 'edit_pages' ) ) {
-			add_filter( 'mce_buttons', array('flexmlsConnect', 'filter_mce_button' ) );
-			add_filter( 'mce_external_plugins', array('flexmlsConnect', 'filter_mce_plugin' ) );
-		}
-
-		// register our settings with WordPress so it can automatically handle saving them
-		register_setting('fmc_settings_group', 'fmc_settings', array('flexmlsConnect', 'settings_validate') );
-
-		// add a section called fmc_settings_api to the settings page
-		add_settings_section('fmc_settings_api', '<br/>API Settings', array('flexmlsConnect', 'settings_overview_api') , 'flexmls_connect');
-
-		// add some setting fields to the fmc_settings_api section of the settings page
-		add_settings_field('fmc_api_key', 'API Key', array('flexmlsConnect', 'settings_field_api_key') , 'flexmls_connect', 'fmc_settings_api');
-		add_settings_field('fmc_api_secret', 'API Secret', array('flexmlsConnect', 'settings_field_api_secret') , 'flexmls_connect', 'fmc_settings_api');
-		add_settings_field('fmc_clear_cache', 'Clear Cache?', array('flexmlsConnect', 'settings_field_clear_cache') , 'flexmls_connect', 'fmc_settings_api');
-
-		add_settings_section('fmc_settings_plugin', '<br/>Plugin Behavior', array('flexmlsConnect', 'settings_overview_plugin') , 'flexmls_connect');
-		add_settings_field('fmc_default_titles', 'Use Default Widget Titles', array('flexmlsConnect', 'settings_field_default_titles') , 'flexmls_connect', 'fmc_settings_plugin');
-		add_settings_field('fmc_destlink', 'Open IDX Links', array('flexmlsConnect', 'settings_field_destlink') , 'flexmls_connect', 'fmc_settings_plugin');
-		add_settings_field('fmc_default_link', 'Default IDX Link', array('flexmlsConnect', 'settings_field_default_link') , 'flexmls_connect', 'fmc_settings_plugin');
-		add_settings_field('fmc_neigh_template', 'Neighborhood Page Template', array('flexmlsConnect', 'settings_field_neigh_template') , 'flexmls_connect', 'fmc_settings_plugin');
-		add_settings_field('fmc_contact_notifications', 'When a new lead is created', array('flexmlsConnect', 'settings_field_contact_notifications') , 'flexmls_connect', 'fmc_settings_plugin');
-
-	}
-
-
-	function settings_page() {
-
-		// put the settings page together
-
-		$options = get_option('fmc_settings');
-
-		echo "<div class='wrap'>\n";
-		screen_icon('options-general');
-		echo "<h2>flexmls&reg; IDX Settings</h2>\n";
-
-		echo "<form action='options.php' method='post'>\n";
-
-		settings_fields('fmc_settings_group');
-		do_settings_sections('flexmls_connect');
-
-		echo "<p class='submit'><input type='submit' name='Submit' type='submit' class='button-primary' value='" .__('Save Settings'). "' />\n";
-		
-		echo "</form>\n";
-		echo "</div>\n";
-
-	}
-
-
-	function settings_validate($input) {
-		$options = get_option('fmc_settings');
-
-		foreach ($input as $key => $value) {
-			$input[$key] = trim($value);
-		}
-
-		if ($options['api_key'] != $input['api_key'] || $options['api_secret'] != $input['api_secret']) {
-			$input['clear_cache'] = "y";
-		}
-
-		$options['api_key'] = trim($input['api_key']);
-		$options['api_secret'] = trim($input['api_secret']);
-
-		if ($input['clear_cache'] == "y") {
-			// since clear_cache is checked, wipe out the contents of the fmc_cache_* transient items
-			// but don't do anything else since we aren't saving the state of this particular checkbox
-
-			flexmlsConnect::clear_temp_cache();
-		}
-
-		if ($input['default_titles'] == "y") {
-			$options['default_titles'] = true;
-		}
-		else {
-			$options['default_titles'] = false;
-		}
-
-		$options['destpref'] = $input['destpref'];
-		$options['destlink'] = $input['destlink'];
-		$options['destwindow'] = $input['destwindow'];
-		$options['default_link'] = $input['default_link'];
-		$options['neigh_template'] = $input['neigh_template'];
-		
-		if ($input['contact_notifications'] == "y") {
-			$options['contact_notifications'] = true;
-		}
-		else {
-			$options['contact_notifications'] = false;
-		}
-
-		return $options;
-
-	}
-
-
-	function settings_overview_api() {
-		if (flexmlsConnect::has_api_saved() == false) {
-			echo "<p>Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a href='mailto:idx@flexmls.com'>idx@flexmls.com</a> to purchase a key to activate your plugin.</p>";
-		}
-	}
-
-	function settings_overview_plugin() {
-		//echo "<p>Tweak how the flexmls&reg; Connect plugin behaves.</p>";
-	}
-
-	function settings_overview_helpful() {
-		echo "<p>Here is some information you may find helpful.</p>";
-	}
-
-	function settings_field_api_key() {
-		global $fmc_api;
-		global $fmc_plugin_url;
-
-		$options = get_option('fmc_settings');
-
-		$api_status_info = "";
-
-		if (flexmlsConnect::has_api_saved()) {
-			$api_auth = $fmc_api->Authenticate(true);
-
-			if ($api_auth === false) {
-				$api_status_info = " <img src='{$fmc_plugin_url}/images/error.png'> Error with entered info";
-			}
-			else {
-				$api_status_info = " <img src='{$fmc_plugin_url}/images/accept.png'> It works!";
-			}
-		}
-		
-		echo "<input type='text' id='fmc_api_key' name='fmc_settings[api_key]' value='{$options['api_key']}' size='16' maxlength='32' />{$api_status_info}\n";
-	}
-
-	function settings_field_api_secret() {
-		$options = get_option('fmc_settings');
-		echo "<input type='password' id='fmc_api_secret' name='fmc_settings[api_secret]' value='{$options['api_secret']}' size='14' maxlength='25' />\n";
-	}
-
-	function settings_field_default_titles() {
-		$options = get_option('fmc_settings');
-
-		$checked = "";
-
-		if ($options['default_titles'] == true) {
-			$checked_yes = " checked='checked'";
-		}
-		else {
-			$checked_no = " checked='checked'";
-		}
-
-		echo "<label><input type='radio' name='fmc_settings[default_titles]' value='y'{$checked_yes} /> Yes</label> &nbsp; ";
-		echo "<label><input type='radio' name='fmc_settings[default_titles]' value='n'{$checked_no} /> No</label><br />\n";
-		echo "<span class='description'>Use the default widget titles when no title is entered.</span>\n";
-	}
-
-	function settings_field_clear_cache() {
-		// stale option that doesn't pay attention to any saved option.  this simply triggers the cache clearing
-		echo "<label><input type='checkbox' name='fmc_settings[clear_cache]' value='y' /> Clear the cached flexmls&reg; API responses</label>\n";
-	}
-
-
-	function settings_field_destlink() {
-		$options = get_option('fmc_settings');
-
-		$args = array(
-				'name' => 'fmc_settings[destlink]',
-				'selected' => $options['destlink']
-		);
-		
-		$checked_code = " checked='checked'";
-
-		if ($options['destpref'] == "own") {
-			$checked_own = $checked_code;
-		}
-		elseif ($options['destpref'] == "page") {
-			$checked_page = $checked_code;
-		}
-		else {
-			$checked_own = $checked_code;
-		}
-
-		if ($options['destwindow'] == "new") {
-			$checked_new = $checked_code;
-		}
-
-		echo "<label><input type='checkbox' name='fmc_settings[destwindow]' value='new'{$checked_new} /> in a new window</label>";
-		echo "<br />\n";
-		echo "<br />\n";
-		echo "<label><input type='radio' name='fmc_settings[destpref]' value='own'{$checked_own} /> separate from WordPress</label><br />\n";
-		echo "<label><input type='radio' name='fmc_settings[destpref]' value='page'{$checked_page} /> framed within a WordPress page (select below)</label><br />\n";
-		echo "&nbsp; &nbsp; &nbsp; Page: ";
-		wp_dropdown_pages($args);
-		echo "<br/>";
-		echo "&nbsp; &nbsp; &nbsp; <span class='description'><a href='#' id='idx_frame_shortcode_docs_link'>View the documentation</a> for more details on how this works.</span> ";
-
-		echo "<div id='idx_frame_shortcode_docs' style='display: none; margin-left: 23px; width: 700px;'>";
-		echo "<p>In order for this feature to work, the page you point your links to must have the following shortcode in the body of the page:</p>";
-		echo "<blockquote><pre>[idx_frame width='100%' height='600']</pre></blockquote>";
-		echo "<p>By using this shortcode, it allows the flexmls&reg; IDX plugin to catch links and show the appropriate pages to your users.  If the page with this shortcode is viewed and no link is provided, the 'Default IDX Link' (below) will be displayed.</p>";
-		echo "<p><b>Note:</b> When you activated this plugin, a page with this shortcode in the body <a href='".get_permalink($options['autocreatedpage'])."'>was created automatically</a>.</p>";
-		echo "<p><b>Another Note:</b> If you're using a SEO plugin, you may need to disable Permalink Cleaning for this feature to work.</p>";
-		echo "</div>";
-
-	}
-
-
-	function settings_field_default_link() {
-		global $fmc_api;
-		$options = get_option('fmc_settings');
-
-		$selected_default_link = $options['default_link'];
-
-		if (flexmlsConnect::has_api_saved()) {
-
-			$api_links = flexmlsConnect::get_all_idx_links();
-
-			if ($api_links === false) {
-				if ($fmc_api->last_error_code == 1500) {
-					echo "This functionality requires a subscription to flexmls&reg; IDX in order to work.  <a href=''>Buy Now</a>.<input type='hidden' name='fmc_settings[default_link]' value='{$selected_default_link}' />";
-				}
-				else {
-					echo "Information not currently available due to API issue.<input type='hidden' name='fmc_settings[default_link]' value='{$selected_default_link}' />";
-				}
-				return;
-			}
-
-			echo "<select name='fmc_settings[default_link]'>\n";
-			foreach ($api_links as $link) {
-				$selected = ($link['LinkId'] == $selected_default_link) ? " selected='selected'" : "";
-				echo "<option value='{$link['LinkId']}'{$selected}>{$link['Name']}</option>\n";
-			}
-			echo "</select>\n";
-			echo "<br/>\n";
-			echo "<span class='description'>Select the default flexmls&reg; IDX link your widgets should use</span>";
-
-		}
-		else {
-			echo "<span class='description'>You must enter API key information to select this option.</span><input type='hidden' name='fmc_settings[default_link]' value='{$selected_default_link}' />";
-		}
-
-	}
-
-
-	function settings_field_neigh_template() {
-		$options = get_option('fmc_settings');
-
-		$selected_neigh_template = $options['neigh_template'];
-
-		$args = array(
-				'name' => 'fmc_settings[neigh_template]',
-				'selected' => $selected_neigh_template,
-				'post_status' => 'draft',
-				'echo' => false
-		);
-
-		$page_selection = wp_dropdown_pages($args);
-		if (!empty($page_selection)) {
-			echo $page_selection;
-		}
-		else {
-			echo "Please create a page as a draft to select it here.";
-		}
-		
-		echo "<br/><span class='description'>Select the page to use as your default neighborhood page template.</span>";
-
-	}
-	
-	
-	function settings_field_contact_notifications() {
-		$options = get_option('fmc_settings');
-
-		$checked_code = " checked='checked'";
-
-		if (!array_key_exists('contact_notifications', $options)) {
-			$checked_yes = $checked_code;
-		}
-		elseif ($options['contact_notifications'] === true) {
-			$checked_yes = $checked_code;
-		}
-		else {
-			$checked_no = $checked_code;
-		}
-
-		
-		echo "<label><input type='radio' name='fmc_settings[contact_notifications]' value='y'{$checked_yes} /> Notify me within flexmls&reg;</label> &nbsp; ";
-		echo "<label><input type='radio' name='fmc_settings[contact_notifications]' value='n'{$checked_no} /> Don't send any notification</label><br />\n";
-		
-	}
-
-
-	function settings_helpful_proptypes() {
-		global $fmc_api;
-		
-		$api_prop_types = $fmc_api->PropertyTypes();
-		$api_system_info = $fmc_api->SystemInfo();
-		
-		if ($api_prop_types === false || $api_system_info === false) {
-			echo "Information not currently available due to API issue.";
-			return;
-		}
-
-		echo "<span class='description'>Below are the names and codes for each property type {$api_system_info['Mls']} supports:</span><br />\n";
-		echo "<table border='0' width='400'>\n";
-		echo "	<tr><td><b>Code</b></td><td><b>Property Type</b></td></tr>\n";
-		foreach ($api_prop_types as $k => $v) {
-			echo "	<tr><td>{$k}</td><td>{$v}</td></tr>\n";
-		}
-		echo "</table>\n";
-	}
-
-	function settings_helpful_idxlinks() {
-		global $fmc_api;
-
-		$api_links = flexmlsConnect::get_all_idx_links();
-
-		if ($api_links === false) {
-			if ($fmc_api->last_error_code == 1500) {
-				echo "This functionality requires a subscription to flexmls&reg; IDX in order to work.  <a href=''>Buy Now</a>.";
-			}
-			else {
-				echo "Information not currently available due to API issue.";
-			}
-			return;
-		}
-
-		echo "<span class='description'>Below are the names and codes for saved IDX link you have:</span><br />\n";
-		echo "<table border='0' width='400'>\n";
-		echo "	<tr><td><b>Code</b></td><td><b>Name</b></td></tr>\n";
-		foreach ($api_links as $link) {
-			echo "	<tr><td>{$link['LinkId']}</td><td>{$link['Name']}</td></tr>\n";
-		}
-		echo "</table>\n";
-
-	}
-
 
 
 	function clean_spaces_and_trim($value) {
@@ -814,12 +531,22 @@ class flexmlsConnect {
 	}
 
 
-	function make_destination_link($link) {
+	function make_destination_link($link, $as = 'url', $params = array()) {
+		
+		$extra_query_string = null;
+		if ( count($params) > 0 ) {
+			$extra_query_string = http_build_query($params);
+		}
 
 		$options = get_option('fmc_settings');
 
 		if (flexmlsConnect::get_destination_pref() == "own") {
-			return $link;
+			if (empty($extra_query_string)) {
+				return $link;
+			}
+			else {
+				return $link . '?' . $extra_query_string;
+			}
 		}
 
 		if (!empty($options['destlink'])) {
@@ -835,17 +562,27 @@ class flexmlsConnect {
 			$link = urlencode($link);
 
 			if (strpos($permalink, '?') !== false) {
-				$return = $permalink . '&url=' . $link;
+				$return = $permalink . '&' . $as . '=' . $link;
 			}
 			else {
-				$return = $permalink . '?url=' . $link;
+				$return = $permalink . '?' . $as . '=' . $link;
 			}
 
-			return $return;
+			if (empty($extra_query_string)) {
+				return $return;
+			}
+			else {
+				return $return . '&' . $extra_query_string;
+			}
 
 		}
 		else {
-			return $link;
+			if (empty($extra_query_string)) {
+				return $link;
+			}
+			else {
+				return $link . '?' . $extra_query_string;
+			}
 		}
 
 	}
@@ -944,14 +681,12 @@ class flexmlsConnect {
 	
 	
 	function clear_temp_cache() {
-		// get list of transient items to clear
-		$cache_tracker = get_transient('fmc_cache_tracker');
-		if (is_array($cache_tracker)) {
-			foreach ($cache_tracker as $key => $value) {
-				delete_transient('fmc_cache_'. $key);
-			}
+		$count = get_option('fmc_cache_version');
+		if (empty($count)) {
+			$count = 0;
 		}
-		delete_transient('fmc_cache_tracker');
+		$count++;
+		update_option('fmc_cache_version', $count);
 	}
 
 	function greatest_fitting_number($num, $slide, $max) {
@@ -1109,7 +844,7 @@ class flexmlsConnect {
 	}
 
 
-	function wp_input_get($key) {
+	static function wp_input_get($key) {
 		
 		if (isset($_GET) && is_array($_GET) && array_key_exists($key, $_GET)) {
 			return self::wp_input_clean($_GET[$key]);
@@ -1133,12 +868,17 @@ class flexmlsConnect {
 					$manual[$k] = urldecode($v);
 				}
 			}
-			return $manual[$key];
+			if ( array_key_exists($key, $manual) ) {
+				return $manual[$key];
+			}
+			else {
+				return null;
+			}
 		}
 	}
 	
 	
-	function wp_input_post($key) {
+	static function wp_input_post($key) {
 		if (isset($_POST) && is_array($_POST) && array_key_exists($key, $_POST)) {
 			return self::wp_input_clean($_POST[$key]);
 		}
@@ -1148,7 +888,7 @@ class flexmlsConnect {
 	}
 	
 	
-	function wp_input_get_post($key) {
+	static function wp_input_get_post($key) {
 		$via_post = self::wp_input_post($key);
 		if ($via_post !== null) {
 			return $via_post;
@@ -1163,7 +903,7 @@ class flexmlsConnect {
 	}
 	
 	
-	function wp_input_clean($string) {
+	static function wp_input_clean($string) {
 		
 		$string = stripslashes($string);
 		return $string;
@@ -1171,7 +911,7 @@ class flexmlsConnect {
 	}
 	
 	
-	function send_notification() {
+	static function send_notification() {
 	
 		$options = get_option('fmc_settings');
 
@@ -1188,8 +928,340 @@ class flexmlsConnect {
 	}
 	
 	
+
+	static function format_listing_street_address($data) {
+
+		$listing = $data['StandardFields'];
+
+		$one_line_address = "{$listing['StreetNumber']} {$listing['StreetDirPrefix']} {$listing['StreetName']} ";
+		$one_line_address .= "{$listing['StreetSuffix']} {$listing['StreetDirSuffix']}";
+		$one_line_address = str_replace("********", "", $one_line_address);
+		$one_line_address = flexmlsConnect::clean_spaces_and_trim($one_line_address);
+
+		$first_line_address = $one_line_address;
+
+		$second_line_address = "";
+
+		if ( flexmlsConnect::is_not_blank_or_restricted($listing['City']) ) {
+			$second_line_address .= "{$listing['City']}, ";
+		}
+
+		if ( flexmlsConnect::is_not_blank_or_restricted($listing['StateOrProvince']) ) {
+			$second_line_address .= "{$listing['StateOrProvince']} ";
+		}
+
+		if ( flexmlsConnect::is_not_blank_or_restricted($listing['StateOrProvince']) ) {
+			$second_line_address .= "{$listing['PostalCode']}";
+		}
+
+		$second_line_address = str_replace("********", "", $second_line_address);
+		$second_line_address = flexmlsConnect::clean_spaces_and_trim($second_line_address);
+
+		$one_line_address .= ", {$second_line_address}";
+		$one_line_address = flexmlsConnect::clean_spaces_and_trim($one_line_address);
+
+		return array($first_line_address, $second_line_address, $one_line_address);
+
+	}
+
+	static function is_not_blank_or_restricted($val) {
+		$val = trim($val);
+		return ( empty($val) or $val == "********") ? false : true;
+	}
+
+	static function generate_nice_urls() {
+		global $wp_rewrite;
+		return $wp_rewrite->using_mod_rewrite_permalinks();
+	}
 	
-	static function get_all_idx_links() {
+	static function make_nice_tag_url($tag, $params = array()) {
+		
+		$query_string = null;
+		if ( count($params) > 0 ) {
+			$query_string .= '?'. http_build_query($params);
+		}
+		
+		if (flexmlsConnect::generate_nice_urls()) {
+			$options = get_option('fmc_settings');
+			return get_option('siteurl') . '/' . $options['permabase'] . '/' . $tag . $query_string;
+		}
+		else {
+			return flexmlsConnect::make_destination_link($tag, 'fmc_tag', $params);
+		}
+	}
+
+	static function make_nice_address_url($data, $params = array()) {
+		$address = flexmlsConnect::format_listing_street_address($data);
+
+		$return = $address[0] .'-'. $address[1] .'-mls_'. $data['StandardFields']['ListingId'];
+		$return = preg_replace('/[^\w]/', '-', $return);
+
+		while (preg_match('/\-\-/', $return)) {
+			$return = preg_replace('/\-\-/', '-', $return);
+		}
+
+		$return = preg_replace('/^\-/', '', $return);
+		$return = preg_replace('/\-$/', '', $return);
+
+		if (flexmlsConnect::generate_nice_urls()) {
+			$options = get_option('fmc_settings');
+			
+			if (count($params) > 0) {
+				$return .= '?'. http_build_query($params);
+			}
+			
+			return get_option('siteurl') . '/' . $options['permabase'] . '/' . $return;
+		}
+		else {
+			return flexmlsConnect::make_destination_link($return, 'fmc_tag', $params);
+		}
+	}
+
+	static function make_nice_address_title($data) {
+		$address = flexmlsConnect::format_listing_street_address($data);
+
+		$return = $address[0] .', '. $address[1] .' (MLS# '. $data['StandardFields']['ListingId'] .')';
+		$return = flexmlsConnect::clean_spaces_and_trim($return);
+
+		return $return;
+	}
+
+	static function generate_api_query($conditions) {
+
+	}
+
+	static function make_api_formatted_value($value, $type) {
+
+		$formatted_value = null;
+
+		if ($type == 'Character') {
+			$formatted_value = (string) "'". addslashes( trim( trim($value) ,"'") ) ."'";
+		}
+		elseif ($type == 'Integer') {
+			$formatted_value = (int) $value;
+		}
+		elseif ($type == 'Decimal') {
+			$formatted_value = number_format($value, 2, '.', '');
+		}
+		elseif ($type == 'Date') {
+			$formatted_value = trim($value); // no single quotes
+		}
+		else { }
+
+		return $formatted_value;
+
+	}
+
+	static function make_api_displayable_value($value, $type) {
+		
+		$formatted_value = null;
+
+		if ($type == 'Character') {
+			$formatted_value = (string) $value;
+		}
+		elseif ($type == 'Integer') {
+			$formatted_value = (int) number_format($value, 0, '', ',');
+		}
+		elseif ($type == 'Decimal') {
+			$formatted_value = number_format($value, 2, '.', ',');
+		}
+		elseif ($type == 'Date') {
+			$date_parts = explode("-", $value);
+			$formatted_value = $date_parts[1].'/'.$date_parts[2].'/'.$date_parts[0];
+		}
+		else { }
+
+		return $formatted_value;
+	}
+	
+	static function get_big_idx_disclosure_text() {
+		global $fmc_api;
+		
+		$api_system_info = $fmc_api->GetSystemInfo();
+		return trim( $api_system_info['Configuration'][0]['IdxDisclaimer'] );
+	}
+	
+	static function mls_custom_idx_logo() {
+		global $fmc_api;
+		
+		$api_system_info = $fmc_api->GetSystemInfo();
+		
+		if (array_key_exists('IdxLogoSmall', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogoSmall'])) {
+			return $api_system_info['Configuration'][0]['IdxLogoSmall'];
+		}
+		else {
+			return false;
+		}
+	}
+	
+	static function mls_requires_office_name_in_search_results() {
+		$options = get_option('fmc_settings');
+		
+		if ($options['listing_office_disclosure'] == 'y') {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	
+	static function fetch_ma_tech_id() {
+		global $fmc_api;
+		
+		$api_system_info = $fmc_api->GetSystemInfo();
+		
+		if ( array_key_exists('MlsId', $api_system_info) ) {
+			return $api_system_info['MlsId'];
+		}
+		else {
+			// MLS level key with no MlsId defined.  return Id
+			return $api_system_info['Id'];
+		}
+		
+	}
+	
+	static function is_odd($val) {
+		return ($val % 2) ? true : false;
+	}
+	
+	static function get_locationsearch_url() {
+		global $fmc_location_search_url;
+		return $fmc_location_search_url;
+	}
+	
+
+	/*
+	 * Take a value and clean it so it can be used as a parameter value in what's sent to the API.
+	 *
+	 * @param string $var Regular string of text to be cleaned
+	 * @return string Cleaned string
+	 */
+	static function clean_comma_list($var) {
+
+		$return = "";
+
+		if ( strpos($var, ',') !== false ) {
+			// $var contains a comma so break it apart into a list...
+			$list = explode(",", $var);
+			// trim the extra spaces and weird characters from the beginning and end of each item in the list...
+			$list = array_map('trim', $list);
+			// and put it back together as a comma-separated string to be returned
+			$return = implode(",", $list);
+		}
+		else {
+			// trim the extra spaces and weird characters from the beginning and end of the string to be returned
+			$return = trim($var);
+		}
+
+		return $return;
+
+	}
+	
+	static function page_slug_tag() {
+		global $wp_query;
+		return $wp_query->get('fmc_tag');
+	}
+	
+	static function oauth_login_link() {
+		global $fmc_api;
+		$api_system_info = $fmc_api->GetSystemInfo();
+		$base_url = $api_system_info['Configuration'][0]['OAuth2ServiceEndpointPortal'];
+		
+		$options = get_option('fmc_settings');
+		
+		$options['oauth_client_id'] = '33v3wnk3mi8sw2k8g8h9petwo';
+		$options['oauth_client_secret'] = 'jyxib0a75tbikly4vbtk1uxs';
+		
+		$params = array(
+		    'client_id' => $options['oauth_client_id'],
+		    'redirect_uri' => flexmlsConnect::oauth_login_landing_page(),
+		    'response_type' => 'code'
+		);
+		
+		return $base_url .'?'. http_build_query($params);		
+	}
+	
+	static function oauth_login_landing_page() {
+		return flexmlsConnect::make_nice_tag_url('oauth-login');
+	}
+	
+	static function new_apiauth_client() {
+		global $fmc_version;
+		
+		$options = get_option('fmc_settings');
+
+		$fmc_api = new flexmlsAPI_APIAuth($options['api_key'], $options['api_secret']);
+		// enable API caching via WordPress transient cache system
+		$fmc_api->SetCache( new flexmlsAPI_WordPressCache );
+		// set application name
+		$fmc_api->SetApplicationName("flexmls WordPress Plugin/{$fmc_version}");
+		$fmc_api->SetNewAccessCallback( array('flexmlsConnect', 'new_access_keys') );
+		
+		$fmc_api->SetCachePrefix('fmc_'. get_option('fmc_cache_version') .'_');
+		
+		return $fmc_api;
+	}
+	
+	static function new_oauth_client() {
+		global $fmc_version;
+		
+		$options = get_option('fmc_settings');
+		
+		$options['oauth_client_id'] = '33v3wnk3mi8sw2k8g8h9petwo';
+		$options['oauth_client_secret'] = 'jyxib0a75tbikly4vbtk1uxs';
+
+		$fmc_api = new flexmlsAPI_OAuth($options['oauth_key'], $options['oauth_secret'], flexmlsConnect::oauth_login_landing_page());
+		// enable API caching via WordPress transient cache system
+		$fmc_api->SetCache( new flexmlsAPI_WordPressCache );
+		// set application name
+		$fmc_api->SetApplicationName("flexmls WordPress Plugin/{$fmc_version}");
+		$fmc_api->SetNewAccessCallback( array('flexmlsConnect', 'new_access_keys') );
+		
+		$fmc_api->SetCachePrefix("1");
+		
+		return $fmc_api;
+	}
+	
+	static function new_access_keys($type, $values) {
+		if ($type == "oauth") {
+			// save to session since OAuth tokens are user-specific
+			$_SESSION['fmc_oauth_access_token'] = $values['access_token'];
+			$_SESSION['fmc_oauth_refresh_token'] = $values['refresh_token'];
+		}
+		elseif ($type == "api") {
+			// managed via cache automatically since API auth is only site-specific
+		}
+	}
+	
+	static function is_logged_in() {
+		return (array_key_exists('fmc_oauth_logged_in', $_SESSION) and $_SESSION['fmc_oauth_logged_in']) ? true : false;
+	}
+	
+	static function is_oauth() {
+		global $fmc_api;
+		return ($fmc_api->auth_mode == "oauth") ? true : false;
+	}
+	
+	static function expand_link_id($string) {
+				
+		$maximum = flexmlsConnect::bc_base_convert($string, 36, 10);
+		
+		$prefix = '20';
+		if (substr($maximum, 0, 1) == '9' and strlen($maximum) == 18) {
+			$prefix = '19';
+		}
+		
+		while ( strlen($prefix . $maximum) < 20 ) {
+			$prefix .= '0';
+		}
+		
+		$short = $prefix . $maximum . '000000';
+		
+		return (string) $short;
+		
+	}
+	
+	static function get_all_idx_links($only_saved_search = false) {
 		global $fmc_api;
 		
 		$return = array();
@@ -1210,6 +1282,10 @@ class flexmlsConnect {
 			
 			if ( is_array($result) ) {
 				foreach ($result as $r) {
+					if ($only_saved_search and !array_key_exists('SearchId', $r) ) {
+						// we're only wanting saved search links and this isn't one
+						continue;
+					}
 					$return[] = $r;
 				}
 			}
@@ -1218,13 +1294,137 @@ class flexmlsConnect {
 				break;
 			}
 			else {
-				$current_page = $fmc_api->last_current_page;
-				$total_pages = $fmc_api->last_count_pages;
+				$current_page = $fmc_api->current_page;
+				$total_pages = $fmc_api->total_pages;
 			}
 		}
 		
 		return $return;		
 	}
+	
+	static function possible_destinations() {
+		return array('local' => 'my search results', 'remote' => 'a flexmls IDX frame');
+	}
+	
+	static function is_agent() {
+		$type = get_option('fmc_my_type');
+		return ($type == 'Member') ? true : false;
+	}
+	
+	static function is_office() {
+		$type = get_option('fmc_my_type');
+		return ($type == 'Office') ? true : false;
+	}
+	
+	static function is_company() {
+		$type = get_option('fmc_my_type');
+		return ($type == 'Company') ? true : false;
+	}
+	
+	static function get_office_id() {
+		return get_option('fmc_my_office');
+	}
+	
+	static function get_company_id() {
+		return get_option('fmc_my_company');
+	}
+	
+	static function possible_fonts() {
+		return array(
+		    'Arial' => 'Arial', 
+		    'Lucida Sans Unicode' => 'Lucida Sans Unicode', 
+		    'Tahoma' => 'Tahoma', 
+		    'Verdana' => 'Verdana'
+		    );
+	}
+	
+	static function hexLighter($hex, $factor = 20) {
+    $new_hex = '';
+    $base['R'] = hexdec($hex{0}.$hex{1}); 
+    $base['G'] = hexdec($hex{2}.$hex{3}); 
+    $base['B'] = hexdec($hex{4}.$hex{5}); 
 
+    foreach ($base as $k => $v) { 
+      $amount = 255 - $v; 
+      $amount = $amount / 100; 
+      $amount = round($amount * $factor);
+      $new_decimal = $v + $amount;
+      
+      $new_hex_component = dechex($new_decimal); 
+      if (strlen($new_hex_component) < 2) {
+        $new_hex_component = "0".$new_hex_component;
+      } 
+      $new_hex .= $new_hex_component; 
+    } 
+
+    return $new_hex;
+	}
+	
+	function hexDarker($color, $dif=20){
+    $color = str_replace('#', '', $color);
+    if (strlen($color) != 6){ return '000000'; }
+    $rgb = '';
+
+    for ($x=0;$x<3;$x++){
+        $c = hexdec(substr($color,(2*$x),2)) - $dif;
+        $c = ($c < 0) ? 0 : dechex($c);
+        $rgb .= (strlen($c) < 2) ? '0'.$c : $c;
+    }
+
+    return $rgb;
+  }
+	
+	
+	static function nice_property_type_label($abbrev) {
+		global $fmc_api;
+		$options = get_option('fmc_settings');
+				
+		if ( array_key_exists("property_type_label_{$abbrev}", $options) and !empty($options["property_type_label_{$abbrev}"]) ) {
+			return $options["property_type_label_{$abbrev}"];
+		}
+		else {
+			$api_property_types = $fmc_api->GetPropertyTypes();
+			return $api_property_types[$abbrev];
+		}
+	}
+	
+	
+	
+	// source: http://www.technischedaten.de/pmwiki2/pmwiki.php?n=Php.BaseConvert
+	function bc_base_convert($value, $quellformat, $zielformat) {
+		$vorrat = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		if (max($quellformat, $zielformat) > strlen($vorrat))
+			trigger_error('Bad Format max: ' . strlen($vorrat), E_USER_ERROR);
+		if (min($quellformat, $zielformat) < 2)
+			trigger_error('Bad Format min: 2', E_USER_ERROR);
+		$dezi = '0';
+		$level = 0;
+		$result = '';
+		$value = trim((string) $value, "\r\n\t +");
+		$vorzeichen = '-' === $value{0} ? '-' : '';
+		$value = ltrim($value, "-0");
+		$len = strlen($value);
+		for ($i = 0; $i < $len; $i++) {
+			$wert = strpos($vorrat, $value{$len - 1 - $i});
+			if (FALSE === $wert)
+				trigger_error('Bad Char in input 1', E_USER_ERROR);
+			if ($wert >= $quellformat)
+				trigger_error('Bad Char in input 2', E_USER_ERROR);
+			$dezi = bcadd($dezi, bcmul(bcpow($quellformat, $i), $wert));
+		}
+		if (10 == $zielformat)
+			return $vorzeichen . $dezi; // abk�rzung
+		while (1 !== bccomp(bcpow($zielformat, $level++), $dezi));
+		for ($i = $level - 2; $i >= 0; $i--) {
+			$factor = bcpow($zielformat, $i);
+			$zahl = bcdiv($dezi, $factor, 0);
+			$dezi = bcmod($dezi, $factor);
+			$result .= $vorrat{$zahl};
+		}
+		$result = empty($result) ? '0' : $result;
+		return $vorzeichen . $result;
+	}
+	
+	
 }
 

@@ -3,7 +3,7 @@ Tags: flexmls, IDX, MLS search
 Contributors: flexmls
 Requires at least: 3.0.0
 Tested up to: 3.2.1
-Stable tag: 2.4.2
+Stable tag: 3.0.0
 
 Add flexmls IDX listings, market statistics, IDX searches, and a contact form on your web site.
 
@@ -55,6 +55,21 @@ Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a hre
 
 
 == Changelog ==
+
+
+= 3.0.0 =
+
+* Newly architected PHP API client for better speed, efficiency and features
+* New option in IDX Slideshow to limit shown listings by agent if the site uses an office API key
+* Lots of changes to IDX Search widget to support skins and new options
+* New widget to integrate a summary list of listings (or search results) directly into a WP page
+* New widget to integrate a detailed property report directly into a WP page
+* New shortcodes for the 2 new integrated widgets
+* Expanded and better organized settings screen under Settings > flexmls IDX
+* Ability to turn on display of Listing Office for more control over IDX compliance
+* Added the ability to rename property type labels shown to users (from Settings > flexmls IDX > Behavior)
+* Fixed some issues with the recent change to IDX link pagination
+
 
 = 2.4.2 = 
 

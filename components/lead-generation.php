@@ -35,8 +35,8 @@ class fmcLeadGen extends fmcWidget {
 
 		$return = '';
 
-		$api_prefs = $fmc_api->ConnectPrefs();
-
+		$api_prefs = $fmc_api->GetPreferences();
+		
 		if ($api_prefs === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, false, $args, $settings);
 		}
@@ -196,7 +196,7 @@ class fmcLeadGen extends fmcWidget {
 		// verify that the AJAX hit is legit.  returns -1 and stops if not
 		check_ajax_referer('fmcLeadGen', 'nonce');
 		
-		$api_prefs = $fmc_api->ConnectPrefs();
+		$api_prefs = $fmc_api->GetPreferences();
 
 		$data = array();
 		
@@ -256,7 +256,7 @@ class fmcLeadGen extends fmcWidget {
 		}
 
 		if ($success == true) {
-			$contact = $fmc_api->SendContact($data);
+			$contact = $fmc_api->AddContact($data);
 			$return = array('success' => true, 'nonce' => wp_create_nonce('fmcLeadGen'));
 		}
 		else {

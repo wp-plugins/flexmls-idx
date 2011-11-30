@@ -21,6 +21,12 @@ class fmcPhotos extends fmcWidget {
 
 		add_action('wp_ajax_'.get_class($this).'_additional_photos', array(&$this, 'additional_photos') );
 		add_action('wp_ajax_nopriv_'.get_class($this).'_additional_photos', array(&$this, 'additional_photos') );
+		
+		add_action('wp_ajax_'.get_class($this).'_additional_videos', array(&$this, 'additional_videos') );
+		add_action('wp_ajax_nopriv_'.get_class($this).'_additional_videos', array(&$this, 'additional_videos') );
+		
+		add_action('wp_ajax_'.get_class($this).'_additional_vtours', array(&$this, 'additional_vtours') );
+		add_action('wp_ajax_nopriv_'.get_class($this).'_additional_vtours', array(&$this, 'additional_vtours') );
 
 		add_action('wp_ajax_'.get_class($this).'_additional_slides', array(&$this, 'additional_slides') );
 		add_action('wp_ajax_nopriv_'.get_class($this).'_additional_slides', array(&$this, 'additional_slides') );
@@ -50,10 +56,13 @@ class fmcPhotos extends fmcWidget {
 		$display = trim($settings['display']);
 		$property_type = trim($settings['property_type']);
 		$link = trim($settings['link']);
-		$location = html_entity_decode(flexmlsApiWP::clean_comma_list($settings['location']));
+		$location = html_entity_decode(flexmlsConnect::clean_comma_list($settings['location']));
 		$sort = trim($settings['sort']);
 		$page = trim($settings['page']);
 		$additional_fields = trim($settings['additional_fields']);
+		$destination = trim($settings['destination']);
+		$agent = trim($settings['agent']);
+		
 
 		$show_additional_fields = array();
 		if (!empty($additional_fields)) {
@@ -99,6 +108,7 @@ class fmcPhotos extends fmcWidget {
 
 		$filter_conditions = array();
 		$outbound_criteria = "";
+		$pure_conditions = array();
 
 		$params = array();
 		$params['_expand'] = 'PrimaryPhoto';
@@ -118,19 +128,23 @@ class fmcPhotos extends fmcWidget {
 		}
 		elseif ($display == "new") {
 			$params['HotSheet'] = "new";
+			$pure_conditions['HotSheet'] = "new";
 			$outbound_criteria .= "&listingevent=new&listingeventhours={$hours}";
 		}
 		elseif ($display == "open_houses") {
 			$params['OpenHouses'] = 10;
+			$pure_conditions['OpenHouses'] = 10;
 			$params['_expand'] .= ',OpenHouses';
 			$outbound_criteria .= "&openhouse=10";
 		}
 		elseif ($display == "price_changes") {
 			$params['HotSheet'] = "price";
+			$pure_conditions['HotSheet'] = "price";
 			$outbound_criteria .= "&listingevent=price&listingeventhours={$hours}";
 		}
 		elseif ($display == "recent_sales") {
 			$params['HotSheet'] = "sold";
+			$pure_conditions['HotSheet'] = "sold";
 			$outbound_criteria .= "&status=C&listingevent=status&listingeventhours={$hours}";
 		}
 
@@ -144,63 +158,90 @@ class fmcPhotos extends fmcWidget {
 			$params['_orderby'] = "-ListPrice";
 		}
 
+		$pure_conditions['OrderBy'] = ($params['_orderby']) ? $params['_orderby'] : 'natural';
+		$pure_conditions['Limit'] = $params['_limit'];
 
 
-		$api_system_info = $fmc_api->SystemInfo();
-		$apply_property_type = false;
-
-		if ($source == "my") {
-			$outbound_criteria .= "&my_listings=true";
-			// make a simple request to /my/listings with no _filter's
-			$api_listings = $fmc_api->MyListings( $params );
-		}
-		elseif ($source == "office") {
-			$api_listings = $fmc_api->OfficeListings( $params );
-		}
-		elseif ($source == "company") {
-			$api_listings = $fmc_api->CompanyListings( $params );
+		$api_system_info = $fmc_api->GetSystemInfo();
+		
+		if ($source == 'location') {
+			$apply_property_type = true;
 		}
 		else {
-			
-			// set this to true since only GetListings() calls can have _filter's applied
-			$apply_property_type = true;
-			
-			// parse the given Locations for the _filter
-
-			$locations = flexmlsConnect::parse_location_search_string($location);
-
-			$location_conditions = array();
-			$location_field_names = array();
-
-			foreach ($locations as $loc) {
-				$location_conditions[] = "{$loc['f']} Eq '{$loc['v']}'";
-				$location_field_names[] = $loc['f'];
-			}
-
-			$uniq_location_field_names = array_unique($location_field_names);
-
-			if (count($location_conditions) > 1) {
-				return "<span style='color:red;'>flexmls&reg; IDX: This IDX slideshow widget is configured with too many location search criteria options.  Please reduce to 1.</span>";
-			}
-
-			if (count($location_conditions) > 0) {
-				$filter_conditions[] = implode(" Or ", $location_conditions);
-			}
-			if (!empty($property_type)) {
-				$filter_conditions[] = "PropertyType Eq '{$property_type}'";
-			}
-
-			$link_details = flexmlsConnect::get_idx_link_details($link);
-			if ($link_details['LinkType'] == "SavedSearch") {
-				$filter_conditions[] = "SavedSearch Eq '{$link_details['SearchId']}'";
-			}
-
-			$params['_filter'] = implode(" And ", $filter_conditions);
-
-			$api_listings = $fmc_api->Listings( $params );
+			$apply_property_type = false;
 		}
 		
-		$total_js_pages = ceil($fmc_api->last_count / ($horizontal * $vertical));
+		if ($source == 'agent') {
+			$pure_conditions['ListAgentId'] = $agent;
+			$filter_conditions[] = "(ListAgentId Eq '{$agent}' Or CoListAgentId Eq '{$agent}')";
+		}
+
+		// parse the given Locations for the _filter
+
+		$locations = flexmlsConnect::parse_location_search_string($location);
+
+		$location_conditions = array();
+		$location_field_names = array();
+
+		foreach ($locations as $loc) {
+			$location_conditions[] = "{$loc['f']} Eq '{$loc['v']}'";
+			$pure_conditions[$loc['f']] = $loc['v'];
+			$location_field_names[] = $loc['f'];
+		}
+
+		$uniq_location_field_names = array_unique($location_field_names);
+
+		if (count($location_conditions) > 1) {
+			return "<span style='color:red;'>flexmls&reg; IDX: This IDX slideshow widget is configured with too many location search criteria options.  Please reduce to 1.</span>";
+		}
+
+		if (count($location_conditions) > 0) {
+			$filter_conditions[] = implode(" Or ", $location_conditions);
+		}
+		if ($apply_property_type and !empty($property_type)) {
+			$pure_conditions['PropertyType'] = $property_type;
+			$filter_conditions[] = "PropertyType Eq '{$property_type}'";
+		}
+
+		$link_details = flexmlsConnect::get_idx_link_details($link);
+		if ($link_details['LinkType'] == "SavedSearch") {
+			$pure_conditions['SavedSearch'] = $link_details['SearchId'];
+			$filter_conditions[] = "SavedSearch Eq '{$link_details['SearchId']}'";
+		}
+
+		$params['_filter'] = implode(" And ", $filter_conditions);
+		
+
+		$only_our_listings = false;
+		if ($source == "my") {
+			$outbound_criteria .= "&my_listings=true";
+			$pure_conditions['My'] = 'listings';
+			$only_our_listings = true;
+			// make a simple request to /my/listings with no _filter's
+			$api_listings = $fmc_api->GetMyListings( $params );
+		}
+		elseif ($source == "office") {
+			$outbound_criteria .= "&office=". flexmlsConnect::get_office_id();
+			$pure_conditions['My'] = 'office';
+			$only_our_listings = true;
+			$api_listings = $fmc_api->GetOfficeListings( $params );
+		}
+		elseif ($source == "company") {
+			$outbound_criteria .= "&office=". flexmlsConnect::get_company_id();
+			$pure_conditions['My'] = 'company';
+			$only_our_listings = true;
+			$api_listings = $fmc_api->GetCompanyListings( $params );
+		}
+		elseif ($source == 'agent') {
+			$outbound_criteria .= "&agent={$agent}";
+			$only_our_listings = true;
+			$api_listings = $fmc_api->GetListings( $params );
+		}
+		else {
+			$api_listings = $fmc_api->GetListings( $params );
+		}
+		
+		$pure_conditions['pg'] = ($params['_page']) ? $params['_page'] : 1;
 		
 		if ($fmc_api->last_count == 1) {
 			$show_count = "1 Listing";
@@ -208,56 +249,83 @@ class fmcPhotos extends fmcWidget {
 		else {
 			$show_count = number_format($fmc_api->last_count) . " Listings";
 		}
+		
+		$api_page_size = $fmc_api->page_size;
+		$api_current_page = $fmc_api->current_page;
+		$api_last_count = $fmc_api->last_count;
+		$total_js_pages = ceil($fmc_api->last_count / ($horizontal * $vertical));
 
 		if ($api_listings === false || $api_system_info === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, false, $args, $settings);
 		}
-
-		if (!is_array($uniq_location_field_names)) {
-			$uniq_location_field_names = array();
+		
+		$search_destination_target = null;
+		$full_search_destination_link = null;
+		
+		if ($destination == 'local') {
+			$full_search_destination_link = flexmlsConnect::make_nice_tag_url('search', $pure_conditions );
+			$listing_destination_link = $full_search_destination_link;
 		}
+		else {
 
-		if (!is_array($locations)) {
-			$locations = array();
-		}
+			if (!is_array($uniq_location_field_names)) {
+				$uniq_location_field_names = array();
+			}
 
-		$link_transform_params = array();
-		foreach ($uniq_location_field_names as $loc_name) {
-			$link_transform_params["{$loc_name}"] = "*{$loc_name}*";
-		}
+			if (!is_array($locations)) {
+				$locations = array();
+			}
 
-		if ($apply_property_type) {
-			$link_transform_params["PropertyType"] = "*PropertyType*";
-		}
+			$link_transform_params = array();
+			foreach ($uniq_location_field_names as $loc_name) {
+				$link_transform_params["{$loc_name}"] = "*{$loc_name}*";
+			}
 
-		// make the API call to translate standard field names
-		$outbound_link = $fmc_api->GetTransformedIDXLink($link, $link_transform_params);
-		$this_link = $outbound_link;
+			if ($apply_property_type) {
+				$link_transform_params["PropertyType"] = "*PropertyType*";
+			}
 
-		foreach ($locations as $loc) {
-			// start replacing the placeholders in the link with the real values for this link
-			$this_link = preg_replace('/\*'.preg_quote($loc['f']).'\*/', $loc['v'], $this_link);
-		}
+			// make the API call to translate standard field names
+			$outbound_link = $fmc_api->GetTransformedIDXLink($link, $link_transform_params);
+			$this_link = $outbound_link;
 
-		if ($apply_property_type) {
-			$this_link = preg_replace('/\*PropertyType\*/', $property_type, $this_link);
-		}
+			foreach ($locations as $loc) {
+				// start replacing the placeholders in the link with the real values for this link
+				$this_link = preg_replace('/\*'.preg_quote($loc['f']).'\*/', $loc['v'], $this_link);
+			}
 
-		// replace all remaining placeholders with a blank value since it doesn't apply to this link
-		$this_link = preg_replace('/\*(.*?)\*/', "", $this_link);
-		$this_link .= $outbound_criteria;
+			if ($apply_property_type) {
+				$this_link = preg_replace('/\*PropertyType\*/', $property_type, $this_link);
+			}
+
+			// replace all remaining placeholders with a blank value since it doesn't apply to this link
+			$this_link = preg_replace('/\*(.*?)\*/', "", $this_link);
+			$this_link .= $outbound_criteria;
 
 
-		$destination_link = "";
+			$search_destination_link = "";
 
-		if (!empty($this_link) && !$fmc_api->HasBasicRole()) {
-			$destination_link = $this_link;
+			if (!empty($this_link) && !$fmc_api->HasBasicRole()) {
+				$search_destination_link = $this_link;
+			}
+			
+			if (flexmlsConnect::get_destination_window_pref() == "new") {
+				$search_destination_target = " target='_blank'";
+			}
+			
+			$full_search_destination_link = flexmlsConnect::make_destination_link($search_destination_link);
+			$listing_destination_link = $search_destination_link;
+			
 		}
 
 		$return .= $before_widget;
 
 		$carousel_class = "flexmls_connect__carousel";
-		if ($tall_carousel) {
+		
+		if ( flexmlsConnect::mls_requires_office_name_in_search_results() and !$only_our_listings) {
+			$carousel_class .= " extratall";
+		}
+		elseif ($tall_carousel) {
 			$carousel_class .= " tall";
 		}
 
@@ -276,14 +344,9 @@ class fmcPhotos extends fmcWidget {
 				$return .= $div_box . $title_line;
 			}
 
-			$this_target = "";
-			if (flexmlsConnect::get_destination_window_pref() == "new") {
-				$this_target = " target='_blank'";
-			}
 
-
-			if (!empty($destination_link)) {
-				$return .= "\t<div class='flexmls_connect__count'><a href='".flexmlsConnect::make_destination_link($destination_link)."'{$this_target}>{$show_count}</a></div>\n";
+			if (!empty($full_search_destination_link)) {
+				$return .= "\t<div class='flexmls_connect__count'><a href='{$full_search_destination_link}'{$search_destination_target}>{$show_count}</a></div>\n";
 			}
 			else {
 				$return .= "\t<div class='flexmls_connect__count'>{$show_count}</div>\n";
@@ -297,30 +360,32 @@ class fmcPhotos extends fmcWidget {
 		$rand = mt_rand();
 
 		$total_listings = 0;
+		$result_count = 0;
 		if (is_array($api_listings)) {
 			foreach ($api_listings as $li) {
+				$result_count++;
+				
+				$this_result_overall_index = ($api_page_size * ($api_current_page - 1)) + $result_count;
+				// figure out if there's a previous listing
+				$pure_conditions['p'] = ($this_result_overall_index != 1) ? 'y' : 'n';
+
+				// figure out if there's a next listing possible
+				$pure_conditions['n'] = ( $this_result_overall_index < $api_last_count ) ? 'y' : 'n';
+				
 				$total_listings++;
 				$show_idx_badge = "";
 
 				$listing = $li['StandardFields'];
-				$one_line_address = "{$listing['StreetNumber']} {$listing['StreetDirPrefix']} {$listing['StreetName']} ";
-				$one_line_address .= "{$listing['StreetSuffix']} {$listing['StreetDirSuffix']}";
-				$one_line_address = str_replace("********", "", $one_line_address);
-				$one_line_address = flexmlsConnect::clean_spaces_and_trim($one_line_address);
 
-				$first_line_address = $one_line_address;
-
-				$second_line_address = "{$listing['City']}, {$listing['StateOrProvince']} {$listing['PostalCode']}";
-				$second_line_address = str_replace("********", "", $second_line_address);
-
-				$one_line_address .= ", {$second_line_address}";
-				$one_line_address = flexmlsConnect::clean_spaces_and_trim($one_line_address);
-
+				$listing_address = flexmlsConnect::format_listing_street_address($li);
+				$first_line_address = $listing_address[0];
+				$second_line_address = $listing_address[1];
+				$one_line_address = $listing_address[2];
 
 
 				$price = '$'. number_format($listing['ListPrice'], 0);
 
-				if ($source != "my" && $source != "my_office") {
+				if ($source != "my" and $source != "my_office" and flexmlsConnect::get_office_id() != $listing['ListOfficeId'] ) {
 					if (array_key_exists('IdxLogoSmall', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogoSmall'])) {
 						$show_idx_badge = "<img src='{$api_system_info['Configuration'][0]['IdxLogoSmall']}' class='flexmls_connect__badge_image' title='{$listing['ListOfficeName']}' />\n";
 					}
@@ -340,8 +405,14 @@ class fmcPhotos extends fmcWidget {
 
 				$tall_line = "";
 				$extra_title_line = "";
+				$address_line = "<small>{$first_line_address}<br />{$second_line_address}</small>";
 				
-				if ($tall_carousel) {
+				if ( flexmlsConnect::mls_requires_office_name_in_search_results() and !$only_our_listings ) {
+					// swap some of them around to make room for a dim Listing Office
+					$address_line = "<small>Listing office: {$listing['ListOfficeName']}</small>\n";
+					$tall_line = "<small class='dark'>{$first_line_address}<br />{$second_line_address}</small>";
+				}
+				elseif ($tall_carousel) {
 					$show_additional_field_line = array();
 					foreach ($show_additional_fields as $fi) {
 						if ($fi == "beds") {
@@ -358,7 +429,7 @@ class fmcPhotos extends fmcWidget {
 					$extra_title_line = ' | '. implode(" | ", $show_additional_field_line);
 					$tall_line = "<small class='dark'>". implode(" &nbsp; ", $show_additional_field_line) ."</small>";
 				}
-
+				
 
 
 				$link_to_start = "<a>";
@@ -366,10 +437,19 @@ class fmcPhotos extends fmcWidget {
 				$this_link = "";
 				$this_target = "";
 
-				if (!empty($destination_link)) {
-					$this_link = flexmlsConnect::make_destination_link("{$destination_link}&start=details&start_id={$listing['ListingKey']}");
-					if (flexmlsConnect::get_destination_window_pref() == "new") {
-						$this_target = " target='_blank'";
+				if (!empty($listing_destination_link)) {
+					
+					$this_link = null;
+					$this_target = null;
+					
+					if ($destination == 'local') {
+						$this_link = flexmlsConnect::make_nice_address_url($li, $pure_conditions);
+					}
+					else {					
+						$this_link = flexmlsConnect::make_destination_link("{$listing_destination_link}&start=details&start_id={$listing['ListingKey']}");
+						if (flexmlsConnect::get_destination_window_pref() == "new") {
+							$this_target = " target='_blank'";
+						}
 					}
 					$link_to_start = "<a href='{$this_link}'{$this_target}>";
 					$link_to_end = "</a>";
@@ -412,7 +492,7 @@ class fmcPhotos extends fmcWidget {
 				}
 
 				$return .= "<!-- Listing -->
-						<div title='{$first_line_address}, {$listing['City']}, {$listing['StateOrProvince']} {$listing['PostalCode']} | MLS #: {$listing['ListingId']} | {$price}{$extra_title_line}' link='{$this_link}' target=\"{$this_target}\">
+						<div title='{$one_line_address} | MLS #: {$listing['ListingId']} | {$price}{$extra_title_line}' link='{$this_link}' target=\"{$this_target}\">
 							<a href='{$listing['Photos'][0]['UriLarge']}' class='popup' rel='{$rand}-{$listing['ListingKey']}' title='{$main_photo_caption}'>
 								<img src='{$main_photo_uri300}' style='width:134px;height:100px' alt='' />
 							</a>
@@ -420,7 +500,7 @@ class fmcPhotos extends fmcWidget {
 								{$link_to_start}
 								{$relevant_info_line}
 								{$tall_line}
-								<small>{$first_line_address}<br />{$second_line_address}</small>
+								{$address_line}
 								{$link_to_end}
 							</p>
 							{$show_idx_badge}
@@ -484,7 +564,7 @@ class fmcPhotos extends fmcWidget {
 
 
 	function widget($args, $instance) {
-		echo $this->cache_jelly($args, $instance, "widget");
+		echo $this->jelly($args, $instance, "widget");
 	}
 
 
@@ -497,7 +577,7 @@ class fmcPhotos extends fmcWidget {
 				'after_widget' => ''
 				);
 
-		return $this->cache_jelly($args, $attr, "shortcode");
+		return $this->jelly($args, $attr, "shortcode");
 
 	}
 
@@ -516,6 +596,8 @@ class fmcPhotos extends fmcWidget {
 		$location = $instance['location'];
 		$sort = esc_attr($instance['sort']);
 		$additional_fields = esc_attr($instance['additional_fields']);
+		$destination = esc_attr($instance['destination']);
+		$agent = esc_attr($instance['agent']);
 
 		$selected_code = " selected='selected'";
 		$checked_code = " checked='checked'";
@@ -542,12 +624,32 @@ class fmcPhotos extends fmcWidget {
 				30000 => "30 seconds",
 				60000 => "1 minute"
 				);
-
-		$source_options = array(
-				"my" => "My Listings",
-				"office" => "My Office's Listings",
-				"company" => "My Company's Listings"
-		);
+		
+		$source_options = array();
+		$roster_feature = false;
+		
+		$my_company_id = flexmlsConnect::get_company_id();
+				
+		if ( flexmlsConnect::is_agent() ) {
+			$source_options['my'] = "My Listings";
+			$source_options['office'] = "My Office's Listings";
+			if ( !empty($my_company_id) ) {
+				$source_options['company'] = "My Company's Listings";
+			}
+		}
+		
+		if ( flexmlsConnect::is_office() ) {
+			$source_options['office'] = "My Office's Listings";
+			if ( !empty($my_company_id) ) {
+				$source_options['company'] = "My Company's Listings";
+			}
+			$source_options['agent'] = "Specific agent";
+			$roster_feature = true;
+		}
+		
+		if ( flexmlsConnect::is_company() ) {
+			$source_options['company'] = "My Company's Listings";
+		}
 
 		$display_options = array(
 				"all" => "All Listings",
@@ -568,17 +670,24 @@ class fmcPhotos extends fmcWidget {
 			'baths' => "Bathrooms",
 			'sqft' => "Square Footage"
 		);
+		
+		$possible_destinations = flexmlsConnect::possible_destinations();
+		
+		if (empty($destination)) {
+			$destination = 'remote';
+		}
 
 		$additional_fields_selected = array();
 		if (!empty($additional_fields)) {
 			$additional_fields_selected = explode(",", $additional_fields);
 		}
 
-		$api_property_type_options = $fmc_api->PropertyTypes();
-		$api_system_info = $fmc_api->SystemInfo();
-		$api_location_search_api = $fmc_api->GetLocationSearchApiUrl();
+		$api_property_type_options = $fmc_api->GetPropertyTypes();
+		$api_system_info = $fmc_api->GetSystemInfo();
+		$api_location_search_api = flexmlsConnect::get_locationsearch_url();
+		$api_my_account = $fmc_api->GetMyAccount();
 
-		if ($api_property_type_options === false || $api_system_info === false || $api_location_search_api === false) {
+		if ($api_property_type_options === false || $api_system_info === false || $api_location_search_api === false || $api_my_account === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, true);
 		}
 
@@ -586,6 +695,14 @@ class fmcPhotos extends fmcWidget {
 		if (!$fmc_api->HasBasicRole()) {
 			$source_options['location'] = "Location";
 		}
+		
+		if ($roster_feature) {
+			$office_roster = $fmc_api->GetAccountsByOffice( $api_my_account['Id'] );
+		}
+		else {
+			$office_roster = array();
+		}
+		
 
 		if (empty($source)) {
 			$source = "location";
@@ -682,13 +799,11 @@ class fmcPhotos extends fmcWidget {
 		}
 
 		$hidden_location = ($source != "location") ? " style='display:none;'" : "";
-		$no_filter_warning = ($source == "location") ? "display:none;" : "";
+		$hidden_roster = ($source != "agent") ? " style='display:none;'" : "";
 
 		$return .= "
 					</select><br /><span class='description'>Which listings to display</span>
 			</p>
-
-			<p style='{$no_filter_warning}color:red;' class='flexmls_connect__no_filters_applied'>Note: Criteria applied to the selected saved search link above will not affect listings displayed.</p>
 
 			<p class='flexmls_connect__location_property_type_p' {$hidden_location}>
 				<label for='".$this->get_field_id('property_type')."'>" . __('Property Type:') . "</label>
@@ -713,8 +828,27 @@ class fmcPhotos extends fmcWidget {
 					<p>All Locations Included</p>
 				</div>
 				<input type='hidden' name='tech_id' class='flexmls_connect__tech_id' value=\"x'{$api_system_info['Id']}'\" />
-				<input type='hidden' name='ma_tech_id' class='flexmls_connect__ma_tech_id' value=\"x'{$api_system_info['MlsId']}'\" />
+				<input type='hidden' name='ma_tech_id' class='flexmls_connect__ma_tech_id' value=\"x'". flexmlsConnect::fetch_ma_tech_id() ."'\" />
 				<input fmc-field='location' fmc-type='text' type='hidden' name='".$this->get_field_name('location')."' class='flexmls_connect__location_fields' value=\"{$location}\" />
+				</p>
+			</div>
+				
+			<div class='flexmls_connect__roster'{$hidden_roster}>
+				<p>
+				<label for='".$this->get_field_id('agent')."'>" . __('Agent:') . "
+					<select fmc-field='agent' fmc-type='select' id='".$this->get_field_id('agent')."' name='".$this->get_field_name('agent')."'>
+						<option value=''>  - Select One -  </option>
+						";
+			
+			foreach ($office_roster as $a) {
+				$is_selected = ($a['Id'] == $agent) ? $selected_code : "";
+				$return .= "<option value='{$a['Id']}'{$is_selected}>". htmlspecialchars($a['Name']) ."</option>";
+			}
+			
+			$return .= "
+					</select>
+				</label>
+			
 				</p>
 			</div>
 
@@ -763,6 +897,20 @@ class fmcPhotos extends fmcWidget {
 
 		$return .= "
 			</p>
+			
+			<p>
+				<label for='".$this->get_field_id('destination')."'>" . __('Send users to:') . "</label>
+				<select fmc-field='destination' fmc-type='select' id='".$this->get_field_id('destination')."' name='".$this->get_field_name('destination')."'>
+						";
+
+		foreach ($possible_destinations as $dk => $dv) {
+			$is_selected = ($dk == $destination) ? " selected='selected'" : "";
+			$return .= "<option value='{$dk}'{$is_selected}{$is_disabled}>{$dv}</option>\n";
+		}
+
+		$return .= "
+					</select>
+			</p>
 
 			<img src='x' class='flexmls_connect__bootloader' onerror='flexmls_connect.location_setup(this);' />
 
@@ -773,7 +921,7 @@ class fmcPhotos extends fmcWidget {
 		}
 
 
-		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,horizontal,vertical,auto_rotate,source,property_type,location,display,sort,additional_fields' />\n";
+		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,horizontal,vertical,auto_rotate,source,property_type,location,display,sort,additional_fields,destination,agent' />\n";
 		$return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />\n";
 
 		return $return;
@@ -796,6 +944,8 @@ class fmcPhotos extends fmcWidget {
 		$instance['link'] = strip_tags($new_instance['link']);
 		$instance['location'] = strip_tags($new_instance['location']);
 		$instance['sort'] = strip_tags($new_instance['sort']);
+		$instance['destination'] = strip_tags($new_instance['destination']);
+		$instance['agent'] = strip_tags($new_instance['agent']);
 
 		$additional_fields_selected = "";
 		if (is_array($new_instance['additional_fields'])) {
@@ -820,13 +970,63 @@ class fmcPhotos extends fmcWidget {
 		$id = $full_id;
 		$id = substr($id, -26, 26);
 
-		$photos = $fmc_api->ListingPhotos($id);
+		$photos = $fmc_api->GetListingPhotos($id);
 
 		$return = array();
 
 		if (is_array($photos)) {
 			foreach ($photos as $photo) {
 				$return[] = array('photo' => $photo['UriLarge'], 'caption' => htmlspecialchars($photo['Caption'], ENT_QUOTES) );
+			}
+			echo flexmlsJSON::json_encode($return);
+		}
+		else {
+			echo flexmlsJSON::json_encode( false );
+		}
+
+		die();
+
+	}
+	
+	function additional_videos() {
+		global $fmc_api;
+
+		$full_id = flexmlsConnect::wp_input_get_post('id');
+		$id = $full_id;
+		$id = substr($id, -26, 26);
+
+		$objects = $fmc_api->GetListingVideos($id);
+
+		$return = array();
+
+		if (is_array($objects)) {
+			foreach ($objects as $obj) {
+				$return[] = array('html' => $obj['ObjectHtml'], 'name' => htmlspecialchars($obj['Name'], ENT_QUOTES), 'caption' => htmlspecialchars($obj['Caption'], ENT_QUOTES) );
+			}
+			echo flexmlsJSON::json_encode($return);
+		}
+		else {
+			echo flexmlsJSON::json_encode( false );
+		}
+
+		die();
+
+	}
+	
+	function additional_vtours() {
+		global $fmc_api;
+
+		$full_id = flexmlsConnect::wp_input_get_post('id');
+		$id = $full_id;
+		$id = substr($id, -26, 26);
+
+		$objects = $fmc_api->GetListingVirtualTours($id);
+
+		$return = array();
+
+		if (is_array($objects)) {
+			foreach ($objects as $obj) {
+				$return[] = array('uri' => $obj['Uri'], 'name' => htmlspecialchars($obj['Name'], ENT_QUOTES) );
 			}
 			echo flexmlsJSON::json_encode($return);
 		}
@@ -865,7 +1065,7 @@ class fmcPhotos extends fmcWidget {
 
 		$type = "ajax";
 
-		echo $this->cache_jelly($args, $settings, $type);
+		echo $this->jelly($args, $settings, $type);
 
 		die();
 

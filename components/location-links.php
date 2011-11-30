@@ -37,7 +37,7 @@ class fmcLocationLinks extends fmcWidget {
 		$title = trim($settings['title']);
 		$my_link = trim($settings['link']);
 		$property_type = trim($settings['property_type']);
-		$my_locations = html_entity_decode(flexmlsApiWP::clean_comma_list($settings['locations']));
+		$my_locations = html_entity_decode(flexmlsConnect::clean_comma_list($settings['locations']));
 
 		// check if required parameters were given
 		if (empty($my_link) || empty($my_locations) || empty($property_type)) {
@@ -61,7 +61,7 @@ class fmcLocationLinks extends fmcWidget {
 		// re-arrange the structure a bit for easier testing
 		$valid_links = array();
 		foreach ($api_links as $link) {
-			$valid_links[$link['LinkId']] = array('Uri' => $link['Uri'], 'Name' => $link['Name']);
+			$valid_links[$link['LinkId']] = array('Uri' => $link['Uri'], 'Name' => $link['Name'], 'SearchId' => $link['SearchId']);
 		}
 
 		// test if the selected link is valid.  bail out if not
@@ -88,23 +88,38 @@ class fmcLocationLinks extends fmcWidget {
 		}
 		
 		$link_transform_params["PropertyType"] = "*PropertyType*";
-
-		// make the API call to translate standard field names
-		$outbound_link = $fmc_api->GetTransformedIDXLink($my_link, $link_transform_params);
+		
+		if ($settings['destination'] != 'local') {
+			// make the API call to translate standard field names
+			$outbound_link = $fmc_api->GetTransformedIDXLink($my_link, $link_transform_params);
+			
+		}
 
 		foreach ($locations as $loc) {
-
-			// start replacing the placeholders in the link with the real values for this link
-			$this_link = $outbound_link;
-			$this_link = preg_replace('/\*'.preg_quote($loc['f']).'\*/', $loc['v'], $this_link);
-			$this_link = preg_replace('/\*PropertyType\*/', $property_type, $this_link);
-			// replace all remaining placeholders with a blank value since it doesn't apply to this link
-			$this_link = preg_replace('/\*(.*?)\*/', "", $this_link);
-			$this_target = "";
-			if (flexmlsConnect::get_destination_window_pref() == "new") {
-				$this_target = " target='_blank'";
+			
+			$final_destination = null;
+			$final_target = null;
+			
+			if ($settings['destination'] == 'local') {
+				$final_destination = flexmlsConnect::make_nice_tag_url('search', array('SavedSearch' => $valid_links[$my_link]['SearchId'], $loc['f'] => $loc['v']) );
 			}
-			$links_to_show .= "<li><a href=\"".flexmlsConnect::make_destination_link($this_link)."\" title=\"{$valid_links[$my_link]['Name']} - {$loc['l']}\"{$this_target}>{$loc['l']}</a></li>\n";
+			else {
+				// start replacing the placeholders in the link with the real values for this link
+				$this_link = $outbound_link;
+				$this_link = preg_replace('/\*'.preg_quote($loc['f']).'\*/', $loc['v'], $this_link);
+				$this_link = preg_replace('/\*PropertyType\*/', $property_type, $this_link);
+				// replace all remaining placeholders with a blank value since it doesn't apply to this link
+				$this_link = preg_replace('/\*(.*?)\*/', "", $this_link);
+				$this_target = "";
+				if (flexmlsConnect::get_destination_window_pref() == "new") {
+					$this_target = " target='_blank'";
+				}
+				$final_destination = flexmlsConnect::make_destination_link($this_link);
+				$final_target = $this_target;
+			}
+
+			
+			$links_to_show .= "<li><a href=\"{$final_destination}\" title=\"{$valid_links[$my_link]['Name']} - {$loc['l']}\"{$final_target}}>{$loc['l']}</a></li>\n";
 		}
 
 		if (empty($links_to_show)) {
@@ -157,13 +172,16 @@ class fmcLocationLinks extends fmcWidget {
 		$link = esc_attr($instance['link']);
 		$property_type = esc_attr($instance['property_type']);
 		$locations = $instance['locations'];
+		$destination = esc_attr($instance['destination']);
+		
+		$possible_destinations = flexmlsConnect::possible_destinations();
 
 		$selected_code = " selected='selected'";
 
-		$api_links = flexmlsConnect::get_all_idx_links();
-		$api_property_type_options = $fmc_api->PropertyTypes();
-		$api_system_info = $fmc_api->SystemInfo();
-		$api_location_search_api = $fmc_api->GetLocationSearchApiUrl();
+		$api_links = flexmlsConnect::get_all_idx_links(true);
+		$api_property_type_options = $fmc_api->GetPropertyTypes();
+		$api_system_info = $fmc_api->GetSystemInfo();
+		$api_location_search_api = flexmlsConnect::get_locationsearch_url();
 
 		if ($api_links === false || $api_property_type_options === false || $api_system_info === false || $api_location_search_api === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, true);
@@ -192,7 +210,7 @@ class fmcLocationLinks extends fmcWidget {
 		}
 
 		$return .= "
-					</select><br /><span class='description'>Link these locations are built upon</span>
+					</select><br /><span class='description'>Saved Search IDX link these locations are built upon</span>
 			</p>
 
 			<p>
@@ -218,15 +236,29 @@ class fmcLocationLinks extends fmcWidget {
         <p>All Locations Included</p>
       </div>
       <input type='hidden' name='{$this->get_field_name('tech_id')}' class='flexmls_connect__tech_id' value=\"x'{$api_system_info['Id']}'\" />
-      <input type='hidden' name='{$this->get_field_name('ma_tech_id')}' class='flexmls_connect__ma_tech_id' value=\"x'{$api_system_info['MlsId']}'\" />
+      <input type='hidden' name='{$this->get_field_name('ma_tech_id')}' class='flexmls_connect__ma_tech_id' value=\"x'". flexmlsConnect::fetch_ma_tech_id() ."'\" />
       <input fmc-field='locations' fmc-type='text' type='hidden' name='{$this->get_field_name('locations')}' class='flexmls_connect__location_fields' value=\"{$locations}\" />
     </div>
 		
 		<img src='x' class='flexmls_connect__bootloader' onerror='flexmls_connect.location_setup(this);' />
+	 
+			 <p><br/>
+				<label for='".$this->get_field_id('destination')."'>" . __('Send users to:') . "</label>
+				<select fmc-field='destination' fmc-type='select' id='".$this->get_field_id('destination')."' name='".$this->get_field_name('destination')."'>
+						";
+
+		foreach ($possible_destinations as $dk => $dv) {
+			$is_selected = ($dk == $destination) ? " selected='selected'" : "";
+			$return .= "<option value='{$dk}'{$is_selected}{$is_disabled}>{$dv}</option>\n";
+		}
+
+		$return .= "
+					</select>
+			</p>
 
 			";
 
-		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,property_type,locations' />\n";
+		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,property_type,locations,destination' />\n";
 		$return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />\n";
 
 		return $return;
@@ -241,6 +273,7 @@ class fmcLocationLinks extends fmcWidget {
 		$instance['link'] = strip_tags($new_instance['link']);
 		$instance['property_type'] = strip_tags($new_instance['property_type']);
 		$instance['locations'] = strip_tags($new_instance['locations']);
+		$instance['destination'] = strip_tags($new_instance['destination']);
 
 		return $instance;
 	}

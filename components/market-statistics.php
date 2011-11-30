@@ -99,8 +99,8 @@ class fmcMarketStats extends fmcWidget {
 
 		$return = '';
 
-		$api_market_stats = $fmc_api->MarketStats($stat_type, $display, $property_type, $loc_name, $loc_value_nice);
-
+		$api_market_stats = $fmc_api->GetMarketStats($stat_type, $display, $property_type, $loc_name, $loc_value_nice);
+		
 		if ($api_market_stats === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, false, $args, $settings);
 		}
@@ -217,9 +217,9 @@ class fmcMarketStats extends fmcWidget {
 				"volume" => "Volume"
 		);
 
-		$api_property_type_options = $fmc_api->PropertyTypes();
-		$api_system_info = $fmc_api->SystemInfo();
-		$api_location_search_api = $fmc_api->GetLocationSearchApiUrl();
+		$api_property_type_options = $fmc_api->GetPropertyTypes();
+		$api_system_info = $fmc_api->GetSystemInfo();
+		$api_location_search_api = flexmlsConnect::get_locationsearch_url();
 
 		if ($api_property_type_options === false || $api_system_info === false || $api_location_search_api === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, true);
@@ -314,7 +314,7 @@ class fmcMarketStats extends fmcWidget {
 					<p>All Locations Included</p>
 				</div>
 				<input type='hidden' name='tech_id' class='flexmls_connect__tech_id' value=\"x'{$api_system_info['Id']}'\" />
-				<input type='hidden' name='ma_tech_id' class='flexmls_connect__ma_tech_id' value=\"x'{$api_system_info['MlsId']}'\" />
+				<input type='hidden' name='ma_tech_id' class='flexmls_connect__ma_tech_id' value=\"x'". flexmlsConnect::fetch_ma_tech_id() ."'\" />
 				<input fmc-field='location' fmc-type='text' type='hidden' name='".$this->get_field_name('location')."' class='flexmls_connect__location_fields' value=\"{$location}\" />
 			</p>
 			

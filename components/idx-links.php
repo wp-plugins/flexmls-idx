@@ -42,7 +42,7 @@ class fmcIDXLinks extends fmcWidget {
 
 		$links_to_show = "";
 
-		$api_links = flexmlsConnect::get_all_idx_links();
+		$api_links = flexmlsConnect::get_all_idx_links(true);
 
 		if ($api_links === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, false, $args, $settings);
@@ -51,14 +51,19 @@ class fmcIDXLinks extends fmcWidget {
 		// some small shuffling to maintain the given order of the links
 		$valid_links = array();
 		foreach ($api_links as $link) {
-			$valid_links[$link['LinkId']] = array('Uri' => $link['Uri'], 'Name' => $link['Name']);
+			$valid_links[$link['LinkId']] = array('Uri' => $link['Uri'], 'Name' => $link['Name'], 'SearchId' => $link['SearchId']);
 		}
 
 		foreach ($links_selected as $link) {
 			if ( array_key_exists($link, $valid_links) || empty($my_links)) {
 				$this_link = $valid_links[$link];
 
-				$destination_link = flexmlsConnect::make_destination_link($this_link['Uri']);
+				if ($settings['destination'] == 'local') {
+					$destination_link = flexmlsConnect::make_nice_tag_url('search', array('SavedSearch' => $this_link['SearchId']) );
+				}
+				else {
+					$destination_link = flexmlsConnect::make_destination_link($this_link['Uri']);
+				}
 
 				$this_target = "";
 				if (flexmlsConnect::get_destination_window_pref() == "new") {
@@ -117,15 +122,22 @@ class fmcIDXLinks extends fmcWidget {
 
 		$title = esc_attr($instance['title']);
 		$links = esc_attr($instance['links']);
+		$destination = esc_attr($instance['destination']);
 
 		$links_selected = explode(",", $links);
 
 		$selected_code = " checked='checked'";
 
-		$api_links = flexmlsConnect::get_all_idx_links();
+		$api_links = flexmlsConnect::get_all_idx_links(true);
 
 		if ($api_links === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, true);
+		}
+		
+		$possible_destinations = flexmlsConnect::possible_destinations();
+		
+		if (empty($destination)) {
+			$destination = 'remote';
 		}
 
 		$return = "";
@@ -139,14 +151,14 @@ class fmcIDXLinks extends fmcWidget {
 			</p>
 
 			<p>
-				<label for='".$this->get_field_id('links')."'>" . __('Links to Display:') . "</label>
+				<label for='".$this->get_field_id('links')."'>" . __('Saved Search IDX Links to Display:') . "</label>
 
 				";
 
 		foreach ($api_links as $link) {
 			$return .= "<div>";
 			$this_selected = (in_array($link['LinkId'], $links_selected)) ? $selected_code : "";
-			$return .= "<input fmc-field='links' fmc-type='checkbox' type='checkbox' name='".$this->get_field_name('links')."[{$link['LinkId']}]' value='{$link['LinkId']}' id='".$this->get_field_id('links')."-".$link['LinkId']."'{$this_selected} /> ";
+			$return .= "&nbsp; &nbsp;<input fmc-field='links' fmc-type='checkbox' type='checkbox' name='".$this->get_field_name('links')."[{$link['LinkId']}]' value='{$link['LinkId']}' id='".$this->get_field_id('links')."-".$link['LinkId']."'{$this_selected} /> ";
 			$return .= "<label for='".$this->get_field_id('links')."-".$link['LinkId']."'>{$link['Name']}</label>";
 			$return .= "</div>\n";
 		}
@@ -155,9 +167,24 @@ class fmcIDXLinks extends fmcWidget {
 
 		$return .= "
 			</p>
+			
+			<p>
+				<label for='".$this->get_field_id('destination')."'>" . __('Send users to:') . "</label>
+				<select fmc-field='destination' fmc-type='select' id='".$this->get_field_id('destination')."' name='".$this->get_field_name('destination')."'>
+						";
+
+		foreach ($possible_destinations as $dk => $dv) {
+			$is_selected = ($dk == $destination) ? " selected='selected'" : "";
+			$return .= "<option value='{$dk}'{$is_selected}{$is_disabled}>{$dv}</option>\n";
+		}
+
+		$return .= "
+					</select>
+			</p>
+
 			";
 
-		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,links' />\n";
+		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,links,destination' />\n";
 		$return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />\n";
 
 		return $return;
@@ -179,6 +206,7 @@ class fmcIDXLinks extends fmcWidget {
 		$instance = $old_instance;
 		$instance['title'] = strip_tags($new_instance['title']);
 		$instance['links'] = $links_selected;
+		$instance['destination'] = strip_tags($new_instance['destination']);
 		return $instance;
 	}
 
