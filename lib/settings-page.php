@@ -524,7 +524,7 @@ class flexmlsConnectSettings {
 		global $fmc_version;
 		
 		$known_plugin_conflicts = array(
-		    //'hello.php', // Hello Dolly
+		    'screencastcom-video-embedder/screencast.php', // Screencast Video Embedder, JS syntax errors in 0.4.4 breaks all pages
 		);
 		
 		/*

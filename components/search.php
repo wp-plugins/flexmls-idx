@@ -455,9 +455,13 @@ class fmcSearch extends fmcWidget {
 					$add_button_class = "add_std_field";
 				}
 				
+				if ( !is_array($current_list) ) {
+					$current_list = array();
+				}
+				
 				$new_return .= "<div>\n";
 				
-				$new_return .= "<input fmc-field='{$name}' fmc-type='text' type='hidden' name='".$this->get_field_name($name)."' class='flexmls_connect__list_values' value='". implode(",", $settings[$name]). "' />\n";
+				$new_return .= "<input fmc-field='{$name}' fmc-type='text' type='hidden' name='".$this->get_field_name($name)."' class='flexmls_connect__list_values' value='". implode(",", $current_list). "' />\n";
 				$new_return .= "<ul class='flexmls_connect__sortable'>\n";
 
 				foreach ($current_list as $k) {
