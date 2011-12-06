@@ -427,7 +427,7 @@ class fmcPhotos extends fmcWidget {
 					}
 
 					$extra_title_line = ' | '. implode(" | ", $show_additional_field_line);
-					$tall_line = "<small class='dark'>". implode(" &nbsp; ", $show_additional_field_line) ."</small>";
+					$tall_line = "<small class='dark'>". implode(" &nbsp;", $show_additional_field_line) ."</small>";
 				}
 				
 

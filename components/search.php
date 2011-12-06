@@ -122,12 +122,12 @@ class fmcSearch extends fmcWidget {
       $submit_button_css .= "border: 1px solid #{$dark_border_color} !important;";
       $submit_button_css .= "text-shadow: 0 1px 1px #{$text_shadow} !important;";
       $submit_button_css .= "background: -moz-linear-gradient(top, #{$lighter} 0%, #{$submit_button_background} 44%, #{$darker} 100%) !important;";
-      $submit_button_css .= "background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#{$lighter}), color-stop(44%,#{$submit_button_background}), color-stop(100%,#4096ee)) !important;";
-      $submit_button_css .= "background: -webkit-linear-gradient(top, #{$lighter} 0%,#{$submit_button_background} 44%,#4096ee 100%) !important;";
-      $submit_button_css .= "background: -o-linear-gradient(top, #{$lighter} 0%,#{$submit_button_background} 44%,#4096ee 100%) !important;";
-      $submit_button_css .= "background: -ms-linear-gradient(top, #{$lighter} 0%,#{$submit_button_background} 44%,#4096ee 100%) !important;";
-      $submit_button_css .= "background: linear-gradient(top, #{$lighter} 0%,#{$submit_button_background} 44%,#4096ee 100%) !important;";
-      $submit_button_css .= "filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#{$lighter}', endColorstr='#4096ee',GradientType=0 ) !important;";
+      $submit_button_css .= "background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#{$lighter}), color-stop(44%,#{$submit_button_background}), color-stop(100%,#{$darker})) !important;";
+      $submit_button_css .= "background: -webkit-linear-gradient(top, #{$lighter} 0%,#{$submit_button_background} 44%,#{$darker} 100%) !important;";
+      $submit_button_css .= "background: -o-linear-gradient(top, #{$lighter} 0%,#{$submit_button_background} 44%,#{$darker} 100%) !important;";
+      $submit_button_css .= "background: -ms-linear-gradient(top, #{$lighter} 0%,#{$submit_button_background} 44%,#{$darker} 100%) !important;";
+      $submit_button_css .= "background: linear-gradient(top, #{$lighter} 0%,#{$submit_button_background} 44%,#{$darker} 100%) !important;";
+      $submit_button_css .= "filter: progid:DXImageTransform.Microsoft.gradient( startColorstr=\"#{$lighter}\", endColorstr=\"#{$darker}\",GradientType=0 ) !important;";
     
     } else if ($submit_button_shine == 'shine') {
       $light = flexmlsConnect::hexLighter($submit_button_background, 20);
@@ -142,7 +142,7 @@ class fmcSearch extends fmcWidget {
       $submit_button_css .= "background: -o-linear-gradient(top, #{$light} 0%,#{$lighter} 50%,#{$dark} 51%,#{$darker} 100%) !important;";
       $submit_button_css .= "background: -ms-linear-gradient(top, #{$light} 0%,#{$lighter} 50%,#{$dark} 51%,#{$darker} 100%) !important;";
       $submit_button_css .= "background: linear-gradient(top, #{$light} 0%,#{$lighter} 50%,#{$dark} 51%,#{$darker} 100%) !important;";
-      $submit_button_css .= "filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#{$light}', endColorstr='#{$darker}',GradientType=0 ) !important;";
+      $submit_button_css .= "filter: progid:DXImageTransform.Microsoft.gradient( startColorstr=\"#{$light}\", endColorstr=\"#{$darker}\",GradientType=0 ) !important;";
     }
     
     // Submit Return

@@ -34,6 +34,12 @@ class flexmlsConnectPageCore {
 						'field' => 'SavedSearch'
 				),
 				array(
+						'input' => 'ListingId',
+						'operator' => 'Eq',
+						'field' => 'ListingId',
+						'allow_or' => true
+				),
+				array(
 						'input' => 'PropertyType',
 						'operator' => 'Eq',
 						'field' => 'PropertyType',
