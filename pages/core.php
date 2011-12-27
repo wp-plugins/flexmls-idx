@@ -57,6 +57,30 @@ class flexmlsConnectPageCore {
 						'allow_or' => true
 				),
 				array(
+						'input' => 'StateOrProvince',
+						'operator' => 'Eq',
+						'field' => 'StateOrProvince',
+						'allow_or' => true
+				),
+				array(
+						'input' => 'CountyOrParish',
+						'operator' => 'Eq',
+						'field' => 'CountyOrParish',
+						'allow_or' => true
+				),
+				array(
+						'input' => 'PostalCode',
+						'operator' => 'Eq',
+						'field' => 'PostalCode',
+						'allow_or' => true
+				),
+				array(
+						'input' => 'SubdivisionName',
+						'operator' => 'Eq',
+						'field' => 'SubdivisionName',
+						'allow_or' => true
+				),
+				array(
 						'input' => 'MinBeds',
 						'operator' => 'Ge',
 						'field' => 'BedsTotal'

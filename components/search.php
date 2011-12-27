@@ -146,13 +146,21 @@ class fmcSearch extends fmcWidget {
     }
     
     // Submit Return
-    $submit_return  = "<input type='hidden' name='fmc_do' value='fmc_search' />\n";
-		$submit_return .= "<input type='hidden' name='link' class='flexmls_connect__link' value='{$my_link}' />\n";
-		$submit_return .= "<input type='hidden' name='query' value='' />\n";
-		$submit_return .= "<input type='hidden' name='tech_id' class='flexmls_connect__tech_id' value=\"x'{$api_system_info['Id']}'\" />\n";
-		$submit_return .= "<input type='hidden' name='ma_tech_id' class='flexmls_connect__ma_tech_id' value=\"x'". flexmlsConnect::fetch_ma_tech_id() ."'\" />\n";
-		$submit_return .= "<input type='hidden' name='destlink' value='".flexmlsConnect::get_destination_link()."' />\n";
-		$submit_return .= "<input type='hidden' name='destination' value='{$destination}' />\n";
+    $submit_return  = "";
+    
+    // only include remote link information if necessary
+    if ($destination == "remote") {
+      $submit_return .= "<input type='hidden' name='fmc_do' value='fmc_search' />\n";
+      $submit_return .= "<input type='hidden' name='link' class='flexmls_connect__link' value='{$my_link}' />\n";
+      $submit_return .= "<input type='hidden' name='destlink' value='".flexmlsConnect::get_destination_link()."' />\n";
+  		$submit_return .= "<input type='hidden' name='destination' value='{$destination}' />\n";
+  		$submit_return .= "<input type='hidden' name='query' value='' />\n";
+    }
+
+		$submit_return .= "<div style='visibility:hidden;' class='query' ></div>\n";
+		$submit_return .= "<input type='hidden' class='flexmls_connect__tech_id' value=\"x'{$api_system_info['Id']}'\" />\n";
+		$submit_return .= "<input type='hidden' class='flexmls_connect__ma_tech_id' value=\"x'". flexmlsConnect::fetch_ma_tech_id() ."'\" />\n";
+		
 		$submit_return .= "<div class='flexmls_connect__search_link'>\n";
 		  $submit_return .= "<input type='submit' value='{$buttontext}' style='{$submit_button_css}' />\n";
   		$submit_return .= "</div>\n";
@@ -170,20 +178,25 @@ class fmcSearch extends fmcWidget {
 		}
 		if ($property_type_enabled == "on" and count($good_prop_types) > 0) {
 		  $property_type_return .= "<div class='label'>Property Type</div>";
-		  $property_type_return .= "<select name='property-type' class='property-type' size='1'>";
+		  $property_type_return .= "<select name='PropertyType' class='property-type' size='1'>";
 			foreach ($good_prop_types as $type) {
 				$property_type_return .= "\t\t<option value='{$type}'>". flexmlsConnect::nice_property_type_label($type) ."</option>\n";
 			}
 		  $property_type_return .= "</select>";
 		}
 		else {
-			$property_type_return .= "\t<input type='hidden' name='property-type' value='".implode(",", $good_prop_types)."' />\n";
+			$property_type_return .= "\t<input type='hidden' name='PropertyType' value='".implode(",", $good_prop_types)."' />\n";
 		}
-		$search_fields[] = "PropertyType";		
+		$search_fields[] = "PropertyType";
   		
     // start the HTML
 		$return .= "<div class='flexmls_connect__search flexmls_connect__search_new {$orientation}' style='color:#{$field_text_color}; width:{$width}px; font-family:{$field_font},sans-serif; {$border_radius} {$box_shadow} background-color:#{$background_color};'>\n";
-		$return .= "<form action='{$_SERVER['REQUEST_URI']}' method='post'{$this_target}>\n";
+		if ($destination == "remote") {
+		  $return .= "<form action='{$_SERVER['REQUEST_URI']}' method='post'{$this_target}>\n";
+    } else {
+  		$return .= "<form action='" . flexmlsConnect::make_nice_tag_url('search') . "/' method='get'{$this_target}>\n";
+    }
+		
 		
 		// title
 		$return .= "<h1 style='color:#{$title_text_color};font-family:{$title_font},sans-serif;'>{$title}</h1>\n";
@@ -201,7 +214,7 @@ class fmcSearch extends fmcWidget {
   		// Location Search
   		if ($location_search == "on") { 
   		  $return .= "<div class='label'>Location</div>";
-  			$return .= "<input type='text' name='location' data-connect-url='{$api_location_search_api}' class='flexmls_connect__location_search' autocomplete='off' value='City, Zip, Address or Other Location' />\n";
+  			$return .= "<input type='text' data-connect-url='{$api_location_search_api}' class='flexmls_connect__location_search' autocomplete='off' value='City, Zip, Address or Other Location' />\n";
   			$search_fields[] = "Location";
   		}
 		
@@ -215,51 +228,51 @@ class fmcSearch extends fmcWidget {
   		  $right_float = ($iteration % 2 == 0 && $orientation == "horizontal") ? "right_float" : "" ;
   		  
   			if ( $fi == "list_price" ) {
-  				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='list_price'>\n";
-  				$return .= "  <div class='label'><label for='{$rand}-list_price_from'>Price Range</label></div>\n";
-  				$return .= "  <input type='text' class='text left_float' name='list_price_from' id='{$rand}-list_price_from' data-connect-default='Min' />\n";
-  				$return .= "  <label for='{$rand}-list_price_to'>to</label>\n";
-  				$return .= "  <input type='text' class='text right_float' name='list_price_to' id='{$rand}-list_price_to' data-connect-default='Max' />\n";
+  				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Price'>\n";
+  				$return .= "  <div class='label'><label for='MinPrice'>Price Range</label></div>\n";
+  				$return .= "  <input type='text' class='text left_float' name='MinPrice' id='{$rand}-MinPrice' data-connect-default='Min' />\n";
+  				$return .= "  <label for='MaxPrice'>to</label>\n";
+  				$return .= "  <input type='text' class='text right_float' name='MaxPrice' id='{$rand}-MaxPrice' data-connect-default='Max' />\n";
   				$return .= "</div>\n";
   				$search_fields[] = "ListPrice";
   			}
 
   			if ( $fi == "beds" ) {
-  				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='beds'>\n";
-  				$return .= "  <div class='label'><label for='{$rand}-beds_from'>Bedrooms</label></div>\n";
-  				$return .= "  <input type='text' class='text left_float' name='beds_from' id='{$rand}-beds_from' data-connect-default='Min' />\n";
-  				$return .= "  <label for='{$rand}-beds_to'>to</label>\n";
-  				$return .= "  <input type='text' class='text right_float' name='beds_to' id='{$rand}-beds_to' data-connect-default='Max' />\n";
+  				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Beds'>\n";
+  				$return .= "  <div class='label'><label for='MinBeds'>Bedrooms</label></div>\n";
+  				$return .= "  <input type='text' class='text left_float' name='MinBeds' id='{$rand}-MinBeds' data-connect-default='Min' />\n";
+  				$return .= "  <label for='MaxBeds'>to</label>\n";
+  				$return .= "  <input type='text' class='text right_float' name='MaxBeds' id='{$rand}-MaxBeds' data-connect-default='Max' />\n";
   				$return .= "</div>\n";
   				$search_fields[] = "BedsTotal";
   			}
 
   			if ( $fi == "baths" ) {
-  				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='baths'>\n";
-  				$return .= "  <div class='label'><label for='{$rand}-baths_from'>Bathroom</label></div>\n";
-  				$return .= "  <input type='text' class='text left_float' name='baths_from' id='{$rand}-baths_from' data-connect-default='Min' />\n";
-  				$return .= "  <label for='{$rand}-baths_to'>to</label>\n";
-  				$return .= "  <input type='text' class='text right_float' name='baths_to' id='{$rand}-baths_to' data-connect-default='Max' />\n";
+  				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Baths'>\n";
+  				$return .= "  <div class='label'><label for='MinBaths'>Bathroom</label></div>\n";
+  				$return .= "  <input type='text' class='text left_float' name='MinBaths' id='{$rand}-MinBaths' data-connect-default='Min' />\n";
+  				$return .= "  <label for='MaxBaths'>to</label>\n";
+  				$return .= "  <input type='text' class='text right_float' name='MaxBaths' id='{$rand}-MaxBaths' data-connect-default='Max' />\n";
   				$return .= "</div>\n";
   				$search_fields[] = "BathsTotal";
   			}
 
   			if ( $fi == "square_footage" ) {
-  				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='square_footage'>\n";
-  				$return .= "  <div class='label'><label for='{$rand}-square_footage_from'>Square Feet</label></div>\n";
-  				$return .= "  <input type='text' class='text left_float' name='square_footage_from' id='{$rand}-square_footage_from' data-connect-default='Min' />\n";
-  				$return .= "  <label for='{$rand}-square_footage_to'>to</label>\n";
-  				$return .= "  <input type='text' class='text right_float' name='square_footage_to' id='{$rand}-square_footage_to' data-connect-default='Max' />\n";
+  				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='SqFt'>\n";
+  				$return .= "  <div class='label'><label for='MinSqFt'>Square Feet</label></div>\n";
+  				$return .= "  <input type='text' class='text left_float' name='MinSqFt' id='{$rand}-MinSqFt' data-connect-default='Min' />\n";
+  				$return .= "  <label for='MaxSqFt'>to</label>\n";
+  				$return .= "  <input type='text' class='text right_float' name='MaxSqFt' id='{$rand}-MaxSqFt' data-connect-default='Max' />\n";
   				$return .= "</div>\n";
   				$search_fields[] = "BuildingAreaTotal";
   			}
 
   			if ( $fi == "age" ) {
-  				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='age'>\n";
-  				$return .= "  <div class='label'><label for='{$rand}-age_from'>Year Built</label></div>\n";
-  				$return .= "  <input type='text' class='text left_float' name='age_from' id='{$rand}-age_from' data-connect-default='Min' />\n";
-  				$return .= "  <label for='{$rand}-age_to'>to</label>\n";
-  				$return .= "  <input type='text' class='text right_float' name='age_to' id='{$rand}-age_to' data-connect-default='Max' />\n";
+  				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Year'>\n";
+  				$return .= "  <div class='label'><label for='MinYear'>Year Built</label></div>\n";
+  				$return .= "  <input type='text' class='text left_float' name='MinYear' id='{$rand}-MinYear' data-connect-default='Min' />\n";
+  				$return .= "  <label for='MaxYear'>to</label>\n";
+  				$return .= "  <input type='text' class='text right_float' name='MaxYear' id='{$rand}-MaxYear' data-connect-default='Max' />\n";
   				$return .= "</div>\n";
   				$search_fields[] = "YearBuilt";
   			}
@@ -576,7 +589,7 @@ class fmcSearch extends fmcWidget {
 		    'square_footage_from' => 'MinSqFt',
 		    'square_footage_to' => 'MaxSqFt',
 		    'list_price_from' => 'MinPrice',
-		    'list_price_to' => 'MaxPrice',
+		    'list_price_to' => 'MaxPrice'
 		);
 		
 		foreach ($translate_fields as $local_field => $search_field) {
@@ -619,10 +632,10 @@ class fmcSearch extends fmcWidget {
 				'PropertyType' => 'PropertyType',
 				'MapOverlay' => 'MapOverlay',
 				'list_price' => 'ListPrice',
-				'beds' => 'BedsTotal',
-				'baths' => 'BathsTotal',
-				'age' => 'YearBuilt',
-				'square_footage' => 'BuildingAreaTotal'
+				'Beds' => 'BedsTotal',
+				'Baths' => 'BathsTotal',
+				'Year' => 'YearBuilt',
+				'SqFt' => 'BuildingAreaTotal'
 		);
 		
 		
@@ -698,7 +711,7 @@ class fmcSearch extends fmcWidget {
 		else {
 			$outbound_link = $permalink . '?url=' . $outbound_link;
 		}
-
+        
 		// forward the user on if we have someplace for them to go
 		if (!empty($outbound_link)) {
 			header("Location: {$outbound_link}");

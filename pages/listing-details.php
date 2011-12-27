@@ -93,7 +93,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 
 		// begin
 		echo "<div class='flexmls_connect__sr_detail' title='{$one_line_address} - MLS# {$sf['ListingId']}'>\n";
-		echo "  <img src='{$sf['Photos'][0]['UriLarge']}' id='flexmls_connect__resize_image' />\n";
+		echo "  <img src='{$sf['Photos'][0]['UriLarge']}' class='flexmls_connect__resize_image' />\n";
 		echo "  <hr class='flexmls_connect__sr_divider'>\n";
 		
 		echo "  <div class='flexmls_connect__sr_address'>\n";
@@ -167,7 +167,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		  
 		  echo "  <div class='flexmls_connect__photos'>\n";
 		  echo "    <div class='flexmls_connect__photo_container'>\n";
-      echo "      <img src='{$main_photo_url}' id='flexmls_connect__main_image' onload='flexmls_connect.resizeMainPhoto()' title='{$one_line_address} - MLS# {$sf['ListingId']}' />\n";
+      echo "      <img src='{$main_photo_url}' class='flexmls_connect__main_image' onload='flexmls_connect.resizeMainPhoto(this)' title='{$one_line_address} - MLS# {$sf['ListingId']}' />\n";
 		  echo "    </div>\n";
 
     	// photo pager
@@ -199,7 +199,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		  echo "    <div class='flexmls_connect__hidden'>\n";
 			  if ($count_photos > 0) {
     			foreach ($sf['Photos'] as $p) {
-    				echo "<a href='{$p['UriLarge']}' data-connect-ajax='true' rel='photo' title='".htmlspecialchars($p['Caption'], ENT_QUOTES)."'></a>\n";
+    				echo "<a href='{$p['UriLarge']}' data-connect-ajax='true' rel='p{$rand}-{$sf['ListingKey']}' title='".htmlspecialchars($p['Caption'], ENT_QUOTES)."'></a>\n";
     			}
     		}
 			echo "    </div>\n";
