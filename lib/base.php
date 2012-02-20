@@ -1387,6 +1387,20 @@ class flexmlsConnect {
 			return $api_property_types[$abbrev];
 		}
 	}
+
+	static public function gentle_price_rounding($val) {
+		// check if the value has decimal places and if those aren't just zeros
+
+		if ( strpos($val, '.') !== false ) {
+			// has a decimal
+			$places = explode(".", $val);
+			if ($places[1] != "00") {
+				return number_format($val, 2);
+			}
+		}
+
+		return number_format($val, 0);
+	}
 	
 	
 	

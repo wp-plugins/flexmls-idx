@@ -422,9 +422,12 @@ class flexmlsAPI_Core {
 		}
 	}
 	
-	function AddContact($contact_data) {
-		$data = array('Contacts' => array($contact_data));
-		return $this->return_all_results( $this->MakeAPICall("POST", "contacts", array(), $this->make_sendable_body($data) ) );
+	function AddContact($contact_data, $notify = false) {
+		$data = array(
+			'Contacts' => array($contact_data),
+			'Notify' => $notify
+		);
+		return $this->return_all_results( $this->MakeAPICall("POST", "contacts", 0, array(), $this->make_sendable_body($data) ) );
 	}
 	
 	function GetContact($id) {
@@ -454,7 +457,7 @@ class flexmlsAPI_Core {
 	
 	function AddListingCart($name, $listings) {
 		$data = array('ListingCarts' => array( array('Name' => $name, 'ListingIds' => $listings) ) );
-		return $this->return_all_results( $this->MakeAPICall("POST", "listingcarts", array(), $this->make_sendable_body($data) ) );
+		return $this->return_all_results( $this->MakeAPICall("POST", "listingcarts", 0, array(), $this->make_sendable_body($data) ) );
 	}
 	
 	function GetListingCart($id) {
@@ -463,12 +466,12 @@ class flexmlsAPI_Core {
 	
 	function AddListingsToCart($id, $listings) {
 		$data = array('ListingIds' => $listings);
-		return $this->return_all_results( $this->MakeAPICall("POST", "listingcarts/".$id, array(), $this->make_sendable_body($data) ) );
+		return $this->return_all_results( $this->MakeAPICall("POST", "listingcarts/".$id, 0, array(), $this->make_sendable_body($data) ) );
 	}
 	
 	function UpdateListingsInCart($id, $listings) {
 		$data = array('ListingIds' => $listings);
-		return $this->return_all_results( $this->MakeAPICall("PUT", "listingcarts/".$id, array(), $this->make_sendable_body($data) ) );
+		return $this->return_all_results( $this->MakeAPICall("PUT", "listingcarts/".$id, 0, array(), $this->make_sendable_body($data) ) );
 	}
 	
 	function DeleteListingCart($id) {

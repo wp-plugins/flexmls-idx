@@ -175,32 +175,44 @@ class flexmlsConnectSettings {
 			$options['default_link'] = $input['default_link'];
 			$options['neigh_template'] = $input['neigh_template'];
 			$options['permabase'] = (!empty($input['permabase'])) ? $input['permabase'] : 'idx';
-			
+
 			if ($input['contact_notifications'] == "y") {
 				$options['contact_notifications'] = true;
 			}
 			else {
 				$options['contact_notifications'] = false;
 			}
-			
+
 			$property_types = explode(",", $input['property_types']);
 			foreach ($property_types as $pt) {
 				$options['property_type_label_'.$pt] = $input['property_type_label_'.$pt];
 			}
-			
+
 			$options['listing_office_disclosure'] = $input['listing_office_disclosure'];
-			
+
 		}
 
 		return $options;
 
 	}
-	
+
 	function settings_overview_api() {
 		if (flexmlsConnect::has_api_saved() == false) {
 			echo "<p>Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a href='mailto:idx@flexmls.com'>idx@flexmls.com</a> to purchase a key to activate your plugin.</p>";
 		}
 		echo "<input type='hidden' name='fmc_settings[tab]' value='settings' />\n";
+	}
+
+	function settings_overview_linking() {
+		echo "";
+	}
+
+	function settings_overview_labels() {
+		echo "";
+	}
+
+	function settings_overview_compliance() {
+		echo "";
 	}
 	
 	function settings_overview_oauth() {

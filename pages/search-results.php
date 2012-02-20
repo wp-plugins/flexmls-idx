@@ -141,7 +141,7 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
       
       // Price
       echo "    <div class='flexmls_connect__sr_price'>\n";
-			echo '		  $'. number_format($sf['ListPrice'], 0, '.', ',') . "\n";
+			echo '		  $'. flexmlsConnect::gentle_price_rounding($sf['ListPrice']) . "\n";
       echo "    </div>\n";
       
       

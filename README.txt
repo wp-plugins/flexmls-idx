@@ -3,7 +3,7 @@ Tags: flexmls, IDX, MLS search
 Contributors: flexmls
 Requires at least: 3.0.0
 Tested up to: 3.2.1
-Stable tag: 3.0.3
+Stable tag: 3.0.4
 
 Add flexmls IDX listings, market statistics, IDX searches, and a contact form on your web site.
 
@@ -55,6 +55,15 @@ Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a hre
 
 
 == Changelog ==
+
+= 3.0.4 =
+
+* Changes so list prices with decimals display correctly without rounding
+* Fix for listing price searches when using the IDX frame results
+* Fix for the lead generation widget to properly send data and identify notification preference
+* Changed assumed default for listing sorts in listing summary, slideshow and results widgets (assumes "price, high to low" if none given)
+* Small fix to the Settings screen to help eliminate PHP notices in certain environments
+
 
 = 3.0.3 =
 

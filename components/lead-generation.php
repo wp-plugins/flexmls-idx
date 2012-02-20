@@ -256,7 +256,7 @@ class fmcLeadGen extends fmcWidget {
 		}
 
 		if ($success == true) {
-			$contact = $fmc_api->AddContact($data);
+			$contact = $fmc_api->AddContact($data, flexmlsConnect::send_notification());
 			$return = array('success' => true, 'nonce' => wp_create_nonce('fmcLeadGen'));
 		}
 		else {

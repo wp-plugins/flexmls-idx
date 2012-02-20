@@ -383,7 +383,7 @@ class fmcPhotos extends fmcWidget {
 				$one_line_address = $listing_address[2];
 
 
-				$price = '$'. number_format($listing['ListPrice'], 0);
+				$price = '$'. flexmlsConnect::gentle_price_rounding($listing['ListPrice']);
 
 				if ($source != "my" and $source != "my_office" and flexmlsConnect::get_office_id() != $listing['ListOfficeId'] ) {
 					if (array_key_exists('IdxLogoSmall', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogoSmall'])) {

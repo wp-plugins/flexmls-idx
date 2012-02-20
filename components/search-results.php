@@ -80,7 +80,7 @@ class fmcSearchResults extends fmcWidget {
 		}
 
 		if ($sort == "recently_changed") {
-			// nothing to do.  this is the default
+			$pure_conditions['OrderBy'] = "natural"; // special tag caught later
 		}
 		elseif ($sort == "price_low_high") {
 			$pure_conditions['OrderBy'] = "+ListPrice";

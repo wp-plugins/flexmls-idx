@@ -635,7 +635,8 @@ class fmcSearch extends fmcWidget {
 				'Beds' => 'BedsTotal',
 				'Baths' => 'BathsTotal',
 				'Year' => 'YearBuilt',
-				'SqFt' => 'BuildingAreaTotal'
+				'SqFt' => 'BuildingAreaTotal',
+				'Price' => 'ListPrice'
 		);
 		
 		

@@ -99,7 +99,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		echo "  <div class='flexmls_connect__sr_address'>\n";
 			
 			// show price
-  		echo "<div class='flexmls_connect__sr_price'>$". number_format($sf['ListPrice'], 0, '.', ',') . "</div>\n";		  
+  		echo "<div class='flexmls_connect__sr_price'>$". flexmlsConnect::gentle_price_rounding($sf['ListPrice']) . "</div>\n";
 
   		// show top address details
   		echo "{$first_line_address}<br>\n";
