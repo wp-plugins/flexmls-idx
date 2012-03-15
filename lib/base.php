@@ -671,7 +671,7 @@ class flexmlsConnect {
 	}
 	
 	function ie_version() {
-		ereg('MSIE ([0-9]\.[0-9])',$_SERVER['HTTP_USER_AGENT'],$reg);
+		preg_match('/MSIE ([0-9]\.[0-9])/', $_SERVER['HTTP_USER_AGENT'], $reg);
 		if(!isset($reg[1])) {
 			return -1;
 		} else {
@@ -687,6 +687,7 @@ class flexmlsConnect {
 		}
 		$count++;
 		update_option('fmc_cache_version', $count);
+		flexmlsConnect::garbage_collect_bad_caches();
 	}
 
 	function greatest_fitting_number($num, $slide, $max) {
@@ -1400,6 +1401,26 @@ class flexmlsConnect {
 		}
 
 		return number_format($val, 0);
+	}
+
+	/*
+	 * idea credit to: https://github.com/Seebz/Snippets/blob/master/Wordpress/plugins/purge-transients/purge-transients.php
+	 */
+	static public function garbage_collect_bad_caches() {
+		global $wpdb;
+
+		$transients = $wpdb->get_col(
+			$wpdb->prepare("
+			SELECT REPLACE(option_name, '_transient_timeout_', '') AS transient_name FROM {$wpdb->options} WHERE
+			option_name LIKE '\_transient\_timeout\_%%' AND option_value < %s
+			", time())
+		);
+
+		foreach ($transients as $transient) {
+			get_transient($transient);
+		}
+
+		return true;
 	}
 	
 	
