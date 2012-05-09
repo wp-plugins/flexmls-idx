@@ -146,11 +146,11 @@ class flexmlsConnectSettings {
 				$input['clear_cache'] = "y";
 			}
 		
-			$options['api_key'] = $input['api_key'];
-			$options['api_secret'] = $input['api_secret'];
+			$options['api_key'] = trim($input['api_key']);
+			$options['api_secret'] = trim($input['api_secret']);
 			
-			$options['oauth_key'] = $input['oauth_key'];
-			$options['oauth_secret'] = $input['oauth_secret'];
+			$options['oauth_key'] = trim($input['oauth_key']);
+			$options['oauth_secret'] = trim($input['oauth_secret']);
 		
 			if ( array_key_exists('clear_cache', $input) and $input['clear_cache'] == "y") {
 				// since clear_cache is checked, wipe out the contents of the fmc_cache_* transient items
@@ -189,6 +189,7 @@ class flexmlsConnectSettings {
 			}
 
 			$options['listing_office_disclosure'] = $input['listing_office_disclosure'];
+			$options['listing_agent_disclosure'] = $input['listing_agent_disclosure'];
 
 		}
 
@@ -527,6 +528,9 @@ class flexmlsConnectSettings {
 		
 		$checked = ($options['listing_office_disclosure'] == 'y') ? " checked='checked'" : null;
 		echo "<label><input type='checkbox' name='fmc_settings[listing_office_disclosure]'{$checked} value='y' /> Force Listing Office to display</label>\n";
+		
+		$checked = ($options['listing_agent_disclosure'] == 'y') ? " checked='checked'" : null;
+		echo "<br><label><input type='checkbox' name='fmc_settings[listing_agent_disclosure]'{$checked} value='y' /> Force Listing Agent to display</label>\n";
 	}
 	
 	

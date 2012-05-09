@@ -626,6 +626,7 @@ class fmcSearch extends fmcWidget {
 	
 	function handle_remote_search() {
 		global $fmc_api;
+		/* @var $fmc_api flexmlsAPI_Core */
 		
 		// translate from form field names to standard names
 		$fields_to_catch = array(
@@ -638,8 +639,16 @@ class fmcSearch extends fmcWidget {
 				'SqFt' => 'BuildingAreaTotal',
 				'Price' => 'ListPrice'
 		);
-		
-		
+
+		$standard_fields = $fmc_api->GetStandardFields();
+		$standard_fields = $standard_fields[0];
+
+		if (array_key_exists('BathsTotal', $standard_fields)) {
+			if (array_key_exists('MlsVisible', $standard_fields['BathsTotal']) and empty($standard_fields['BathsTotal']['MlsVisible'])) {
+				$fields_to_catch['Baths'] = "BathsFull";
+			}
+		}
+
 		$query = stripslashes($_POST['query']);
 		$my_link = stripslashes($_POST['link']);
 

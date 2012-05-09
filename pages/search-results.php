@@ -237,6 +237,10 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 			if ( flexmlsConnect::mls_requires_office_name_in_search_results() or flexmlsConnect::get_office_id() == $sf['ListOfficeId']) {
 				echo "			<span class='flexmls_connect__sr_idx_badge_office'>Listing Office: {$sf['ListOfficeName']}</span>\n";
 			}
+			if ( flexmlsConnect::mls_requires_agent_name_in_search_results() && flexmlsConnect::is_not_blank_or_restricted($sf['ListAgentFirstName']) && flexmlsConnect::is_not_blank_or_restricted($sf['ListAgentLastName'])) {
+				echo "			<br><span class='flexmls_connect__sr_idx_badge_office'>Listing Agent: {$sf['ListAgentFirstName']} {$sf['ListAgentLastName']}</span>\n";
+			}			
+
   	  echo "			</td></tr>\n";
 		
 			

@@ -245,20 +245,47 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			}
 		}
 		
-		foreach ($record['CustomFields'][0]['Main'] as $one) {
-			foreach ($one as $property_headline_description => $two) {
-				foreach ($two as $three) {
-					foreach ($three as $k => $v) {
-						if ( flexmlsConnect::is_not_blank_or_restricted($v) ) {
-							$this_val = $v;
-
-							$property_detail_values[$property_headline_description][] = "<b>{$k}:</b> {$this_val}";
-						}
-					}
-				}
-			}
-		}
+		$detailsarepresent = false;
 		
+		if (isset($record['CustomFields'][0]['Details']))
+		  $detailsarepresent = true;
+		
+		//old way details are present
+		if ($detailsarepresent === true) {
+		
+  		foreach ($record['CustomFields'][0]['Main'] as $one) {
+  			foreach ($one as $property_headline_description => $two) {
+  				foreach ($two as $three) {
+  					foreach ($three as $k => $v) {
+  						if ( flexmlsConnect::is_not_blank_or_restricted($v) ) {
+  							$this_val = $v;
+  
+  							$property_detail_values[$property_headline_description][] = "<b>{$k}:</b> {$this_val}";
+  						}
+  					}
+  				}
+  			}
+  		}
+  		
+		//new way no details they are in main list WP-121
+	  } else {		
+
+  		foreach ($record['CustomFields'][0]['Main'] as $one) {
+  			foreach ($one as $property_headline_description => $two) {
+  				foreach ($two as $three) {
+  					foreach ($three as $k => $v) {
+  						if ( flexmlsConnect::is_not_blank_or_restricted($v) && is_bool($v) === false ) {
+  							$this_val = $v;
+  
+  							$property_detail_values[$property_headline_description][] = "<b>{$k}:</b> {$this_val}";
+  						}
+  					}
+  				}
+  			}
+  		}
+  		
+	  }
+	  
 		// render the results now
 		foreach ($property_detail_values as $k => $v) {
 			echo "<div class='flexmls_connect__detail_header'>{$k}</div>\n";
@@ -296,25 +323,51 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			echo "</table>\n";
 			echo "<br><br>\n\n";
 		}
-		
+			  
 		// build the Property Featured portion of the page
 		$property_features_values = array();
-		
-		foreach ($record['CustomFields'][0]['Details'] as $one) {
-			foreach ($one as $k => $two) {
-				$this_feature = array();
-				foreach ($two as $three) {
-					foreach ($three as $name => $value) {
-						if ($value === true) {
-							$this_feature[] = $name;
-						}
-					}
-				}
-				if ( count($this_feature) > 0) {
-					$property_features_values[] = "<b>{$k}:</b> ". implode("; ", $this_feature);
-				}
-			}
-		}
+
+		//old way details are present
+		if ($detailsarepresent === true) {
+  		
+  		foreach ($record['CustomFields'][0]['Details'] as $one) {
+  			foreach ($one as $k => $two) {
+  				$this_feature = array();
+  				foreach ($two as $three) {
+  					foreach ($three as $name => $value) {
+  						if ($value === true) {
+  							$this_feature[] = $name;
+  						}
+  					}
+  				}
+  				if ( count($this_feature) > 0) {
+  					$property_features_values[] = "<b>{$k}:</b> ". implode("; ", $this_feature);
+  				}
+  			}
+  		}
+
+		//new way no details they are in main list WP-121
+	  } else {		
+
+  		foreach ($record['CustomFields'][0]['Main'] as $one) {
+  			foreach ($one as $k => $two) {
+  			  $this_feature = array();
+  				foreach ($two as $three) {
+  					foreach ($three as $name => $v) {
+  						if ( flexmlsConnect::is_not_blank_or_restricted($v) && is_bool($v) === true ) {
+  							if ($v === true) {
+  							  $this_feature[] = $name;
+  						  }
+  						}
+  					}
+  				}
+  				if ( count($this_feature) > 0) {
+  					$property_features_values[] = "<b>{$k}:</b> ". implode("; ", $this_feature);
+  				}				
+  			}
+  		}
+	  
+	  }			  
 		
 		echo "<div class='flexmls_connect__detail_header'>Property Features</div>\n";
 		echo "<table width='100%'>\n";
@@ -402,6 +455,10 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			if (flexmlsConnect::is_not_blank_or_restricted($sf['ListOfficeName'])) {
 				echo "<p>Listing Office: {$sf['ListOfficeName']}</p>\n";
 			}
+			if (flexmlsConnect::mls_requires_agent_name_in_search_results() && flexmlsConnect::is_not_blank_or_restricted($sf['ListAgentFirstName']) && flexmlsConnect::is_not_blank_or_restricted($sf['ListAgentLastName'])) {
+				echo "<p>Listing Agent: {$sf['ListAgentFirstName']} {$sf['ListAgentLastName']}</p>\n";
+			}
+			
 			echo flexmlsConnect::get_big_idx_disclosure_text();
 			echo "</div>\n\n";
 		}

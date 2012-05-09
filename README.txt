@@ -3,7 +3,7 @@ Tags: flexmls, IDX, MLS search
 Contributors: flexmls
 Requires at least: 3.0.0
 Tested up to: 3.3.1
-Stable tag: 3.0.5
+Stable tag: 3.0.6
 
 Add flexmls IDX listings, market statistics, IDX searches, and a contact form on your web site.
 
@@ -55,6 +55,15 @@ Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a hre
 
 
 == Changelog ==
+
+
+= 3.0.6 =
+
+* Fix for boolean "main" custom fields as details
+* Fix for bath fields
+* Add the ability to force the display of the listing agent on the WordPress plugin detail page
+* Fix title override from bleeding out
+* Fix links and widgets from being broken when wordpress is referenced from different folder
 
 = 3.0.5 =
 

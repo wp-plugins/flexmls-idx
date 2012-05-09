@@ -984,7 +984,7 @@ class flexmlsConnect {
 		
 		if (flexmlsConnect::generate_nice_urls()) {
 			$options = get_option('fmc_settings');
-			return get_option('siteurl') . '/' . $options['permabase'] . '/' . $tag . $query_string;
+			return get_home_url() . '/' . $options['permabase'] . '/' . $tag . $query_string;
 		}
 		else {
 			return flexmlsConnect::make_destination_link($tag, 'fmc_tag', $params);
@@ -1011,7 +1011,7 @@ class flexmlsConnect {
 				$return .= '?'. http_build_query($params);
 			}
 			
-			return get_option('siteurl') . '/' . $options['permabase'] . '/' . $return;
+			return get_home_url() . '/' . $options['permabase'] . '/' . $return;
 		}
 		else {
 			return flexmlsConnect::make_destination_link($return, 'fmc_tag', $params);
@@ -1099,6 +1099,17 @@ class flexmlsConnect {
 		$options = get_option('fmc_settings');
 		
 		if ($options['listing_office_disclosure'] == 'y') {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	
+	static function mls_requires_agent_name_in_search_results() {
+		$options = get_option('fmc_settings');
+		
+		if ($options['listing_agent_disclosure'] == 'y') {
 			return true;
 		}
 		else {

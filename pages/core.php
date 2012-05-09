@@ -139,6 +139,9 @@ class flexmlsConnectPageCore {
 		
 		$possible_api_parameters = array('HotSheet','OpenHouses');
 
+		$standard_fields = $fmc_api->GetStandardFields();
+		$standard_fields = $standard_fields[0];
+
 
 		$cleaned_raw_criteria = array();
 
@@ -147,6 +150,15 @@ class flexmlsConnectPageCore {
 		
 		// pluck out values from GET or POST
 		foreach ($catch_fields as $f) {
+
+			if ($f['field'] == "BathsTotal") {
+				if (array_key_exists('BathsTotal', $standard_fields)) {
+					if (array_key_exists('MlsVisible', $standard_fields['BathsTotal']) and empty($standard_fields['BathsTotal']['MlsVisible'])) {
+						$f['field'] = "BathsFull";
+					}
+				}
+			}
+
 			$value = $this->fetch_input_data($f['input']);
 			if ($value === null or $value == '') {
 				// not provided

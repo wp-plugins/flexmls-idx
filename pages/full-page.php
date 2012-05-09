@@ -8,6 +8,7 @@ class flexmlsConnectPage {
 
 	function catch_special_request() {
 		global $fmc_special_page_caught;
+		global $wp_query;
 
 		$tag = flexmlsConnect::page_slug_tag('fmc_tag');
 
@@ -56,6 +57,7 @@ class flexmlsConnectPage {
 			add_filter('the_post', array('flexmlsConnectPage', 'custom_post_title') );
 			add_filter('the_content', array('flexmlsConnectPage', 'custom_post_content') );
 
+
 			if ( !empty($fmc_special_page_caught['page-url']) ) {
 				remove_action('wp_head', 'rel_canonical');
 				add_action('wp_head', array('flexmlsConnectPage', 'my_rel_canonical') );
@@ -73,10 +75,14 @@ class flexmlsConnectPage {
 	}
 
 
-
 	function custom_post_title($page) {
 		global $fmc_special_page_caught;
-		$page->post_title = $fmc_special_page_caught['post-title'];
+		global $wp_query;
+
+		if ($wp_query->post->ID == $page->ID) {
+			$page->post_title = $fmc_special_page_caught['post-title'];
+		}
+
 		return $page;
 	}
 	
@@ -88,10 +94,6 @@ class flexmlsConnectPage {
 		// disable the "Comments are disabled" text on the page
 		$return .= "<style type='text/css'>\n  .nocomments { display:none; }\n</style>\n\n\n";
 		$return .= $fmc_special_page_caught['fmc-page']->generate_page();
-
-//		$return .= "This is the overridden post content";
-//		$return .= "<br><br><div style='width:100%; border:2px solid red;'>asdfad</div>";
-//		$return .= "<br><br><pre>". print_r($fmc_special_page_caught, true) ."</pre><br><br>";
 
 		return $return;
 
