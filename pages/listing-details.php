@@ -507,17 +507,19 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		$property_detail_values = array("Summary" => array());
 		
 		foreach ($mls_property_detail_fields as $k => $v) {
-			if ( array_key_exists($v, $sf) and flexmlsConnect::is_not_blank_or_restricted($sf[$v]) ) {
+			if ( array_key_exists($v, $sf) ) {
 				$this_val = $sf[$v];
 				
 				if ($this_val === true) { $this_val = "Yes"; }
-				if (is_array($this_val)) { $this_val = implode("; ", $this_val); }
+				if (is_array($this_val)) { $this_val = implode("; ", array_keys($this_val)); }
 				
 				if ($v == "PropertyType") {
 					$this_val = flexmlsConnect::nice_property_type_label($this_val);
 				}
 				
-				$property_detail_values["Summary"][] = "<b>{$k}:</b>&nbsp; {$this_val}";
+				if (flexmlsConnect::is_not_blank_or_restricted($this_val)) {
+				  $property_detail_values["Summary"][] = "<b>{$k}:</b>&nbsp; {$this_val}";
+			  }
 			}
 		}
 		
