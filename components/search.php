@@ -230,9 +230,9 @@ class fmcSearch extends fmcWidget {
   			if ( $fi == "list_price" ) {
   				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Price'>\n";
   				$return .= "  <div class='label'><label for='MinPrice'>Price Range</label></div>\n";
-  				$return .= "  <input type='text' class='text left_float' name='MinPrice' id='{$rand}-MinPrice' data-connect-default='Min' />\n";
+  				$return .= "  <input type='text' class='text left_float' name='MinPrice' id='{$rand}-MinPrice' data-connect-default='Min' onChange=\"this.value =  this.value.replace(/,/g,'').replace(/\\\$/g,'')\" />\n";
   				$return .= "  <label for='MaxPrice'>to</label>\n";
-  				$return .= "  <input type='text' class='text right_float' name='MaxPrice' id='{$rand}-MaxPrice' data-connect-default='Max' />\n";
+  				$return .= "  <input type='text' class='text right_float' name='MaxPrice' id='{$rand}-MaxPrice' data-connect-default='Max' onChange=\"this.value =  this.value.replace(/,/g,'').replace(/\\\$/g,'')\" />\n";
   				$return .= "</div>\n";
   				$search_fields[] = "ListPrice";
   			}
