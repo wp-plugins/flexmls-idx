@@ -494,7 +494,7 @@ class flexmlsConnectSettings {
 		$options = get_option('fmc_settings');
 		echo "<input type='text' name='fmc_settings[permabase]' value='{$options['permabase']}' size='15' maxlength='50' />\n";
 		echo "<br/><span class='description'>Changes the URL for special plugin pages.  ";
-		echo "i.e. ". get_option('siteurl') . '/<b><u>' . $options['permabase'] . '</u></b>/' . "search </span>";
+		echo "i.e. ". get_home_url() . '/<b><u>' . $options['permabase'] . '</u></b>/' . "search </span>";
 	}
 	
 	function settings_field_property_type_labels() {
@@ -621,7 +621,7 @@ class flexmlsConnectSettings {
 		
 		echo "<blockquote>";
 		
-		echo "<b>Site URL:</b> ". get_option('siteurl') ."<br/>\n";
+		echo "<b>Site URL:</b> ". get_home_url() ."<br/>\n";
 		echo "<b>Web Server:</b> {$_SERVER['SERVER_SOFTWARE']}<br/>\n";
 		echo "<b>PHP Version:</b> ". phpversion() ."<br/>\n";
 		echo "<b>WP Version:</b> {$wp_version}<br/>\n";
