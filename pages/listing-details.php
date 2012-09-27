@@ -12,19 +12,31 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		
 		// parse passed parameters for browsing capability
 		list($params, $cleaned_raw_criteria, $context) = $this->parse_search_parameters_into_api_request();
+		
 		$this->search_criteria = $cleaned_raw_criteria;
 
-		preg_match('/\-mls\_(.*?)$/', $tag, $matches);
+		preg_match('/mls\_(.*?)$/', $tag, $matches);
 
 		$id_found = $matches[1];
 
+    $filterstr = "ListingId Eq '{$id_found}'";
+    
+    if ( flexmlsConnect::wp_input_get('m') ) {
+      $filterstr .= " and MlsId Eq'".flexmlsConnect::wp_input_get('m')."'";
+    }
+
 		$params = array(
-				'_filter' => "ListingId Eq '{$id_found}'",
+				'_filter' => $filterstr,
 				'_limit' => 1,
 				'_expand' => 'Photos,Videos,OpenHouses,VirtualTours,Documents,Rooms,CustomFields'
 		);
 		$result = $fmc_api->GetListings($params);
 		$listing = $result[0];
+
+		//david debug
+		//print_r($params);
+		//print_r($listing);
+	
 
 		$fmc_special_page_caught['type'] = "listing-details";
 		$this->listing_data = $listing;
@@ -45,6 +57,10 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		global $fmc_api;
 		global $fmc_special_page_caught;
 		global $fmc_plugin_url;
+		
+		//david debug
+		//var_dump($fmc_api->last_error_code);
+		//var_dump($fmc_api->last_error_mess);			
 		
 		if ($this->listing_data == null) {
 			return "<p>The listing you requested is no longer available.</p>";
@@ -426,6 +442,14 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		  // Share and Print buttons
 			echo "		  <button class='print_click' onclick='flexmls_connect.print(this);'><img src='{$fmc_plugin_url}/images/print.png'align='absmiddle' /> Print</button>\n";
 			
+			$api_my_account = $fmc_api->GetMyAccount();
+			
+			if ($api_my_account['Name'] && $api_my_account['Emails'][0]['Address']) {
+  			echo "		  <button class='flexmls_connect__schedule_showing_click' onclick=\"flexmls_connect.scheduleShowing('{$sf['ListingKey']}','{$one_line_address} - MLS# {$sf['ListingId']}','".htmlspecialchars ($api_my_account['Name'])."','{$api_my_account['Emails'][0]['Address']}');\"><img src='{$fmc_plugin_url}/images/showing.png'align='absmiddle' /> Schedule a Showing</button>\n";
+			}
+			
+			echo "<div style='display:none;color:green;font-weight:bold;text-align:center;padding:10px' id='flexmls_connect__success_message'></div>";
+			
 		echo "  </div>\n";
 		
 		echo "  <hr class='flexmls_connect__sr_divider'>\n";
@@ -656,8 +680,9 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		}
 		echo "</table>\n";
 		echo "<br><br>\n\n";
-		
-		
+
+		$room_fields = $fmc_api->GetRoomFields($sf['MlsId']);
+
 		// build the Room Information portion of the page
 		$room_information_values = array();
 		if ( count($sf['Rooms'] > 0) ) {
@@ -669,14 +694,23 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 				
 				foreach ($r['Fields'] as $rf) {
 					foreach ($rf as $rfk => $rfv) {
-						if ($rfk == "Room Name") {
+
+						$label = null;
+						if (is_array($room_fields) && array_key_exists($rfk, $room_fields)) {
+							// since the given name is a key found in the metadata, use the metadata label for it
+							$label = $room_fields[$rfk]['Label'];
+						}	else {
+							$label = $rfk;
+						}
+
+						if ($label == "Room Name") {
 							$this_name = $rfv;
 						}
-						if ($rfk == "Room Level") {
+						if ($label == "Room Level") {
 							$this_level = $rfv;
 						}
 					}
-				}
+				}		
 				
 				if ($this_name != null and $this_level != null) {
 					$room_information_values[] = array(
@@ -761,12 +795,14 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 	function browse_next_url() {
 		$link_criteria = $this->search_criteria;
 		$link_criteria['id'] = $this->listing_data['StandardFields']['ListingId'];
+		$link_criteria['m'] = $this->listing_data['StandardFields']['MlsId'];
 		return flexmlsConnect::make_nice_tag_url('next-listing', $link_criteria);
 	}
 	
 	function browse_previous_url() {
 		$link_criteria = $this->search_criteria;
 		$link_criteria['id'] = $this->listing_data['StandardFields']['ListingId'];
+		$link_criteria['m'] = $this->listing_data['StandardFields']['MlsId'];
 		return flexmlsConnect::make_nice_tag_url('prev-listing', $link_criteria);
 	}
 

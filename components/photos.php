@@ -210,6 +210,7 @@ class fmcPhotos extends fmcWidget {
 		}
 
 		$params['_filter'] = implode(" And ", $filter_conditions);
+		$params['_select'] = 'ListPrice,ListOfficeId,ListOfficeName,OpenHouses,BedsTotal,BathsTotal,BuildingAreaTotal,ListingKey,Photos,ListingId,SubdivisionName,PublicRemarks,StreetNumber,StreetDirPrefix,StreetName,StreetSuffix,StreetDirSuffix,StreetAdditionalInfo,City,StateOrProvince,PostalCode';
 		
 
 		$only_our_listings = false;

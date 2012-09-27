@@ -180,7 +180,7 @@ class fmcSearch extends fmcWidget {
 		  $property_type_return .= "<div class='label'>Property Type</div>";
 		  $property_type_return .= "<select name='PropertyType' class='property-type' size='1'>";
 			foreach ($good_prop_types as $type) {
-				$property_type_return .= "\t\t<option value='{$type}'>". flexmlsConnect::nice_property_type_label($type) ."</option>\n";
+				$property_type_return .= "\t\t<option value='{$type}' ".($_GET["PropertyType"]==$type?" selected":"").">". flexmlsConnect::nice_property_type_label($type) ."</option>\n";
 			}
 		  $property_type_return .= "</select>";
 		}
@@ -230,9 +230,9 @@ class fmcSearch extends fmcWidget {
   			if ( $fi == "list_price" ) {
   				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Price'>\n";
   				$return .= "  <div class='label'><label for='MinPrice'>Price Range</label></div>\n";
-  				$return .= "  <input type='text' class='text left_float' name='MinPrice' id='{$rand}-MinPrice' data-connect-default='Min' onChange=\"this.value =  this.value.replace(/,/g,'').replace(/\\\$/g,'')\" />\n";
+  				$return .= "  <input type='text' class='text left_float' value='".($_GET["MinPrice"]?$_GET["MinPrice"]:"")."' name='MinPrice' id='{$rand}-MinPrice' data-connect-default='Min' onChange=\"this.value =  this.value.replace(/,/g,'').replace(/\\\$/g,'')\" />\n";
   				$return .= "  <label for='MaxPrice'>to</label>\n";
-  				$return .= "  <input type='text' class='text right_float' name='MaxPrice' id='{$rand}-MaxPrice' data-connect-default='Max' onChange=\"this.value =  this.value.replace(/,/g,'').replace(/\\\$/g,'')\" />\n";
+  				$return .= "  <input type='text' class='text right_float' value='".($_GET["MaxPrice"]?$_GET["MaxPrice"]:"")."' name='MaxPrice' id='{$rand}-MaxPrice' data-connect-default='Max' onChange=\"this.value =  this.value.replace(/,/g,'').replace(/\\\$/g,'')\" />\n";
   				$return .= "</div>\n";
   				$search_fields[] = "ListPrice";
   			}
@@ -240,9 +240,9 @@ class fmcSearch extends fmcWidget {
   			if ( $fi == "beds" ) {
   				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Beds'>\n";
   				$return .= "  <div class='label'><label for='MinBeds'>Bedrooms</label></div>\n";
-  				$return .= "  <input type='text' class='text left_float' name='MinBeds' id='{$rand}-MinBeds' data-connect-default='Min' />\n";
+  				$return .= "  <input type='text' class='text left_float' value='".($_GET["MinBeds"]?$_GET["MinBeds"]:"")."' name='MinBeds' id='{$rand}-MinBeds' data-connect-default='Min' />\n";
   				$return .= "  <label for='MaxBeds'>to</label>\n";
-  				$return .= "  <input type='text' class='text right_float' name='MaxBeds' id='{$rand}-MaxBeds' data-connect-default='Max' />\n";
+  				$return .= "  <input type='text' class='text right_float' value='".($_GET["MaxBeds"]?$_GET["MaxBeds"]:"")."' name='MaxBeds' id='{$rand}-MaxBeds' data-connect-default='Max' />\n";
   				$return .= "</div>\n";
   				$search_fields[] = "BedsTotal";
   			}
@@ -250,9 +250,9 @@ class fmcSearch extends fmcWidget {
   			if ( $fi == "baths" ) {
   				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Baths'>\n";
   				$return .= "  <div class='label'><label for='MinBaths'>Bathroom</label></div>\n";
-  				$return .= "  <input type='text' class='text left_float' name='MinBaths' id='{$rand}-MinBaths' data-connect-default='Min' />\n";
+  				$return .= "  <input type='text' class='text left_float' value='".($_GET["MinBaths"]?$_GET["MinBaths"]:"")."' name='MinBaths' id='{$rand}-MinBaths' data-connect-default='Min' />\n";
   				$return .= "  <label for='MaxBaths'>to</label>\n";
-  				$return .= "  <input type='text' class='text right_float' name='MaxBaths' id='{$rand}-MaxBaths' data-connect-default='Max' />\n";
+  				$return .= "  <input type='text' class='text right_float' value='".($_GET["MaxBaths"]?$_GET["MaxBaths"]:"")."' name='MaxBaths' id='{$rand}-MaxBaths' data-connect-default='Max' />\n";
   				$return .= "</div>\n";
   				$search_fields[] = "BathsTotal";
   			}
@@ -260,9 +260,9 @@ class fmcSearch extends fmcWidget {
   			if ( $fi == "square_footage" ) {
   				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='SqFt'>\n";
   				$return .= "  <div class='label'><label for='MinSqFt'>Square Feet</label></div>\n";
-  				$return .= "  <input type='text' class='text left_float' name='MinSqFt' id='{$rand}-MinSqFt' data-connect-default='Min' />\n";
+  				$return .= "  <input type='text' class='text left_float' value='".($_GET["MinSqFt"]?$_GET["MinSqFt"]:"")."' name='MinSqFt' id='{$rand}-MinSqFt' data-connect-default='Min' />\n";
   				$return .= "  <label for='MaxSqFt'>to</label>\n";
-  				$return .= "  <input type='text' class='text right_float' name='MaxSqFt' id='{$rand}-MaxSqFt' data-connect-default='Max' />\n";
+  				$return .= "  <input type='text' class='text right_float' value='".($_GET["MaxSqFt"]?$_GET["MaxSqFt"]:"")."' name='MaxSqFt' id='{$rand}-MaxSqFt' data-connect-default='Max' />\n";
   				$return .= "</div>\n";
   				$search_fields[] = "BuildingAreaTotal";
   			}
@@ -270,9 +270,9 @@ class fmcSearch extends fmcWidget {
   			if ( $fi == "age" ) {
   				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Year'>\n";
   				$return .= "  <div class='label'><label for='MinYear'>Year Built</label></div>\n";
-  				$return .= "  <input type='text' class='text left_float' name='MinYear' id='{$rand}-MinYear' data-connect-default='Min' />\n";
+  				$return .= "  <input type='text' class='text left_float' value='".($_GET["MinYear"]?$_GET["MinYear"]:"")."' name='MinYear' id='{$rand}-MinYear' data-connect-default='Min' />\n";
   				$return .= "  <label for='MaxYear'>to</label>\n";
-  				$return .= "  <input type='text' class='text right_float' name='MaxYear' id='{$rand}-MaxYear' data-connect-default='Max' />\n";
+  				$return .= "  <input type='text' class='text right_float' value='".($_GET["MaxYear"]?$_GET["MaxYear"]:"")."' name='MaxYear' id='{$rand}-MaxYear' data-connect-default='Max' />\n";
   				$return .= "</div>\n";
   				$search_fields[] = "YearBuilt";
   			}

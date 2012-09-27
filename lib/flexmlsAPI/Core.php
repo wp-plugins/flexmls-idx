@@ -212,6 +212,9 @@ class flexmlsAPI_Core {
 				'post_data' => $post_data
 		);
 		
+		//print_r( $params);
+		//print_r( $post_data);
+		
 		// delegate to chosen authentication method for necessary changes to request
 		$this->sign_request(&$request);
 				
@@ -601,6 +604,13 @@ class flexmlsAPI_Core {
 		return $this->return_all_results( $this->MakeAPICall("GET", "standardfields", '24h') );
 	}
 	
+  function GetStandardField($field) {
+		return $this->return_all_results( $this->MakeAPICall("GET", "standardfields/".$field, '24h') );
+	}	
+	
+	function GetStandardFieldByMls($field, $mls) {
+		return $this->return_all_results( $this->MakeAPICall("GET", "mls/".$mls."/standardfields/".$field, '24h') );
+	}	
 	
 	/*
 	 * Custom Fields services
@@ -619,8 +629,13 @@ class flexmlsAPI_Core {
 		return $this->return_first_result( $this->MakeAPICall("GET", "system", '24h') );
 	}
 	
-	
-	
+	function GetRoomFields($mls) {
+		return $this->return_first_result( $this->MakeAPICall("GET", "mls/".$mls."/rooms", '24h') );
+	}		
+
+	function GetUnitFields($mls) {
+		return $this->return_first_result( $this->MakeAPICall("GET", "mls/".$mls."/units", '24h') );
+	}		
 	
 	
 }

@@ -18,9 +18,25 @@ class fmcListingDetails extends fmcWidget {
 		// register where the AJAX calls should be routed when they come in
 		add_action('wp_ajax_'.get_class($this).'_shortcode', array(&$this, 'shortcode_form') );
 		add_action('wp_ajax_'.get_class($this).'_shortcode_gen', array(&$this, 'shortcode_generate') );
-		
+    
+		add_action('wp_ajax_'.get_class($this).'_schedule_showing', array(&$this, 'schedule_showing') );
+		add_action('wp_ajax_nopriv_'.get_class($this).'_schedule_showing', array(&$this, 'schedule_showing') );
+    
 	}
 
+	function schedule_showing($attr = array()) {
+    try {
+      if(filter_var(flexmlsConnect::wp_input_get_post('flexmls_connect__from'), FILTER_VALIDATE_EMAIL) === FALSE) {
+        throw new Exception("From e-mail is invalid");
+      }      
+      $headers = 'From: '. flexmlsConnect::wp_input_get_post('flexmls_connect__from') . "\r\n";
+      $message = flexmlsConnect::wp_input_get_post('flexmls_connect__message') . "\r\n\r\n". flexmlsConnect::wp_input_get_post('flexmls_connect__from_name');
+      wp_mail(flexmlsConnect::wp_input_get_post('flexmls_connect__to'), flexmlsConnect::wp_input_get_post('flexmls_connect__subject'), $message, $headers);
+    	die("SUCCESS");
+    } catch(Exception $e) {
+      die('There was an error sending the e-mail: ' .$e->getMessage());
+    }
+	}
 
 	function jelly($args, $settings, $type) {
 		

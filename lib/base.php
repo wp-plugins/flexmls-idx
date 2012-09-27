@@ -1402,7 +1402,10 @@ class flexmlsConnect {
 
 	static public function gentle_price_rounding($val) {
 		// check if the value has decimal places and if those aren't just zeros
-
+    
+    if ( !flexmlsConnect::is_not_blank_or_restricted($val) ) 
+      return "";
+    
 		if ( strpos($val, '.') !== false ) {
 			// has a decimal
 			$places = explode(".", $val);

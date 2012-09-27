@@ -21,7 +21,9 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		
 		$this->search_criteria = $cleaned_raw_criteria;
 		
-		
+		//david debug
+	  //print_r($params);
+	  
 		if ($context == "listings") {
 			$results = $fmc_api->GetMyListings($params);
 		}
@@ -112,6 +114,14 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		
 		$result_count = 0;
 		
+		//david debug
+		//var_dump($this->search_data);
+		//echo "<br>";
+		//var_dump($fmc_api->last_error_code);
+		//echo "<br>";
+		//var_dump($fmc_api->last_error_mess);
+		//echo "<br>";
+		
 		foreach ($this->search_data as $record) {
 			$result_count++;
 			
@@ -124,14 +134,18 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 			
 			$this_result_overall_index = ($this->page_size * ($this->current_page - 1)) + $result_count;
 
+      $sf =& $record['StandardFields'];
+
 			// figure out if there's a previous listing
 			$link_to_details_criteria['p'] = ($this_result_overall_index != 1) ? 'y' : 'n';
+			
+			$link_to_details_criteria['m'] = $sf['MlsId'];
 			
 			// figure out if there's a next listing possible
 			$link_to_details_criteria['n'] = ( $this_result_overall_index < $this->total_rows ) ? 'y' : 'n';
 				
 			$link_to_details = flexmlsConnect::make_nice_address_url($record, $link_to_details_criteria);
-			$sf =& $record['StandardFields'];
+			
 			$rand = mt_rand();
 			
 			
