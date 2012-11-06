@@ -3,7 +3,7 @@ Tags: flexmls, IDX, MLS search
 Contributors: flexmls
 Requires at least: 3.0.0
 Tested up to: 3.3.1
-Stable tag: 3.1
+Stable tag: 3.1.1
 
 Add flexmls IDX listings, market statistics, IDX searches, and a contact form on your web site.
 
@@ -29,7 +29,7 @@ Examples and documentation for the widgets can be found [here](http://www.flexml
 
 The easiest way to install the plugin is to use the Add New Plugins function within WordPress and search for flexmls IDX.
 
-Otherwise: 
+Otherwise:
 
 1. Upload the unzipped `flexmls-connect` folder to the `/wp-content/plugins/` directory
 1. Activate the plugin through the 'Plugins' menu in WordPress
@@ -55,6 +55,10 @@ Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a hre
 
 
 == Changelog ==
+
+= 3.1.1 =
+
+* Add MLS Area (minor) to location searching
 
 = 3.1 =
 
@@ -143,7 +147,7 @@ Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a hre
 * Fixed some issues with the recent change to IDX link pagination
 
 
-= 2.4.2 = 
+= 2.4.2 =
 
 * Fix for slideshow's missing/broken pagination
 
