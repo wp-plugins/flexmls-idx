@@ -59,8 +59,8 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		global $fmc_plugin_url;
 		global $fmc_search_results_loaded;
 		
-		if ($fmc_search_results_loaded) {
-			return false;
+		if ($fmc_search_results_loaded and !flexmlsConnect::allowMultipleLists()) {
+			return '<!-- flexmls-idx blocked duplicate search results widget on page -->';
 		}
 		$fmc_search_results_loaded = true;
     

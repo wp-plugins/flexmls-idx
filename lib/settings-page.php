@@ -43,6 +43,7 @@ class flexmlsConnectSettings {
 			add_settings_field('fmc_default_titles', 'Use Default Widget Titles', array('flexmlsConnectSettings', 'settings_field_default_titles') , 'flexmls_connect', 'fmc_settings_plugin');
 			add_settings_field('fmc_neigh_template', 'Neighborhood Page Template', array('flexmlsConnectSettings', 'settings_field_neigh_template') , 'flexmls_connect', 'fmc_settings_plugin');
 			add_settings_field('fmc_contact_notifications', 'When a new lead is created', array('flexmlsConnectSettings', 'settings_field_contact_notifications') , 'flexmls_connect', 'fmc_settings_plugin');
+			add_settings_field('fmc_multiple_summaries', 'Multiple summary lists', array('flexmlsConnectSettings', 'settings_field_multiple_summaries') , 'flexmls_connect', 'fmc_settings_plugin');
 
 			add_settings_section('fmc_settings_linking', '<br/>Linking', array('flexmlsConnectSettings', 'settings_overview_linking') , 'flexmls_connect');
 			add_settings_field('fmc_default_link', 'Default IDX Link', array('flexmlsConnectSettings', 'settings_field_default_link') , 'flexmls_connect', 'fmc_settings_linking');
@@ -182,6 +183,13 @@ class flexmlsConnectSettings {
 			else {
 				$options['contact_notifications'] = false;
 			}
+
+            if ($input['multiple_summaries'] == "y") {
+                $options['multiple_summaries'] = true;
+            }
+            else {
+                $options['multiple_summaries'] = false;
+            }
 
 			$property_types = explode(",", $input['property_types']);
 			foreach ($property_types as $pt) {
@@ -425,6 +433,23 @@ class flexmlsConnectSettings {
 		echo "<label><input type='radio' name='fmc_settings[contact_notifications]' value='n'{$checked_no} /> Don't send any notification</label><br />\n";
 		
 	}
+
+    function settings_field_multiple_summaries() {
+   		$options = get_option('fmc_settings');
+
+   		$checked_code = " checked='checked'";
+
+   		if (array_key_exists('multiple_summaries', $options) and $options['multiple_summaries'] === true) {
+   			$checked_yes = $checked_code;
+   		}
+   		else {
+   			$checked_no = $checked_code;
+   		}
+
+
+   		echo "<label><input type='checkbox' name='fmc_settings[multiple_summaries]' value='y'{$checked_yes} /> Allow multiple lists per page</label> &nbsp; ";
+
+   	}
 
 
 	function settings_helpful_proptypes() {

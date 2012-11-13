@@ -1385,6 +1385,17 @@ class flexmlsConnect {
 
     return $rgb;
   }
+
+    public static function allowMultipleLists() {
+        $options = get_option('fmc_settings');
+
+        if (array_key_exists('multiple_summaries', $options)) {
+            if ($options['multiple_summaries']) {
+                return true;
+            }
+        }
+        return false;
+    }
 	
 	
 	static function nice_property_type_label($abbrev) {
