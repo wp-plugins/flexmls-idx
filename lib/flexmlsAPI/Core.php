@@ -612,14 +612,29 @@ class flexmlsAPI_Core {
 		return $this->return_all_results( $this->MakeAPICall("GET", "mls/".$mls."/standardfields/".$field, '24h') );
 	}	
 	
+	function GetStandardFieldsPlusHasList() {
+	  $stan = $this->GetStandardFields();
+	  $stan = $stan[0];
+	  foreach ($stan as $key => $s) {
+	    if ($s["HasList"]==1) {
+	      $fielddata = $this->GetStandardField($key);
+	      $stan[$key]["HasListValues"] =  $fielddata[0][$key]["FieldList"];
+	    }
+	  }
+	  return $stan;
+	}
+	
 	/*
 	 * Custom Fields services
 	 */
 	
-	function GetCustomFields($prop_type) {
-		return $this->return_all_results( $this->MakeAPICall("GET", "customfields/".$prop_type, '24h') );
+	function GetCustomFields() {
+		return $this->return_all_results( $this->MakeAPICall("GET", "customfields", '24h') );
 	}
 	
+	function GetCustomField($field) {
+		return $this->return_all_results( $this->MakeAPICall("GET", "customfields/".rawurlencode($field), '24h') );
+	}
 	
 	/*
 	 * System Info services

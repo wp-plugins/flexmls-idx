@@ -58,6 +58,8 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		global $fmc_special_page_caught;
 		global $fmc_plugin_url;
 		
+		echo "<style>.no_meta_data {display:none; width:1px; height:1px;}</style>";
+		
 		//david debug
 		//var_dump($fmc_api->last_error_code);
 		//var_dump($fmc_api->last_error_mess);			
@@ -66,6 +68,58 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			return "<p>The listing you requested is no longer available.</p>";
 		}
 		
+		$standard_fields_plus = $fmc_api->GetStandardFieldsPlusHasList();
+		$custom_fields = $fmc_api->GetCustomFields();
+		
+		$mls_fields_to_suppress = array(
+		  'ListingKey',
+		  'ListingContractDate',
+		  'ListingId',
+		  'ListingPrefix',
+		  'ListingNumber',
+		  'ModificationTimestamp',
+		  'Latitude',
+		  'Longitude',
+		  'ListAgentId',
+		  'ListOfficeId',
+		  'MlsId',
+		  'StandardStatus',
+		  'PermitInternetYN',
+		  'ListCompanyId',
+		  'UnparsedAddress',
+		  'OnMarketDate',
+		  'PriceChangeTimestamp',
+		  'MajorChangeTimestamp',
+		  'MajorChangeType',
+		  'ListAgentUserType',
+		  'ListOfficeUserType',
+		  'ListAgentFirstName',
+		  'ListAgentMiddleName',
+		  'ListAgentLastName',
+		  'ListAgentEmail',
+		  'ListAgentStateLicense',
+		  'ListAgentPreferredPhone',
+		  'ListAgentOfficePhone',
+		  'ListAgentDesignation',
+		  'ListOfficeName',
+		  'StreetNumber',
+		  'StreetName',
+		  'StreetDirPrefix',
+		  'PropertyClass',
+		  'StateOrProvince',
+		  'PostalCode',
+		  'City',
+		  'ApprovalStatus',
+		  'PublicRemarks',
+		  'ListAgentCellPhone',
+		  'ListAgentFax',
+		  'ListAgentURL',
+		  'CoListOfficeId',
+		  'CoListCompanyId',
+		  'StatusChangeTimestamp'
+		);
+		
+		//old hardcode list that is not spun anymore
 		$mls_property_detail_fields = array(
 		    'MLS#' => 'ListingId',
 		    'Status' => 'MlsStatus',
@@ -530,19 +584,41 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		echo "<div class='flexmls_connect__tab_group' id='flexmls_connect__detail_group'>";
 		$property_detail_values = array("Summary" => array());
 		
-		foreach ($mls_property_detail_fields as $k => $v) {
-			if ( array_key_exists($v, $sf) ) {
-				$this_val = $sf[$v];
+		foreach ($standard_fields_plus as $k => $v) {
+			if ( array_key_exists($k, $sf) && !in_array($k, $mls_fields_to_suppress)) {
+				$this_val = $sf[$k];
 				
 				if ($this_val === true) { $this_val = "Yes"; }
-				if (is_array($this_val)) { $this_val = implode("; ", array_keys($this_val)); }
-				
-				if ($v == "PropertyType") {
+
+				if ($k == "PropertyType") {
 					$this_val = flexmlsConnect::nice_property_type_label($this_val);
 				}
-				
+
+				if ($v['HasList']==1 && is_array($this_val)){
+				  $this_val_new = array();
+			    foreach ($this_val as $ki => $vii) {
+			      $foundone = false; //(11/19/2012 2:06:07 PM) Brandon M: It's official, if you don't have meta data, don't display the field at all.
+			      foreach ($v['HasListValues'] as $vi) {
+  			      if ($vi["Value"]==$ki) {
+  			        array_push($this_val_new, $vi["Name"]);
+  			        $foundone = true;
+  			      }
+			      } 
+			      if (!$foundone) {
+              $logurl = "http://gather.flexmls.com/?u={$sf['MlsId']}&d=MetaDataFail&e=standard field&t={$v['Label']}&l={$ki}";
+  			      echo "<img src=\"{$logurl}\" class='no_meta_data'>";
+  			    }  
+			    }
+				  $this_val = implode("; ", $this_val_new); 
+				} else if (is_array($this_val)) {
+          $logurl = "http://gather.flexmls.com/?u={$sf['MlsId']}&d=MetaDataFail&e=standard field value is array but has_list is not set&t={$v['Label']}&l={$this_val}";
+		      echo "<img src=\"{$logurl}\" class='no_meta_data'>";
+				  //have to blank it out cause value has an array but does not has_list
+				  $this_val = "";
+				}
+
 				if (flexmlsConnect::is_not_blank_or_restricted($this_val)) {
-				  $property_detail_values["Summary"][] = "<b>{$k}:</b>&nbsp; {$this_val}";
+				  $property_detail_values["Summary"][] = "<b>{$v['Label']}:</b>&nbsp; {$this_val}"; //({$k})
 			  }
 			}
 		}
@@ -577,9 +653,22 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
   				foreach ($two as $three) {
   					foreach ($three as $k => $v) {
   						if ( flexmlsConnect::is_not_blank_or_restricted($v) && is_bool($v) === false ) {
-  							$this_val = $v;
-  
-  							$property_detail_values[$property_headline_description][] = "<b>{$k}:</b> {$this_val}";
+  						  $this_val = "";
+  						  if ($custom_fields[0][$property_headline_description]["Fields"][$k]["HasList"]==1) {
+  						    $custom_field = $fmc_api->GetCustomField($k);
+    						  foreach ($custom_field[0][$k]["FieldList"] as $cfv) {
+    						    if ($cfv["Value"]==$v)
+    						      $this_val = $cfv["Name"];
+    						  }		
+    						  if ($this_val=="") {
+    						    $logurl = "http://gather.flexmls.com/?u={$sf['MlsId']}&d=MetaDataFail&e=custom main non boolean field&t={$k}&l={$v}";
+  			            echo "<img src=\"{$logurl}\" class='no_meta_data'>";
+    						  }  
+  						  } else {
+    							$this_val = $v;
+    						}
+                if ($this_val!="")
+  							  $property_detail_values[$property_headline_description][] = "<b>{$k}:</b> {$this_val}";
   						}
   					}
   				}
@@ -658,7 +747,12 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
   					foreach ($three as $name => $v) {
   						if ( flexmlsConnect::is_not_blank_or_restricted($v) && is_bool($v) === true ) {
   							if ($v === true) {
-  							  $this_feature[] = $name;
+  							  if ($custom_fields[0][$k]["Fields"][$name]["Label"]) {
+          			    $this_feature[] = $custom_fields[0][$k]["Fields"][$name]["Label"];
+          			  } else {
+          			    $logurl = "http://gather.flexmls.com/?u={$sf['MlsId']}&d=MetaDataFail&e=custom main boolean field&t={$k}&l={$v}";
+  			            echo "<img src=\"{$logurl}\" class='no_meta_data'>";
+          			  }  
   						  }
   						}
   					}
@@ -670,7 +764,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
   		}
 	  
 	  }			  
-		
+
 		echo "<div class='flexmls_connect__detail_header'>Property Features</div>\n";
 		echo "<table width='100%'>\n";
 		$index = 0;
@@ -770,8 +864,10 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			if (flexmlsConnect::mls_requires_agent_name_in_search_results() && flexmlsConnect::is_not_blank_or_restricted($sf['ListAgentFirstName']) && flexmlsConnect::is_not_blank_or_restricted($sf['ListAgentLastName'])) {
 				echo "<p>Listing Agent: {$sf['ListAgentFirstName']} {$sf['ListAgentLastName']}</p>\n";
 			}
-			
+			echo "<p>";
 			echo flexmlsConnect::get_big_idx_disclosure_text();
+			echo "</p>\n";
+			echo "<p>Prepared on ".date('l jS \of F Y \a\t h:i A')."</p>\n";
 			echo "</div>\n\n";
 		}
 		
