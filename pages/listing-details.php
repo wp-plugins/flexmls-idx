@@ -504,6 +504,8 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
   		// show top address details
   		echo "{$first_line_address}<br>\n";
   		echo "{$second_line_address}<br>\n";
+  		
+  		echo "MLS# {$sf['ListingId']}<br>\n";
 
   		// show under address details (beds, baths, etc.)
   		$under_address_details = array();
