@@ -504,7 +504,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
   		// show top address details
   		echo "{$first_line_address}<br>\n";
   		echo "{$second_line_address}<br>\n";
-  		
+
   		echo "MLS# {$sf['ListingId']}<br>\n";
 
   		// show under address details (beds, baths, etc.)
@@ -886,7 +886,11 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			echo "<p>";
 			echo flexmlsConnect::get_big_idx_disclosure_text();
 			echo "</p>\n";
-			echo "<p>Prepared on ".date('l jS \of F Y \a\t h:i A')."</p>\n";
+
+      // make sure the timezone is set properly
+      date_default_timezone_set(get_option('timezone_string'));
+      echo "<p>This data was last updated on ".date('l jS \of F Y \a\t h:i A')."</p>\n";
+
 			echo "</div>\n\n";
 		}
 
