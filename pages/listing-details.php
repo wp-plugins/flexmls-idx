@@ -493,6 +493,13 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		$second_line_address = htmlspecialchars($listing_address[1]);
 		$one_line_address = htmlspecialchars($listing_address[2]);
 
+    // RVA HAS SILLY BUSINESS RULES
+    //if RVA then add MLSStatus to list of fields to suppress
+    if ($sf['MlsId'] === "20051230194116769413000000") {
+      array_push($mls_fields_to_suppress, "MlsStatus");
+    }
+
+
 		// begin
 		echo "<div class='flexmls_connect__sr_detail' title='{$one_line_address} - MLS# {$sf['ListingId']}'>\n";
 		echo "  <img src='{$sf['Photos'][0]['UriLarge']}' class='flexmls_connect__resize_image' />\n";
