@@ -1,14 +1,14 @@
 <?php
 
 class flexmlsConnectPageCore {
-	
+
 	public $input_data = array();
 	public $input_source = 'page';
-	
-	
+
+
 	protected function parse_search_parameters_into_api_request() {
 		global $fmc_api;
-	
+
 		// pull StandardFields from the API to verify searchability prior to searching
 		$result = $fmc_api->GetStandardFields();
 		$this->standard_fields = $result[0];
@@ -22,6 +22,8 @@ class flexmlsConnectPageCore {
 
 		// add in special fields
 		$searchable_fields[] = 'SavedSearch';
+		$searchable_fields[] = 'StreetAddress';
+		$searchable_fields[] = 'MapOverlay';
 
 		// start catching and building API search criteria
 		$search_criteria = array();
@@ -72,7 +74,7 @@ class flexmlsConnectPageCore {
 						'operator' => 'Eq',
 						'field' => 'StreetAddress',
 						'allow_or' => true
-				),				
+				),
 				array(
 						'input' => 'PostalCode',
 						'operator' => 'Eq',
@@ -141,14 +143,14 @@ class flexmlsConnectPageCore {
 						'field' => 'MLSAreaMinor'
 				),
 		);
-		
+
 		$possible_api_parameters = array('HotSheet','OpenHouses');
 
 		$cleaned_raw_criteria = array();
 
 		// used to track how many field values are provided for each field
 		$field_value_count = array();
-		
+
 		// pluck out values from GET or POST
 		foreach ($catch_fields as $f) {
 
@@ -166,7 +168,7 @@ class flexmlsConnectPageCore {
 				continue;
 			}
 
-			if ( !in_array($f['field'], $searchable_fields) && $f['field'] != "StreetAddress") {
+			if ( !in_array($f['field'], $searchable_fields) ) {
 				// field would usually be OK but it's not searchable for this user
 				continue;
 			}
@@ -211,35 +213,35 @@ class flexmlsConnectPageCore {
 
 			$search_criteria[] = $condition;
 		}
-    
+
     /*
     //attempt at cross mls for WP-139, removing for now
-    $db2only = false;		
+    $db2only = false;
     $subdivused = false;
     $postalused = false;
     $stateused = false;
 		foreach ($search_criteria as $sc) {
-		  if (strrpos($sc, "MapOverlay")!==false || 
-		      strrpos($sc, "ListingCart")!==false || 
-		      strrpos($sc, "SavedSearch")!==false || 
+		  if (strrpos($sc, "MapOverlay")!==false ||
+		      strrpos($sc, "ListingCart")!==false ||
+		      strrpos($sc, "SavedSearch")!==false ||
 		      strrpos($sc, "IdxParam")!==false ||
 		      strrpos($sc, "EmailLink")!==false) {
-		     $db2only = true;    
-		  }  
+		     $db2only = true;
+		  }
 		  if (strrpos($sc, "SubdivisionName")!==false) {
 		    $subdivused = true;
-		  }  
+		  }
 		  if (strrpos($sc, "StateOrProvince")!==false) {
 		    $stateused = true;
-		  }  
+		  }
 		  if (strrpos($sc, "PostalCode")!==false) {
 		    $postalused = true;
-		  }  		  
+		  }
     }
 		//print_r($search_criteria);
 		//echo "<BR>";
 		//echo "<BR>";
-		
+
     $mlss = $fmc_api->GetStandardField('MlsId');
     $mlss = $mlss[0]['MlsId']['FieldList'];
 
@@ -252,10 +254,10 @@ class flexmlsConnectPageCore {
 			if ($m["Value"] != null) {
         $mlssd = $fmc_api->GetStandardFieldByMls('SubdivisionName',$m["Value"]);
         $mlssz = $fmc_api->GetStandardFieldByMls('PostalCode',$m["Value"]);
-        $mlssp = $fmc_api->GetStandardFieldByMls('StateOrProvince',$m["Value"]);			  
-			  if (($subdivused && $mlssd[0]['SubdivisionName']['Searchable']==1 || !$subdivused) && 
-			      ($postalused && $mlssz[0]['PostalCode']['Searchable']==1 || !$postalused) &&  
-			      ($stateused && $mlssp[0]['StateOrProvince']['Searchable']==1 || !$stateused) 
+        $mlssp = $fmc_api->GetStandardFieldByMls('StateOrProvince',$m["Value"]);
+			  if (($subdivused && $mlssd[0]['SubdivisionName']['Searchable']==1 || !$subdivused) &&
+			      ($postalused && $mlssz[0]['PostalCode']['Searchable']==1 || !$postalused) &&
+			      ($stateused && $mlssp[0]['StateOrProvince']['Searchable']==1 || !$stateused)
 			     ) {
             if ($dum!=0)
     			    $mlscond .= ",";
@@ -263,9 +265,9 @@ class flexmlsConnectPageCore {
     			  $dum++;
   			}
 			}
-		}    
+		}
 		$mlscond .= ")";
-		
+
 		//print_r($mlscond);
 		//echo "<BR>";
 		//echo "<BR>";
@@ -278,7 +280,7 @@ class flexmlsConnectPageCore {
 		//echo "<BR>";
 		//echo "<BR>";
 		*/
-		
+
 		// check for ListAgentId
 		$list_agent_id = $this->fetch_input_data('ListAgentId');
 		if ($list_agent_id != null) {
@@ -296,10 +298,10 @@ class flexmlsConnectPageCore {
 		if (!empty($context)) {
 			$cleaned_raw_criteria['My'] = $context;
 		}
-		
+
 		$desired_orderby = $this->fetch_input_data('OrderBy');
 		$orderby = ( !empty($desired_orderby) ) ? $desired_orderby : "-ListPrice";
-		
+
 		$desired_limit = $this->fetch_input_data('Limit');
 		$limit = ($desired_limit) ? $desired_limit : 10;
 		if ($limit != 10) {
@@ -314,12 +316,12 @@ class flexmlsConnectPageCore {
 				'_page' => $pg,
 				'_expand' => 'Photos,Videos,VirtualTours,OpenHouses'
 		);
-		
+
 		if ($orderby !== null and $orderby != 'natural') {
 			$params['_orderby'] = $orderby;
 		}
 		$cleaned_raw_criteria['OrderBy'] = $orderby;
-		
+
 		foreach ($possible_api_parameters as $p) {
 			$v = $this->fetch_input_data($p);
 			if ($v != null) {
@@ -327,15 +329,15 @@ class flexmlsConnectPageCore {
 				$cleaned_raw_criteria[$p] = $v;
 			}
 		}
-		
+
 		return array($params, $cleaned_raw_criteria, $context);
-		
+
 	}
-	
-	
-	
+
+
+
 	function fetch_input_data($key) {
-	
+
 		if ($this->input_source == 'shortcode') {
 			// pull values from $this->input_data rather than $_REQUEST
 			return ( array_key_exists($key, $this->input_data) ) ? $this->input_data[$key] : null;
@@ -343,67 +345,67 @@ class flexmlsConnectPageCore {
 		else {
 			return flexmlsConnect::wp_input_get_post($key);
 		}
-		
+
 	}
-	
-	
-	
+
+
+
 	function get_browse_redirects() {
 		global $fmc_api;
-		
+
 		$last_page = flexmlsConnect::wp_input_get('pg');
-		
+
 		if ($last_page > 1) {
 			$this->build_browse_list( $last_page - 1 );
 		}
-		
+
 		$this->build_browse_list( flexmlsConnect::wp_input_get('pg') );
-		
+
 		if ($no_more == false) {
 			$this->build_browse_list( flexmlsConnect::wp_input_get('pg') + 1 );
 		}
-		
-		
+
+
 		$last_listing = flexmlsConnect::wp_input_get('id');
 		$this_listings_index = null;
-		
+
 		foreach ($this->browse_list as $bl) {
 			if ($bl['ListingId'] == $last_listing) {
 				$this_listings_index = $bl['Index'];
 			}
 		}
-		
+
 		if ( array_key_exists((string) $this_listings_index-1, $this->browse_list) ) {
 			$previous_listing_url = $this->browse_list[(string) $this_listings_index-1]['Uri'];
 		}
 		if ( array_key_exists((string) $this_listings_index+1, $this->browse_list) ) {
 			$next_listing_url = $this->browse_list[(string) $this_listings_index+1]['Uri'];
 		}
-		
+
 		if (flexmlsConnect::wp_input_get('m')) {
   		$previous_listing_url .= "&m=".flexmlsConnect::wp_input_get('m');
   		$next_listing_url .= "&m=".flexmlsConnect::wp_input_get('m');
   	}
-		
+
 		return array($previous_listing_url, $next_listing_url);
-		
+
 	}
-	
-	
+
+
 	function build_browse_list($pg) {
 		global $fmc_api;
-		
+
 		// parse passed parameters for browsing capability
 		list($params, $cleaned_raw_criteria, $context) = $this->parse_search_parameters_into_api_request();
-		
+
 		// cut out pieces we don't want
 		$modified_params = $params;
 		$modified_raw_criteria = $cleaned_raw_criteria;
-		
+
 		unset($modified_params['_expand']);
 		$modified_params['_page'] = $pg;
 		$modified_raw_criteria['pg'] = $pg;
-				
+
 		if ($context == "listings") {
 			$results = $fmc_api->GetMyListings($modified_params);
 		}
@@ -416,34 +418,34 @@ class flexmlsConnectPageCore {
 		else {
 			$results = $fmc_api->GetListings($modified_params);
 		}
-		
+
 		$result_count = 0;
 		foreach ($results as $record) {
 			$result_count++;
-			
+
 			$this_result_overall_index = ($fmc_api->page_size * ($fmc_api->current_page - 1)) + $result_count;
-			
+
 			$link_to_details_criteria = $modified_raw_criteria;
 			// figure out if there's a previous listing
 			$link_to_details_criteria['p'] = ($this_result_overall_index != 1) ? 'y' : 'n';
-			
+
 			// figure out if there's a next listing possible
 			$link_to_details_criteria['n'] = ( $this_result_overall_index < $fmc_api->last_count ) ? 'y' : 'n';
-			
+
 			if ($link_to_details_criteria['n'] == 'n') {
 				$this->no_more = true;
 			}
-				
+
 			$this->browse_list[(string) $this_result_overall_index] = array(
 			    'Index' => $this_result_overall_index,
 			    'Id' => $record['Id'],
 			    'ListingId' => $record['StandardFields']['ListingId'],
 			    'Uri' => flexmlsConnect::make_nice_address_url($record, $link_to_details_criteria)
 			);
-			
+
 		}
-		
+
 	}
-		
-	
+
+
 }
