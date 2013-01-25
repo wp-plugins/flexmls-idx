@@ -2,31 +2,31 @@
 
 
 class flexmlsConnect {
-	
+
 
 	function __construct() {
-		
+
 	}
 
 
 	function initial_init() {
 		global $fmc_plugin_url;
 		global $fmc_api;
-		
+
 		// turn on PHP sessions handling if they aren't on already
 		if (!session_id()) {
 			session_start();
 		}
-		
+
 
 		if (!is_admin()) {
-			
+
 			// check if the user appears to be logged in.  if so, switch to OAuth mode
 			if ( array_key_exists('fmc_oauth_logged_in', $_SESSION) and $_SESSION['fmc_oauth_logged_in'] === true ) {
 				$temp_api = flexmlsConnect::new_oauth_client();
 				$temp_api->SetAccessToken($_SESSION['fmc_oauth_access_token']);
 				$temp_api->SetRefreshToken($_SESSION['fmc_oauth_refresh_token']);
-				
+
 				$ping = $temp_api->Ping();
 				if ($ping) {
 					// ping to the live API succeded so change API mode to OAuth for the rest of this process
@@ -37,7 +37,7 @@ class flexmlsConnect {
 					$_SESSION['fmc_oauth_logged_in'] = false;
 				}
 			}
-			
+
 			wp_enqueue_script('jquery');
 
 			wp_register_script('fmc_connect', $fmc_plugin_url .'/includes/connect.min.js', array('jquery'));
@@ -50,7 +50,7 @@ class flexmlsConnect {
 				wp_register_script('fmc_excanvas', $fmc_plugin_url .'/includes/excanvas.min.js');
 				wp_enqueue_script('fmc_excanvas');
 			}
-			
+
 		}
 		else {
 
@@ -65,7 +65,7 @@ class flexmlsConnect {
 
 			wp_register_style('fmc_jquery_ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.6/themes/ui-lightness/jquery-ui.css');
 			wp_enqueue_style('fmc_jquery_ui');
-			
+
 		}
 
 		wp_localize_script('fmc_connect', 'fmcAjax', array( 'ajaxurl' => admin_url('admin-ajax.php'), 'pluginurl' => $fmc_plugin_url ) );
@@ -74,7 +74,7 @@ class flexmlsConnect {
 
 		$options = get_option('fmc_settings');
 		add_rewrite_rule( $options['permabase'] .'/([^/]+)?' , 'index.php?plugin=flexmls-idx&fmc_tag=$matches[1]&page_id='. $options['destlink'] , 'top' );
-		
+
 	}
 
 
@@ -101,12 +101,12 @@ class flexmlsConnect {
 				}
 			}
 		}
-		
+
 		// register where the AJAX calls should be routed when they come in
 		add_action('wp_ajax_fmcShortcodeContainer', array('flexmlsConnect', 'shortcode_container') );
 
 	}
-	
+
 	function wp_init() {
 		// handle form submission actions from the plugin
 		if ( array_key_exists('fmc_do', $_POST) ) {
@@ -124,13 +124,13 @@ class flexmlsConnect {
 		$qvars[] = 'fmc_tag';
 		return $qvars;
 	}
-	
+
 
 	function plugin_deactivate() {
-		
+
 		flexmlsConnect::clear_temp_cache();
 		delete_transient('fmc_api');
-		
+
 	}
 
 
@@ -161,18 +161,18 @@ class flexmlsConnect {
 					);
 
 			add_option('fmc_settings', $options);
-			
+
 			add_option('fmc_cache_version', 1);
 
 		}
 		else {
 			// plugin is only be re-activated with previous settings.
-			
+
 			if ( !array_key_exists('permabase', $options) ) {
 				$options['permabase'] = 'idx';
 				update_option('fmc_settings', $options);
 			}
-			
+
 		}
 
 	}
@@ -354,7 +354,7 @@ class flexmlsConnect {
 		exit;
 	}
 
-	
+
 	// called to put the start of the form on the shortcode generator page
 	function shortcode_header() {
 		$return = "\n\n";
@@ -422,10 +422,10 @@ class flexmlsConnect {
 		if (is_array($args)) {
 			$return .= $args['after_widget'];
 		}
-		
+
 		return $return;
 	}
-	
+
 
 	function widget_missing_requirements($widget, $reqs_missing) {
 
@@ -469,7 +469,7 @@ class flexmlsConnect {
 		if (empty($show_link)) {
 			return;
 		}
-		
+
 		if (!empty($query_url)) {
 			$show_link = $query_url;
 		}
@@ -509,7 +509,7 @@ class flexmlsConnect {
 		else {
 			return true;
 		}
-		
+
 	}
 
 	function use_default_titles() {
@@ -532,7 +532,7 @@ class flexmlsConnect {
 
 
 	function make_destination_link($link, $as = 'url', $params = array()) {
-		
+
 		$extra_query_string = null;
 		if ( count($params) > 0 ) {
 			$extra_query_string = http_build_query($params);
@@ -602,7 +602,7 @@ class flexmlsConnect {
 		global $fmc_api;
 
 		$options = get_option('fmc_settings');
-		
+
 		if (array_key_exists('default_link', $options) && !empty($options['default_link'])) {
 			return $options['default_link'];
 		}
@@ -610,7 +610,7 @@ class flexmlsConnect {
 			$api_links = flexmlsConnect::get_all_idx_links();
 			return $api_links[0]['LinkId'];
 		}
-		
+
 	}
 
 	function get_idx_link_details($my_link) {
@@ -669,7 +669,7 @@ class flexmlsConnect {
 		}
 
 	}
-	
+
 	function ie_version() {
 		preg_match('/MSIE ([0-9]\.[0-9])/', $_SERVER['HTTP_USER_AGENT'], $reg);
 		if(!isset($reg[1])) {
@@ -678,8 +678,8 @@ class flexmlsConnect {
 			return floatval($reg[1]);
 		}
 	}
-	
-	
+
+
 	function clear_temp_cache() {
 		$count = get_option('fmc_cache_version');
 		if (empty($count)) {
@@ -809,7 +809,7 @@ class flexmlsConnect {
 		if (!$neigh_template_page_id) {
 			return false;
 		}
-		
+
 		$content = get_page($neigh_template_page_id);
 		return $content->post_content;
 
@@ -835,7 +835,7 @@ class flexmlsConnect {
 	}
 
 
-	function unescape_request_var($string) {	
+	function unescape_request_var($string) {
 		return stripslashes($string);
 	}
 
@@ -846,17 +846,17 @@ class flexmlsConnect {
 
 
 	static function wp_input_get($key) {
-		
+
 		if (isset($_GET) && is_array($_GET) && array_key_exists($key, $_GET)) {
 			return self::wp_input_clean($_GET[$key]);
 		}
 		else {
 			// parse the query string manually.  some kind of internal redirect
 			// or protection is keeping PHP from knowing what $_GET is
-			
+
 			$full_requested_url = (preg_match('/^HTTP\//', $_SERVER['SERVER_PROTOCOL'])) ? "http" : "https";
 			$full_requested_url .= "://". $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-			
+
 			$query_string = parse_url($full_requested_url, PHP_URL_QUERY);
 			$query_parts = explode("&", $query_string);
 			$manual = array();
@@ -877,8 +877,8 @@ class flexmlsConnect {
 			}
 		}
 	}
-	
-	
+
+
 	static function wp_input_post($key) {
 		if (isset($_POST) && is_array($_POST) && array_key_exists($key, $_POST)) {
 			return self::wp_input_clean($_POST[$key]);
@@ -887,33 +887,33 @@ class flexmlsConnect {
 			return null;
 		}
 	}
-	
-	
+
+
 	static function wp_input_get_post($key) {
 		$via_post = self::wp_input_post($key);
 		if ($via_post !== null) {
 			return $via_post;
 		}
-		
+
 		$via_get = self::wp_input_get($key);
 		if ($via_get !== null) {
 			return $via_get;
 		}
-		
+
 		return null;
 	}
-	
-	
+
+
 	static function wp_input_clean($string) {
-		
+
 		$string = stripslashes($string);
 		return $string;
-		
+
 	}
-	
-	
+
+
 	static function send_notification() {
-	
+
 		$options = get_option('fmc_settings');
 
 		if (!array_key_exists('contact_notifications', $options)) {
@@ -925,17 +925,17 @@ class flexmlsConnect {
 		else {
 			return false;
 		}
-		
+
 	}
-	
-	
+
+
 
 	static function format_listing_street_address($data) {
 
 		$listing = $data['StandardFields'];
 
 		$one_line_address = "{$listing['StreetNumber']} {$listing['StreetDirPrefix']} {$listing['StreetName']} ";
-		$one_line_address .= "{$listing['StreetSuffix']} {$listing['StreetDirSuffix']}";
+		$one_line_address .= "{$listing['StreetSuffix']} {$listing['StreetDirSuffix']} {$listing['StreetAdditionalInfo']}";
 		$one_line_address = str_replace("********", "", $one_line_address);
 		$one_line_address = flexmlsConnect::clean_spaces_and_trim($one_line_address);
 
@@ -974,14 +974,14 @@ class flexmlsConnect {
 		global $wp_rewrite;
 		return $wp_rewrite->using_mod_rewrite_permalinks();
 	}
-	
+
 	static function make_nice_tag_url($tag, $params = array()) {
-		
+
 		$query_string = null;
 		if ( count($params) > 0 ) {
 			$query_string .= '?'. http_build_query($params);
 		}
-		
+
 		if (flexmlsConnect::generate_nice_urls()) {
 			$options = get_option('fmc_settings');
 			return get_home_url() . '/' . $options['permabase'] . '/' . $tag . $query_string;
@@ -1006,11 +1006,11 @@ class flexmlsConnect {
 
 		if (flexmlsConnect::generate_nice_urls()) {
 			$options = get_option('fmc_settings');
-			
+
 			if (count($params) > 0) {
 				$return .= '?'. http_build_query($params);
 			}
-			
+
 			return get_home_url() . '/' . $options['permabase'] . '/' . $return;
 		}
 		else {
@@ -1054,7 +1054,7 @@ class flexmlsConnect {
 	}
 
 	static function make_api_displayable_value($value, $type) {
-		
+
 		$formatted_value = null;
 
 		if ($type == 'Character') {
@@ -1074,19 +1074,19 @@ class flexmlsConnect {
 
 		return $formatted_value;
 	}
-	
+
 	static function get_big_idx_disclosure_text() {
 		global $fmc_api;
-		
+
 		$api_system_info = $fmc_api->GetSystemInfo();
 		return trim( $api_system_info['Configuration'][0]['IdxDisclaimer'] );
 	}
-	
+
 	static function mls_custom_idx_logo() {
 		global $fmc_api;
-		
+
 		$api_system_info = $fmc_api->GetSystemInfo();
-		
+
 		if (array_key_exists('IdxLogoSmall', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogoSmall'])) {
 			return $api_system_info['Configuration'][0]['IdxLogoSmall'];
 		}
@@ -1094,10 +1094,10 @@ class flexmlsConnect {
 			return false;
 		}
 	}
-	
+
 	static function mls_requires_office_name_in_search_results() {
 		$options = get_option('fmc_settings');
-		
+
 		if ($options['listing_office_disclosure'] == 'y') {
 			return true;
 		}
@@ -1105,10 +1105,10 @@ class flexmlsConnect {
 			return false;
 		}
 	}
-	
+
 	static function mls_requires_agent_name_in_search_results() {
 		$options = get_option('fmc_settings');
-		
+
 		if ($options['listing_agent_disclosure'] == 'y') {
 			return true;
 		}
@@ -1116,12 +1116,12 @@ class flexmlsConnect {
 			return false;
 		}
 	}
-	
+
 	static function fetch_ma_tech_id() {
 		global $fmc_api;
-		
+
 		$api_system_info = $fmc_api->GetSystemInfo();
-		
+
 		if ( array_key_exists('MlsId', $api_system_info) ) {
 			return $api_system_info['MlsId'];
 		}
@@ -1129,18 +1129,18 @@ class flexmlsConnect {
 			// MLS level key with no MlsId defined.  return Id
 			return $api_system_info['Id'];
 		}
-		
+
 	}
-	
+
 	static function is_odd($val) {
 		return ($val % 2) ? true : false;
 	}
-	
+
 	static function get_locationsearch_url() {
 		global $fmc_location_search_url;
 		return $fmc_location_search_url;
 	}
-	
+
 
 	/*
 	 * Take a value and clean it so it can be used as a parameter value in what's sent to the API.
@@ -1168,38 +1168,38 @@ class flexmlsConnect {
 		return $return;
 
 	}
-	
+
 	static function page_slug_tag() {
 		global $wp_query;
 		return $wp_query->get('fmc_tag');
 	}
-	
+
 	static function oauth_login_link() {
 		global $fmc_api;
 		$api_system_info = $fmc_api->GetSystemInfo();
 		$base_url = $api_system_info['Configuration'][0]['OAuth2ServiceEndpointPortal'];
-		
+
 		$options = get_option('fmc_settings');
-		
+
 		$options['oauth_client_id'] = '33v3wnk3mi8sw2k8g8h9petwo';
 		$options['oauth_client_secret'] = 'jyxib0a75tbikly4vbtk1uxs';
-		
+
 		$params = array(
 		    'client_id' => $options['oauth_client_id'],
 		    'redirect_uri' => flexmlsConnect::oauth_login_landing_page(),
 		    'response_type' => 'code'
 		);
-		
-		return $base_url .'?'. http_build_query($params);		
+
+		return $base_url .'?'. http_build_query($params);
 	}
-	
+
 	static function oauth_login_landing_page() {
 		return flexmlsConnect::make_nice_tag_url('oauth-login');
 	}
-	
+
 	static function new_apiauth_client() {
 		global $fmc_version;
-		
+
 		$options = get_option('fmc_settings');
 
 		$fmc_api = new flexmlsAPI_APIAuth($options['api_key'], $options['api_secret']);
@@ -1208,17 +1208,17 @@ class flexmlsConnect {
 		// set application name
 		$fmc_api->SetApplicationName("flexmls WordPress Plugin/{$fmc_version}");
 		$fmc_api->SetNewAccessCallback( array('flexmlsConnect', 'new_access_keys') );
-		
+
 		$fmc_api->SetCachePrefix('fmc_'. get_option('fmc_cache_version') .'_');
-		
+
 		return $fmc_api;
 	}
-	
+
 	static function new_oauth_client() {
 		global $fmc_version;
-		
+
 		$options = get_option('fmc_settings');
-		
+
 		$options['oauth_client_id'] = '33v3wnk3mi8sw2k8g8h9petwo';
 		$options['oauth_client_secret'] = 'jyxib0a75tbikly4vbtk1uxs';
 
@@ -1228,12 +1228,12 @@ class flexmlsConnect {
 		// set application name
 		$fmc_api->SetApplicationName("flexmls WordPress Plugin/{$fmc_version}");
 		$fmc_api->SetNewAccessCallback( array('flexmlsConnect', 'new_access_keys') );
-		
+
 		$fmc_api->SetCachePrefix("1");
-		
+
 		return $fmc_api;
 	}
-	
+
 	static function new_access_keys($type, $values) {
 		if ($type == "oauth") {
 			// save to session since OAuth tokens are user-specific
@@ -1244,54 +1244,54 @@ class flexmlsConnect {
 			// managed via cache automatically since API auth is only site-specific
 		}
 	}
-	
+
 	static function is_logged_in() {
 		return (array_key_exists('fmc_oauth_logged_in', $_SESSION) and $_SESSION['fmc_oauth_logged_in']) ? true : false;
 	}
-	
+
 	static function is_oauth() {
 		global $fmc_api;
 		return ($fmc_api->auth_mode == "oauth") ? true : false;
 	}
-	
+
 	static function expand_link_id($string) {
-				
+
 		$maximum = flexmlsConnect::bc_base_convert($string, 36, 10);
-		
+
 		$prefix = '20';
 		if (substr($maximum, 0, 1) == '9' and strlen($maximum) == 18) {
 			$prefix = '19';
 		}
-		
+
 		while ( strlen($prefix . $maximum) < 20 ) {
 			$prefix .= '0';
 		}
-		
+
 		$short = $prefix . $maximum . '000000';
-		
+
 		return (string) $short;
-		
+
 	}
-	
+
 	static function get_all_idx_links($only_saved_search = false) {
 		global $fmc_api;
-		
+
 		$return = array();
-		
+
 		$current_page = 0;
 		$total_pages = 1;
-		
+
 		while ($current_page < $total_pages) {
-			
+
 			$current_page++;
-			
+
 			$params = array(
 			    '_pagination' => 1,
 			    '_page' => $current_page
 			);
-			
+
 			$result = $fmc_api->GetIDXLinks($params);
-			
+
 			if ( is_array($result) ) {
 				foreach ($result as $r) {
 					if ($only_saved_search and !array_key_exists('SearchId', $r) ) {
@@ -1301,7 +1301,7 @@ class flexmlsConnect {
 					$return[] = $r;
 				}
 			}
-			
+
 			if ( $fmc_api->total_pages == null ) {
 				break;
 			}
@@ -1310,68 +1310,68 @@ class flexmlsConnect {
 				$total_pages = $fmc_api->total_pages;
 			}
 		}
-		
-		return $return;		
+
+		return $return;
 	}
-	
+
 	static function possible_destinations() {
 		return array('local' => 'my search results', 'remote' => 'a flexmls IDX frame');
 	}
-	
+
 	static function is_agent() {
 		$type = get_option('fmc_my_type');
 		return ($type == 'Member') ? true : false;
 	}
-	
+
 	static function is_office() {
 		$type = get_option('fmc_my_type');
 		return ($type == 'Office') ? true : false;
 	}
-	
+
 	static function is_company() {
 		$type = get_option('fmc_my_type');
 		return ($type == 'Company') ? true : false;
 	}
-	
+
 	static function get_office_id() {
 		return get_option('fmc_my_office');
 	}
-	
+
 	static function get_company_id() {
 		return get_option('fmc_my_company');
 	}
-	
+
 	static function possible_fonts() {
 		return array(
-		    'Arial' => 'Arial', 
-		    'Lucida Sans Unicode' => 'Lucida Sans Unicode', 
-		    'Tahoma' => 'Tahoma', 
+		    'Arial' => 'Arial',
+		    'Lucida Sans Unicode' => 'Lucida Sans Unicode',
+		    'Tahoma' => 'Tahoma',
 		    'Verdana' => 'Verdana'
 		    );
 	}
-	
+
 	static function hexLighter($hex, $factor = 20) {
     $new_hex = '';
-    $base['R'] = hexdec($hex{0}.$hex{1}); 
-    $base['G'] = hexdec($hex{2}.$hex{3}); 
-    $base['B'] = hexdec($hex{4}.$hex{5}); 
+    $base['R'] = hexdec($hex{0}.$hex{1});
+    $base['G'] = hexdec($hex{2}.$hex{3});
+    $base['B'] = hexdec($hex{4}.$hex{5});
 
-    foreach ($base as $k => $v) { 
-      $amount = 255 - $v; 
-      $amount = $amount / 100; 
+    foreach ($base as $k => $v) {
+      $amount = 255 - $v;
+      $amount = $amount / 100;
       $amount = round($amount * $factor);
       $new_decimal = $v + $amount;
-      
-      $new_hex_component = dechex($new_decimal); 
+
+      $new_hex_component = dechex($new_decimal);
       if (strlen($new_hex_component) < 2) {
         $new_hex_component = "0".$new_hex_component;
-      } 
-      $new_hex .= $new_hex_component; 
-    } 
+      }
+      $new_hex .= $new_hex_component;
+    }
 
     return $new_hex;
 	}
-	
+
 	function hexDarker($color, $dif=20){
     $color = str_replace('#', '', $color);
     if (strlen($color) != 6){ return '000000'; }
@@ -1396,12 +1396,12 @@ class flexmlsConnect {
         }
         return false;
     }
-	
-	
+
+
 	static function nice_property_type_label($abbrev) {
 		global $fmc_api;
 		$options = get_option('fmc_settings');
-				
+
 		if ( array_key_exists("property_type_label_{$abbrev}", $options) and !empty($options["property_type_label_{$abbrev}"]) ) {
 			return $options["property_type_label_{$abbrev}"];
 		}
@@ -1413,10 +1413,10 @@ class flexmlsConnect {
 
 	static public function gentle_price_rounding($val) {
 		// check if the value has decimal places and if those aren't just zeros
-    
-    if ( !flexmlsConnect::is_not_blank_or_restricted($val) ) 
+
+    if ( !flexmlsConnect::is_not_blank_or_restricted($val) )
       return "";
-    
+
 		if ( strpos($val, '.') !== false ) {
 			// has a decimal
 			$places = explode(".", $val);
@@ -1447,9 +1447,9 @@ class flexmlsConnect {
 
 		return true;
 	}
-	
-	
-	
+
+
+
 	// source: http://www.technischedaten.de/pmwiki2/pmwiki.php?n=Php.BaseConvert
 	function bc_base_convert($value, $quellformat, $zielformat) {
 		$vorrat = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -1484,7 +1484,7 @@ class flexmlsConnect {
 		$result = empty($result) ? '0' : $result;
 		return $vorzeichen . $result;
 	}
-	
-	
+
+
 }
 

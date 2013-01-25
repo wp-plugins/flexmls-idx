@@ -158,6 +158,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		  'StreetDirPrefix',
       'StreetDirSuffix',
       'StreetSuffix',
+      'StreetAdditionalInfo',
 		  'PropertyClass',
 		  'StateOrProvince',
 		  'PostalCode',
