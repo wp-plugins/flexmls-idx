@@ -153,7 +153,8 @@ class flexmlsConnect {
 
 			$options = array(
 					'default_titles' => true,
-					'destpref' => 'page',
+                    'destpref' => 'page',
+                    'listpref' => 'page',
 					'destlink' => $new_page_id,
 					'autocreatedpage' => $new_page_id,
 					'contact_notifications' => true,
@@ -598,6 +599,17 @@ class flexmlsConnect {
 		return $options['destpref'];
 	}
 
+    function get_no_listings_page_number(){
+        $options = get_option('fmc_settings');
+        return ($options['listlink']);
+    }
+
+    function get_no_listings_pref(){
+        $options = get_option('fmc_settings');
+        return $options['listpref'];
+    }
+
+
 	function get_default_idx_link() {
 		global $fmc_api;
 
@@ -1027,6 +1039,17 @@ class flexmlsConnect {
 		return $return;
 	}
 
+	static function format_date ($format,$date){
+		//Format Last Modified Date
+		//search for "php date" for format specs
+                $LastModifiedDate= "";
+                if (flexmlsConnect::is_not_blank_or_restricted($date)){
+                        $Seconds = strtotime($date);
+                        $LastModifiedDate=date($format,$Seconds);
+                }
+		return $LastModifiedDate;
+	}
+	
 	static function generate_api_query($conditions) {
 
 	}
@@ -1095,26 +1118,144 @@ class flexmlsConnect {
 		}
 	}
 
-	static function mls_requires_office_name_in_search_results() {
-		$options = get_option('fmc_settings');
+	static function add_contact($content){
+        global $fmc_api;
+		 return ($fmc_api->AddContact($content, flexmlsConnect::send_notification()));
+	}
 
-		if ($options['listing_office_disclosure'] == 'y') {
-			return true;
-		}
-		else {
-			return false;
-		}
+	static function message_me($subject, $body, $from_email){
+		global $fmc_api;
+		$my_account = $fmc_api->GetMyAccount();
+		$sender = $fmc_api->GetContacts(null, array("_select" => "Id", "_filter" => "PrimaryEmail Eq '{$from_email}'"));
+		return $fmc_api->AddMessage(array(
+		'Type'       => 'General',
+		'Subject'    => $subject,
+		'Body'       => $body,
+		'Recipients' => array($my_account['Id']),
+		'SenderId'   => $sender[0]['Id']
+		));
+	}
+
+	static function mls_requires_office_name_in_search_results() {
+	
+
+		global $fmc_api;
+                $api_system_info = $fmc_api->GetSystemInfo();
+                $mlsId = $api_system_info["MlsId"];
+                $compList = ($api_system_info["DisplayCompliance"][$mlsId]["View"]["Summary"]["DisplayCompliance"]);
+
+		return (in_array("ListOfficeName",$compList));
 	}
 
 	static function mls_requires_agent_name_in_search_results() {
-		$options = get_option('fmc_settings');
 
-		if ($options['listing_agent_disclosure'] == 'y') {
-			return true;
-		}
-		else {
-			return false;
-		}
+                global $fmc_api;
+                $api_system_info = $fmc_api->GetSystemInfo();
+                $mlsId = $api_system_info["MlsId"];
+                $compList = ($api_system_info["DisplayCompliance"][$mlsId]["View"]["Summary"]["DisplayCompliance"]);
+
+                return (in_array("ListAgentName",$compList));
+
+	}
+	
+	static function mls_required_fields_and_values($type, &$record){
+		//$type		String 	 "Summary" | "Detail"
+		//$record	GetListings(params)[0]
+
+		global $fmc_api;
+        	$api_system_info = $fmc_api->GetSystemInfo();
+        	$mlsId = $api_system_info["MlsId"];
+		$compList = ($api_system_info["DisplayCompliance"][$mlsId]["View"][$type]['DisplayCompliance']);
+		$sf = $record["StandardFields"];
+
+
+		//Get Adresses
+        	//Since these fields take a considerable amount of time to get, check if they are required from the compliance list beforehand.
+        	if (in_array('ListOfficeAddress',$compList)){
+            		$OfficeInfo = $fmc_api->GetAccountsByOffice($sf["ListOfficeId"]);
+            		$OfficeAddress = ($OfficeInfo[0]["Addresses"][0]["Address"]);
+       		}
+
+        	if (in_array('ListMemberAddress',$compList)){
+		    $AgentInfo  = $fmc_api->GetAccount($sf["ListAgentId"]);
+		    $AgentAddress = ($AgentInfo[0]["Addresses"][0]["Address"]);
+        	}
+
+        	if (in_array('CoListAgentAddress',$compList)){
+		    	$CoAgentInfo	= $fmc_api->GetAccount($sf["CoListAgentId"]);
+            		$CoAgentAddress	= ($CoAgentInfo[0]["Addresses"][0]["Address"]);
+        	}
+
+		//Names
+		$AgentName = "";
+		$CoAgentName = "";
+                if ((flexmlsConnect::is_not_blank_or_restricted($sf["ListAgentFirstName"])) && (flexmlsConnect::is_not_blank_or_restricted($sf["ListAgentLastName"])))
+                        $AgentName = "{$sf["ListAgentFirstName"]} {$sf["ListAgentLastName"]}";
+
+		if ((flexmlsConnect::is_not_blank_or_restricted($sf["CoListAgentFirstName"])) && (flexmlsConnect::is_not_blank_or_restricted($sf["CoListAgentLastName"])))
+                        $CoAgentName = "{$sf["CoListAgentFirstName"]} {$sf["CoListAgentLastName"]}";
+
+
+		//Primary Phone Numbers and Extensions
+		$ListOfficePhone = "";
+		$ListAgentPhone = "";
+		$CoListAgentPhone = "";
+		if (flexmlsConnect::is_not_blank_or_restricted($sf["ListOfficePhone"]))
+			$ListOfficePhone = $sf["ListOfficePhone"];
+			if (flexmlsConnect::is_not_blank_or_restricted($sf["ListOfficePhoneExt"]))
+                        	$ListOfficePhone .= " ext. " . $sf["ListOfficePhoneExt"];
+
+		if (flexmlsConnect::is_not_blank_or_restricted($sf["ListAgentPreferredPhone"]))
+                        $ListAgentPhone = $sf["ListAgentPreferredPhone"];
+                        if (flexmlsConnect::is_not_blank_or_restricted($sf["ListAgentPreferredPhone"]))
+                                $ListAgentPhone .= " ext. " . $sf["ListAgentPreferredPhone"];
+
+                if (flexmlsConnect::is_not_blank_or_restricted($sf["CoListAgentPreferredPhone"]))
+                        $CoListAgentPhone = $sf["CoListAgentPreferredPhone"];
+                        if (flexmlsConnect::is_not_blank_or_restricted($sf["CoListAgentPreferredPhone"]))
+                                $CoListAgentPhone .= " ext. " . $sf["CoListAgentPreferredPhone"];
+
+
+		//format last modified date
+		$LastModifiedDate = flexmlsConnect::format_date("F - d - Y", $sf["ModificationTimestamp"]);
+
+		//These will be printed in this order.
+		$possibleRequired = array(
+			"ListOfficeName" 	=> array("Listing Office",$sf["ListOfficeName"]),
+			"ListOfficePhone" 	=> array("Office Phone",$ListOfficePhone),
+			"ListOfficeEmail" 	=> array("Office Email",$sf["ListOfficeEmail"]),
+			"ListOfficeURL" 	=> array("Office Website",$sf["ListOfficeURL"]),
+			"ListOfficeAddress" 	=> array("Office Address",$OfficeAddress),
+			"ListAgentName" 	=> array("Listing Agent",$AgentName),//Agent name is done below to make sure first and last name are present
+			"ListMemberPhone" 	=> array("Agent Phone",$sf["ListAgentPreferredPhone"] ),
+			"ListMemberEmail" 	=> array("Agent Email",$sf["ListAgentEmail"]),
+			"ListMemberURL" 	=> array("Agent Website",$sf["ListAgentURL"]),
+			"ListMemberAddress" 	=> array("Agent Address",$AgentAddress),
+			"CoListOfficeName" 	=> array("Co Office Name",$sf["CoListOfficeName"]),
+			"CoListOfficePhone"	=> array("Co Office Phone",$sf["CoListOfficePhone"]),
+			"CoListOfficeEmail"	=> array("Co Office Email",$sf["CoListOfficeEmail"]),
+			"CoListOfficeURL"	=> array("Co Office Website",$sf["CoListOfficeURL"]),
+			"CoListOfficeAddress"	=> array("Co Office Address","$CoAgentAddress"),
+			"CoListAgentName"	=> array("Co Listing Agent",$CoAgentName),
+			"CoListAgentPhone"	=> array("Co Agent Phone",$CoListAgentPhone),
+			"CoListAgentEmail"	=> array("Co Agent Email",$sf["CoListAgentEmail"]),
+			"CoListAgentURL"	=> array("Co Agent Webpage",$sf["CoListAgentURL"]),
+			"CoListAgentAddress"	=> array("Co Agent Address",$CoAgentAddress),
+			"ListingUpdateTimestamp"=> array("Listing Was Last Updated",$LastModifiedDate),
+			"IDXLogo"               => array("LOGO",""),//Todo -- Print Logo?
+		);
+
+        	$values= array();
+
+        	/*foreach ($compList as $test){
+            	array_push($values,array($possibleRequired[$test][0],$possibleRequired[$test][1]));
+       	 	} */
+        
+        	foreach ($possibleRequired as $key => $value){
+			if (in_array($key, $compList))
+				array_push($values,array($value[0],$value[1]));
+        	}
+		return $values;
 	}
 
 	static function fetch_ma_tech_id() {

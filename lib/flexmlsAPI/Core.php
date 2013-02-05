@@ -216,7 +216,7 @@ class flexmlsAPI_Core {
 		//print_r( $post_data);
 		
 		// delegate to chosen authentication method for necessary changes to request
-		$this->sign_request(&$request);
+		$request = $this->sign_request($request);
 				
 		$served_from_cache = false;
 		
@@ -416,14 +416,14 @@ class flexmlsAPI_Core {
 	 * Contacts services
 	 */
 	
-	function GetContacts($tags = null) {
-		if ( !is_null($tags) ) {
-			return $this->return_all_results( $this->MakeAPICall("GET", "contacts/tags/". rawurlencode($tags) ) );
-		}
-		else {
-			return $this->return_all_results( $this->MakeAPICall("GET", "contacts") );
-		}
-	}
+	function GetContacts($tags = null, $params = array()) {
+                if (!is_null($tags)) {
+                        return $this->return_all_results($this->MakeAPICall("GET", "contacts/tags/" . rawurlencode($tags), 0, $params));
+                }
+                else {
+                        return $this->return_all_results($this->MakeAPICall("GET", "contacts", 0, $params));
+                }
+        }
 	
 	function AddContact($contact_data, $notify = false) {
 		$data = array(
@@ -440,6 +440,8 @@ class flexmlsAPI_Core {
 	function MyContact() {
 		return $this->return_first_result( $this->MakeAPICall("GET", "my/contact") );
 	}
+
+
 	
 	
 	/*
@@ -513,10 +515,15 @@ class flexmlsAPI_Core {
 	
 	/*
 	 * Messaging services
-	 * TODO
 	 */
-	
-	
+
+	function AddMessage($content) {
+                $data = array('Messages' => $content);
+                $x= ($this->MakeAPICall("POST", "messages", 0, array(), $this->make_sendable_body($data)));
+		return($x["success"]);
+	}
+
+
 	/*
 	 * Saved Searches services
 	 */

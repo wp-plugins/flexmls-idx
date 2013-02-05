@@ -23,8 +23,11 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		
 		//david debug
 	  //print_r($params);
-	  
-		if ($context == "listings") {
+
+        //This unset was added to pull all information
+        unset($params['_select']);
+
+        if ($context == "listings") {
 			$results = $fmc_api->GetMyListings($params);
 		}
 		elseif ($context == "office") {
@@ -36,14 +39,12 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		else {
 			$results = $fmc_api->GetListings($params);
 		}
-		
 
 		$this->search_data = $results;
 		$this->total_pages = $fmc_api->total_pages;
 		$this->current_page = $fmc_api->current_page;
 		$this->total_rows = $fmc_api->last_count;
 		$this->page_size = $fmc_api->page_size;
-
 
 		$fmc_special_page_caught['type'] = "search-results";
 		$fmc_special_page_caught['page-title'] = "Property Search";
@@ -110,7 +111,6 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		echo "<hr class='flexmls_connect__sr_divider'>\n\n";
 		
 		$mls_custom_idx_badge = flexmlsConnect::mls_custom_idx_logo();
-		$office_name_required_in_results = flexmlsConnect::mls_requires_office_name_in_search_results();
 		
 		$result_count = 0;
 		
@@ -121,10 +121,8 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		//echo "<br>";
 		//var_dump($fmc_api->last_error_mess);
 		//echo "<br>";
-		
 		foreach ($this->search_data as $record) {
 			$result_count++;
-			
 			// Establish some variables
 			$listing_address = flexmlsConnect::format_listing_street_address($record);
 			$first_line_address = htmlspecialchars($listing_address[0]);
@@ -199,10 +197,9 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
         echo "    </div>\n";
       }
       
-      
       // Details table
       echo "		<div class='flexmls_connect__sr_listing_facts_container'>\n";
-      echo "    <table class='flexmls_connect__sr_listing_facts' cellspacing='0'>\n";
+      echo "    <table class='flexmls_connect__sr_listing_facts' cellspacing='0' style='border-bottom: none;'>\n";
 			$detail_count = 0;
 			foreach ($primary_details as $k => $v) {
 				if ($v == 'PropertyType' and $exclude_property_type) {
@@ -236,24 +233,27 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 					break;
 				}
 			}
+
+
+                        $compList = flexmlsConnect::mls_required_fields_and_values("Summary",$record);
+                        foreach ($compList as $reqs){
+				            $zebra = (flexmlsConnect::is_odd($detail_count)) ? 'on' : 'off';
+                        	if (flexmlsConnect::is_not_blank_or_restricted($reqs[1])){
+                        		echo	"<tr class='flexmls_connect__sr_zebra_{$zebra}'><td><b>{$reqs[0]}</b>:</td><td>{$reqs[1]}</td></tr>\n";
+					$detail_count++;
+				}
+                        }
 			
 			
-			// place IDX disclosure in the table to prevent wrapping when small images are included
 			echo "			<tr><td colspan='2' class='flexmls_connect__sr_idx'>";
 			if ( flexmlsConnect::get_office_id() != $sf['ListOfficeId'] ) {
 				if ($mls_custom_idx_badge) {
 					echo "			<img src='{$mls_custom_idx_badge}' class='flexmls_connect__badge_image' title='{$sf['ListOfficeName']}' />\n";
 				}
 				else {
-					echo "			<span class='flexmls_connect__badge' title='{$sf['ListOfficeName']}'>IDX</span>\n";
+					echo "			<span style='float: right' class='flexmls_connect__badge' title='{$sf['ListOfficeName']}'>IDX</span>\n";
 				}
 			}
-			if ( flexmlsConnect::mls_requires_office_name_in_search_results() or flexmlsConnect::get_office_id() == $sf['ListOfficeId']) {
-				echo "			<span class='flexmls_connect__sr_idx_badge_office'>Listing Office: {$sf['ListOfficeName']}</span>\n";
-			}
-			if ( flexmlsConnect::mls_requires_agent_name_in_search_results() && flexmlsConnect::is_not_blank_or_restricted($sf['ListAgentFirstName']) && flexmlsConnect::is_not_blank_or_restricted($sf['ListAgentLastName'])) {
-				echo "			<br><span class='flexmls_connect__sr_idx_badge_office'>Listing Agent: {$sf['ListAgentFirstName']} {$sf['ListAgentLastName']}</span>\n";
-			}			
 
   	  echo "			</td></tr>\n";
 		
@@ -261,13 +261,24 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 			// end table
 			echo "		</table></div>\n\n";
       
-      
       // Detail Links
-      $count_photos = count($sf['Photos']);
+            $count_photos = count($sf['Photos']);
 			$count_videos = count($sf['Videos']);
 			$count_tours = count($sf['VirtualTours']);      
-      echo "    <div class='flexmls_connect__sr_details'>\n";
-			echo "		  <button href='{$link_to_details}'>View Details</button>\n";
+            echo "    <div class='flexmls_connect__sr_details'>\n";
+            echo "<div style='display:none;color:green;font-weight:bold;text-align:right;padding:5px' id='flexmls_connect__success_message{$sf['ListingId']}'></div>";
+            echo "		  <button href='{$link_to_details}'>View Details</button>\n";
+
+
+ 
+            echo "<button onclick=\"flexmls_connect.contactForm('Ask a Question',";
+            echo "'{$one_line_address} - MLS# {$sf['ListingId']}',";
+            echo "'{$sf['ListAgentEmail']}',";
+            echo "'{$sf['ListOfficeEmail']}',";
+            echo "'{$sf['ListingId']}'";
+            echo ");\"> Ask Question</button>\n";
+
+
 			if ($count_photos > 0) {
 			  echo "		  <a class='photo_click'>View Photos ({$count_photos})</a>\n";
 			  if ($count_videos > 0 || $count_tours > 0) {

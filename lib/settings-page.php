@@ -44,17 +44,21 @@ class flexmlsConnectSettings {
 			add_settings_field('fmc_neigh_template', 'Neighborhood Page Template', array('flexmlsConnectSettings', 'settings_field_neigh_template') , 'flexmls_connect', 'fmc_settings_plugin');
 			add_settings_field('fmc_contact_notifications', 'When a new lead is created', array('flexmlsConnectSettings', 'settings_field_contact_notifications') , 'flexmls_connect', 'fmc_settings_plugin');
 			add_settings_field('fmc_multiple_summaries', 'Multiple summary lists', array('flexmlsConnectSettings', 'settings_field_multiple_summaries') , 'flexmls_connect', 'fmc_settings_plugin');
+            add_settings_field('fmc_settings_dest', 'Listing not available page', array('flexmlsConnectSettings', 'settings_field_listing') , 'flexmls_connect', 'fmc_settings_plugin');
 
 			add_settings_section('fmc_settings_linking', '<br/>Linking', array('flexmlsConnectSettings', 'settings_overview_linking') , 'flexmls_connect');
 			add_settings_field('fmc_default_link', 'Default IDX Link', array('flexmlsConnectSettings', 'settings_field_default_link') , 'flexmls_connect', 'fmc_settings_linking');
-			add_settings_field('fmc_destlink', 'Open IDX Links', array('flexmlsConnectSettings', 'settings_field_destlink') , 'flexmls_connect', 'fmc_settings_linking');
+            add_settings_field('fmc_destlink', 'Open IDX Links', array('flexmlsConnectSettings', 'settings_field_destlink') , 'flexmls_connect', 'fmc_settings_linking');
 			add_settings_field('fmc_permabase', 'Permalink Slug', array('flexmlsConnectSettings', 'settings_field_permabase') , 'flexmls_connect', 'fmc_settings_linking');
-			
+
+
+
+
+
 			add_settings_section('fmc_settings_labels', '<br/>Labels', array('flexmlsConnectSettings', 'settings_overview_labels') , 'flexmls_connect');
 			add_settings_field('fmc_property_type_labels', 'Property Types', array('flexmlsConnectSettings', 'settings_field_property_type_labels') , 'flexmls_connect', 'fmc_settings_labels');
-			
-			add_settings_section('fmc_settings_compliance', '<br/>IDX Compliance', array('flexmlsConnectSettings', 'settings_overview_compliance') , 'flexmls_connect');
-			add_settings_field('fmc_disclosure', 'Disclosure', array('flexmlsConnectSettings', 'settings_field_disclosure') , 'flexmls_connect', 'fmc_settings_compliance');
+
+            
 			
 			// force refresh of WordPress mod_rewrite rules in case the page was just saved with a new permabase
 			$wp_rewrite->flush_rules(true);
@@ -172,6 +176,8 @@ class flexmlsConnectSettings {
 
 			$options['destpref'] = $input['destpref'];
 			$options['destlink'] = $input['destlink'];
+            $options['listpref'] = $input['listpref'];
+            $options['listlink'] = $input['listlink'];
 			$options['destwindow'] = $input['destwindow'];
 			$options['default_link'] = $input['default_link'];
 			$options['neigh_template'] = $input['neigh_template'];
@@ -304,6 +310,36 @@ class flexmlsConnectSettings {
 		// stale option that doesn't pay attention to any saved option.  this simply triggers the cache clearing
 		echo "<label><input type='checkbox' name='fmc_settings[clear_cache]' value='y' /> Clear the cached flexmls&reg; API responses</label>\n";
 	}
+
+
+function settings_field_listing() {
+         $options = get_option('fmc_settings');
+ 
+         $args = array(
+                 'name' => 'fmc_settings[listlink]',
+                 'selected' => $options['listlink']
+         );
+ 
+         $checked_code = " checked='checked'";
+ 
+         if ($options['listpref'] == "default") {
+             $checked_own = $checked_code;
+         }
+         elseif ($options['listpref'] == "page") {
+             $checked_page = $checked_code;
+         }
+         else {
+             $checked_own = $checked_code;
+         }
+ 
+         echo "<label><input type='radio' name='fmc_settings[listpref]' value='default'{$checked_own} /> Default: This listing is no longer available.</label><br />\n";
+         echo "<label><input type='radio' name='fmc_settings[listpref]' value='page'{$checked_page} /> Mimic contents of WordPress page (select below)</label><br />\n";
+         echo "&nbsp; &nbsp; &nbsp; Page: ";
+         wp_dropdown_pages($args);
+         echo "<br/>";
+ 
+     }
+
 
 
 	function settings_field_destlink() {
@@ -548,15 +584,6 @@ class flexmlsConnectSettings {
 		
 	}
 	
-	function settings_field_disclosure() {
-		$options = get_option('fmc_settings');
-		
-		$checked = ($options['listing_office_disclosure'] == 'y') ? " checked='checked'" : null;
-		echo "<label><input type='checkbox' name='fmc_settings[listing_office_disclosure]'{$checked} value='y' /> Force Listing Office to display</label>\n";
-		
-		$checked = ($options['listing_agent_disclosure'] == 'y') ? " checked='checked'" : null;
-		echo "<br><label><input type='checkbox' name='fmc_settings[listing_agent_disclosure]'{$checked} value='y' /> Force Listing Agent to display</label>\n";
-	}
 	
 	
 	function settings_overview_about() {

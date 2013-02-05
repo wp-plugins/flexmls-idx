@@ -9,7 +9,6 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 	function pre_tasks($tag) {
 		global $fmc_special_page_caught;
 		global $fmc_api;
-
 		// parse passed parameters for browsing capability
 		list($params, $cleaned_raw_criteria, $context) = $this->parse_search_parameters_into_api_request();
 
@@ -45,7 +44,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			$fmc_special_page_caught['post-title'] = flexmlsConnect::make_nice_address_title($listing);
 			$fmc_special_page_caught['page-url'] = flexmlsConnect::make_nice_address_url($listing);
 		}
-		else {
+        else {
 			$fmc_special_page_caught['page-title'] = "Listing Not Available";
 			$fmc_special_page_caught['post-title'] = "Listing Not Available";
 //			$fmc_special_page_caught['page-url'] = flexmlsConnect::make_nice_address_url($listing);
@@ -62,8 +61,18 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		//var_dump($fmc_api->last_error_code);
 		//var_dump($fmc_api->last_error_mess);
 
-		if ($this->listing_data == null) {
-			return "<p>The listing you requested is no longer available.</p>";
+        if ($this->listing_data == null) {
+            if (flexmlsConnect::get_no_listings_pref() == 'default')
+            {
+                echo "This listing is no longer available.";
+            }
+            else
+            {
+                $page = flexmlsConnect::get_no_listings_page_number();
+                $page_data = get_page($page);
+                echo apply_filters('the_content', $page_data->post_content);
+            }
+            return;
 		}
 
 		$standard_fields_plus = $fmc_api->GetStandardFields();
@@ -475,10 +484,10 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 
 
 		ob_start();
-
 		// disable display of the H1 entry title on this page only
 		echo "<style type='text/css'>\n  .entry-title { display:none; }\n</style>\n\n\n";
-
+		//This was added to give grid lines on details page
+		echo "<style type='text/css'> .entry-content td, .comment-content td { border: 1px solid #EDEDED; padding: 6px 10px;} </style>\n";
 		echo "<div class='flexmls_connect__prev_next'>";
 		  if ( $this->has_previous_listing() )
 			  echo "<button class='flexmls_connect__button left' href='". $this->browse_previous_url() ."'><img src='{$fmc_plugin_url}/images/left.png' align='absmiddle' /> Prev</button>\n";
@@ -568,8 +577,16 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			$api_my_account = $fmc_api->GetMyAccount();
 
 			if ($api_my_account['Name'] && $api_my_account['Emails'][0]['Address']) {
-  			echo "		  <button class='flexmls_connect__schedule_showing_click' onclick=\"flexmls_connect.scheduleShowing('{$sf['ListingKey']}','{$one_line_address} - MLS# {$sf['ListingId']}','".htmlspecialchars ($api_my_account['Name'])."','{$api_my_account['Emails'][0]['Address']}');\"><img src='{$fmc_plugin_url}/images/showing.png'align='absmiddle' /> Schedule a Showing</button>\n";
+  			echo "		  <button onclick=\"flexmls_connect.scheduleShowing('{$sf['ListingKey']}','{$one_line_address} - MLS# {$sf['ListingId']}','".htmlspecialchars ($api_my_account['Name'])."','{$api_my_account['Emails'][0]['Address']}');\"><img src='{$fmc_plugin_url}/images/showing.png'align='absmiddle' /> Schedule a Showing</button>\n";
 			}
+
+
+            echo "<button onclick=\"flexmls_connect.contactForm('Ask a Question',";
+            echo "'{$one_line_address} - MLS# {$sf['ListingId']}',";
+            echo "'{$sf['ListAgentEmail']}',";
+            echo "'{$sf['ListOfficeEmail']}',";
+            echo "''";    
+            echo ");\"><img src='{$fmc_plugin_url}/images/admin_16.png'align='absmiddle' /> Ask a Question</button>\n";
 
 			echo "<div style='display:none;color:green;font-weight:bold;text-align:center;padding:10px' id='flexmls_connect__success_message'></div>";
 
@@ -804,16 +821,18 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		echo "</table>\n";
 		echo "<br><br>\n\n";
 
-		$room_fields = $fmc_api->GetRoomFields($sf['MlsId']);
-
 		// build the Room Information portion of the page
+		$room_fields = $fmc_api->GetRoomFields($sf['MlsId']);
+		$room_names = array();
+		$room_values = array();
+		foreach ($room_fields as $mls_named_room){
+			array_push($room_names,$mls_named_room["Label"]);
+			array_push($room_values,array());
+		}
 		$room_information_values = array();
 		if ( count($sf['Rooms'] > 0) ) {
-			$verified_room_count = 0;
 
 			foreach ($sf['Rooms'] as $r) {
-				$this_name = null;
-				$this_level = null;
 
 				foreach ($r['Fields'] as $rf) {
 					foreach ($rf as $rfk => $rfv) {
@@ -826,47 +845,51 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 							$label = $rfk;
 						}
 
-						if ($label == "Room Name") {
+						for ($i = 0; $i < count($room_names); $i++){
+							if ($label == $room_names[$i]){
+								array_push($room_values[$i],$rfv);
+							}
+						}
+						/*if     ($label == "Room") {
 							$this_name = $rfv;
-						}
-						if ($label == "Room Level") {
-							$this_level = $rfv;
-						}
+						}*/
 					}
-				}
-
-				if ($this_name != null and $this_level != null) {
-					$room_information_values[] = array(
-					    'name' => $this_name,
-					    'level' => $this_level
-					);
-					$verified_room_count++;
 				}
 			}
 
-			$rooms_per_column = ceil($verified_room_count / 2);
+			//if all values in a field are zero append them to an array 
+			$toUnset = array();
+			for ($i=0;$i<count($room_values);$i++){
+				if (!array_filter($room_values[$i])) {
+					array_push($toUnset,$i);
+				}
+			}
+			//unset causes issues if attempt to do this in above for loop
+			foreach ($toUnset as $index){
+				unset($room_values[$index]);
+				unset($room_names[$index]);
+			}
+			//reset the indexes to have order 0,1,2,...
+			$room_values=array_values($room_values);
+			$room_names= array_values($room_names);
 
-			if ($verified_room_count > 0) {
+			$room_count = count($room_values[0]);
+			if ($room_count) {
 				echo "<div class='flexmls_connect__detail_header'>Room Information</div>\n";
 				echo "<table width='100%'>\n";
-				echo "	<tr><td width='25%'><b>Room Name</b></td><td width='25%'><b>Room Level</b></td><td width='25%'><b>Room Name</b></td><td width='25%'><b>Room Level</b></td></tr>\n";
-
-				for ($i = 0; $i < $rooms_per_column; $i++) {
-					$left_room = $i;
-					$right_room = $i + $rooms_per_column;
-
-					$left_name = $room_information_values[$left_room]['name'];
-					$left_level = $room_information_values[$left_room]['level'];
-
-					$right_name = (array_key_exists((int) $right_room, $room_information_values)) ? $room_information_values[$right_room]['name'] : "";
-					$right_level = (array_key_exists((int) $right_room, $room_information_values)) ? $room_information_values[$right_room]['level'] : "";
-
-					echo "	<tr " . ($i % 2 == 0 ? "class='flexmls_connect__sr_zebra_on'" : "") . ">\n";
-					echo "		<td>{$left_name}</td><td>{$left_level}</td>\n";
-					echo "		<td>{$right_name}</td><td>{$right_level}</td>\n";
-					echo "	</tr>\n";
+				echo "	<tr>\n";
+				foreach ($room_names as $room){
+					echo "    <td><b>{$room}</b></td>\n";
 				}
-
+				echo "  </tr>\n";
+				
+				for ($x = 0; $x < $room_count; $x++){
+					echo "  <tr " . ($x % 2 == 0 ? "class='flexmls_connect__sr_zebra_on'" : "") . ">\n";
+					for ($i = 0; $i < count($room_values); $i++){
+						echo "<td>{$room_values[$i][$x]}</td>";
+					}
+					echo "</tr>\n";
+				}
 				echo "</table>\n";
 
 			}
@@ -884,22 +907,23 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 
 
 			echo "  <hr class='flexmls_connect__sr_divider'>\n";
-
   		// disclaimer
 			echo "	<div class='flexmls_connect__idx_disclosure_text'>";
-			if (flexmlsConnect::is_not_blank_or_restricted($sf['ListOfficeName'])) {
-				echo "<p>Listing Office: {$sf['ListOfficeName']}</p>\n";
-			}
-			if (flexmlsConnect::mls_requires_agent_name_in_search_results() && flexmlsConnect::is_not_blank_or_restricted($sf['ListAgentFirstName']) && flexmlsConnect::is_not_blank_or_restricted($sf['ListAgentLastName'])) {
-				echo "<p>Listing Agent: {$sf['ListAgentFirstName']} {$sf['ListAgentLastName']}</p>\n";
-			}
+
+                	$compList = flexmlsConnect::mls_required_fields_and_values("Detail",$record);
+
+                        foreach ($compList as $reqs){
+                                if (flexmlsConnect::is_not_blank_or_restricted($reqs[1]))
+                                        echo "<p>{$reqs[0]}: {$reqs[1]}</p>";
+                        }
+				
 			echo "<p>";
 			echo flexmlsConnect::get_big_idx_disclosure_text();
 			echo "</p>\n";
 
       // make sure the timezone is set properly
       date_default_timezone_set(get_option('timezone_string'));
-      echo "<p>This data was last updated on ".date('l jS \of F Y \a\t h:i A')."</p>\n";
+      echo "<p>".date('l jS \of F Y  h:i A')."</p>\n";
 
 			echo "</div>\n\n";
 		}

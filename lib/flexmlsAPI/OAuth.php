@@ -27,6 +27,7 @@ class flexmlsAPI_OAuth extends flexmlsAPI_Core implements flexmlsAPI_AuthInterfa
 		$request['headers'] = $this->headers;
 		$request['query_string'] = http_build_query($request['params']);
 		$request['cacheable_query_string'] = $request['query_string'];
+		return $request;
 	}
 	
 	function is_auth_request($request) {

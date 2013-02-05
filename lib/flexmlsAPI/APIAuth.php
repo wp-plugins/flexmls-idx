@@ -73,6 +73,7 @@ class flexmlsAPI_APIAuth extends flexmlsAPI_Core implements flexmlsAPI_AuthInter
 
 		$request['query_string'] = http_build_query($http_parameters);
 		$request['cacheable_query_string'] = http_build_query($cache_http_parameters);
+		return $request;
 	}
 	
 	function SetAuthToken($token) {

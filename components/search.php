@@ -3,10 +3,10 @@
 
 
 class fmcSearch extends fmcWidget {
-  
+
 	function fmcSearch() {
 		global $fmc_widgets;
-		
+
 		$widget_info = $fmc_widgets[ get_class($this) ];
 
 		$widget_ops = array( 'description' => $widget_info['description'] );
@@ -18,7 +18,7 @@ class fmcSearch extends fmcWidget {
 		// register where the AJAX calls should be routed when they come in
 		add_action('wp_ajax_'.get_class($this).'_shortcode', array(&$this, 'shortcode_form') );
 		add_action('wp_ajax_'.get_class($this).'_shortcode_gen', array(&$this, 'shortcode_generate') );
-		
+
 	}
 
 
@@ -29,15 +29,15 @@ class fmcSearch extends fmcWidget {
 		if ($type == "widget" && empty($settings['title']) && flexmlsConnect::use_default_titles()) {
 			$settings['title'] = "IDX Search";
 		}
-		
+
 		$return = '';
 
 		$rand = mt_rand();
-    
+
     // presentation variables from settings
 		$title = trim($settings['title']);
 		$my_link = trim($settings['link']);
-		$buttontext = (array_key_exists('buttontext', $settings) and !empty($settings['buttontext'])) ? htmlspecialchars(trim($settings['buttontext']), ENT_QUOTES) : "Search";  
+		$buttontext = (array_key_exists('buttontext', $settings) and !empty($settings['buttontext'])) ? htmlspecialchars(trim($settings['buttontext']), ENT_QUOTES) : "Search";
     $detailed_search = trim($settings['detailed_search']);
     $detailed_search_text = (array_key_exists('detailed_search_text', $settings) and !empty($settings['detailed_search_text'])) ? trim($settings['detailed_search_text']) : "More Search Options" ;
     // destination="local"
@@ -63,7 +63,7 @@ class fmcSearch extends fmcWidget {
     $title_font = (array_key_exists('title_font', $settings)) ? trim($settings['title_font']) : "Arial" ;
     $field_font = (array_key_exists('field_font', $settings)) ? trim($settings['field_font']) : "Arial" ;
     $destination = (array_key_exists('destination', $settings)) ? trim($settings['destination']) : "local" ;
-        
+
     // API variables
 		$api_prop_types = $fmc_api->GetPropertyTypes();
 		$api_system_info = $fmc_api->GetSystemInfo();
@@ -97,21 +97,21 @@ class fmcSearch extends fmcWidget {
 		if (flexmlsConnect::get_destination_window_pref() == "new") {
 			$this_target = " target='_blank'";
 		}
-		
+
 		$idx_link_details = flexmlsConnect::get_idx_link_details($my_link);
 		$detailed_search_url = flexmlsConnect::make_destination_link($idx_link_details['Uri']);
-		
-    
+
+
     // set border radius code
     $border_radius = "";
     if ($border_style == "rounded")
       $border_radius = "border-radius:8px;-moz-border-radius:8px;-webkit-border-radius:8px;";
-    
+
     // set shadow
     $box_shadow = "";
     if ($widget_drop_shadow == "on")
       $box_shadow = "box-shadow: 0 2px 6px #000 !important; -webkit-box-shadow: 0 2px 6px #000 !important; -moz-box-shadow: 0 2px 6px #000 !important;";
-    
+
     // submit button CSS
     $text_shadow = ($submit_button_text_color == "FFFFFF") ? "111" : "eee" ;
     $submit_button_css = "background:#{$submit_button_background} !important; color:#{$submit_button_text_color} !important;";
@@ -128,7 +128,7 @@ class fmcSearch extends fmcWidget {
       $submit_button_css .= "background: -ms-linear-gradient(top, #{$lighter} 0%,#{$submit_button_background} 44%,#{$darker} 100%) !important;";
       $submit_button_css .= "background: linear-gradient(top, #{$lighter} 0%,#{$submit_button_background} 44%,#{$darker} 100%) !important;";
       $submit_button_css .= "filter: progid:DXImageTransform.Microsoft.gradient( startColorstr=\"#{$lighter}\", endColorstr=\"#{$darker}\",GradientType=0 ) !important;";
-    
+
     } else if ($submit_button_shine == 'shine') {
       $light = flexmlsConnect::hexLighter($submit_button_background, 20);
       $lighter = flexmlsConnect::hexLighter($submit_button_background, 30);
@@ -144,10 +144,10 @@ class fmcSearch extends fmcWidget {
       $submit_button_css .= "background: linear-gradient(top, #{$light} 0%,#{$lighter} 50%,#{$dark} 51%,#{$darker} 100%) !important;";
       $submit_button_css .= "filter: progid:DXImageTransform.Microsoft.gradient( startColorstr=\"#{$light}\", endColorstr=\"#{$darker}\",GradientType=0 ) !important;";
     }
-    
+
     // Submit Return
     $submit_return  = "";
-    
+
     // only include remote link information if necessary
     if ($destination == "remote") {
       $submit_return .= "<input type='hidden' name='fmc_do' value='fmc_search' />\n";
@@ -155,19 +155,24 @@ class fmcSearch extends fmcWidget {
       $submit_return .= "<input type='hidden' name='destlink' value='".flexmlsConnect::get_destination_link()."' />\n";
   		$submit_return .= "<input type='hidden' name='destination' value='{$destination}' />\n";
   		$submit_return .= "<input type='hidden' name='query' value='' />\n";
+    } else {
+      // include the link if it's a Saved Search - added 1-29-2013 by Brandon Medenwald (WP-137)
+      if ($idx_link_details['LinkType'] == "SavedSearch") {
+        $submit_return .= "<input type='hidden' name='SavedSearch' class='flexmls_connect__link' value='{$idx_link_details['SearchId']}' />\n";
+      }
     }
 
 		$submit_return .= "<div style='visibility:hidden;' class='query' ></div>\n";
 		$submit_return .= "<input type='hidden' class='flexmls_connect__tech_id' value=\"x'{$api_system_info['Id']}'\" />\n";
 		$submit_return .= "<input type='hidden' class='flexmls_connect__ma_tech_id' value=\"x'". flexmlsConnect::fetch_ma_tech_id() ."'\" />\n";
-		
+
 		$submit_return .= "<div class='flexmls_connect__search_link'>\n";
 		  $submit_return .= "<input type='submit' value='{$buttontext}' style='{$submit_button_css}' />\n";
   		$submit_return .= "</div>\n";
 		if ($detailed_search == "on")
-		  $submit_return .= "<div class='flexmls_connect__search_link'><a href='{$detailed_search_url}' style='color:#{$detailed_search_text_color};'{$this_target}>{$detailed_search_text}</a></div>";    
-		
-		
+		  $submit_return .= "<div class='flexmls_connect__search_link'><a href='{$detailed_search_url}' style='color:#{$detailed_search_text_color};'{$this_target}>{$detailed_search_text}</a></div>";
+
+
 		// Property Types
 		$property_type_return = "";
 		$good_prop_types = array();
@@ -188,7 +193,7 @@ class fmcSearch extends fmcWidget {
 			$property_type_return .= "\t<input type='hidden' name='PropertyType' value='".implode(",", $good_prop_types)."' />\n";
 		}
 		$search_fields[] = "PropertyType";
-  		
+
     // start the HTML
 		$return .= "<div class='flexmls_connect__search flexmls_connect__search_new {$orientation}' style='color:#{$field_text_color}; width:{$width}px; font-family:{$field_font},sans-serif; {$border_radius} {$box_shadow} background-color:#{$background_color};'>\n";
 		if ($destination == "remote") {
@@ -196,11 +201,11 @@ class fmcSearch extends fmcWidget {
     } else {
   		$return .= "<form action='" . flexmlsConnect::make_nice_tag_url('search') . "/' method='get'{$this_target}>\n";
     }
-		
-		
+
+
 		// title
 		$return .= "<h1 style='color:#{$title_text_color};font-family:{$title_font},sans-serif;'>{$title}</h1>\n";
-		
+
 		// if horizontal, place the search here to float it correctly right
 		if ($orientation == "horizontal") {
 		  $return .= "<div class='right'>\n";
@@ -208,25 +213,25 @@ class fmcSearch extends fmcWidget {
 		    $return .= $submit_return;
 		  $return .= "</div>\n";
 		}
-		
+
 		$return .= "<div class='containment'>";
-		
+
   		// Location Search
-  		if ($location_search == "on") { 
+  		if ($location_search == "on") {
   		  $return .= "<div class='label'>Location</div>";
   			$return .= "<input type='text' data-connect-url='{$api_location_search_api}' class='flexmls_connect__location_search' autocomplete='off' value='City, Zip, Address or Other Location' />\n";
   			$search_fields[] = "Location";
   		}
-		
+
   		// Property Type
   		if ($orientation == "vertical")
         $return .= $property_type_return;
-      
+
       $iteration = 0;
   		foreach ($std_fields_selected as $fi) {
   		  $iteration++;
   		  $right_float = ($iteration % 2 == 0 && $orientation == "horizontal") ? "right_float" : "" ;
-  		  
+
   			if ( $fi == "list_price" ) {
   				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Price'>\n";
   				$return .= "  <div class='label'><label for='MinPrice'>Price Range</label></div>\n";
@@ -278,17 +283,17 @@ class fmcSearch extends fmcWidget {
   			}
 
   		}
-		
+
 		$return .= "</div>";
-		
-    
+
+
     // if vertical, place the search here to float it correctly right
 		if ($orientation == "vertical") {
 		  $return .= "<div>\n";
 		    $return .= $submit_return;
 		  $return .= "</div>\n";
 		}
-    
+
 		$return .= "</form>\n";
 		$return .= "<div class='clear'></div></div>\n";
 		$return .= $after_widget;
@@ -317,33 +322,33 @@ class fmcSearch extends fmcWidget {
 
 	function settings_form($instance) {
 		global $fmc_api;
-				
+
 		$selected_code = " selected='selected'";
 		$hidden_code = " style='display:none;'";
-		
+
 		$hide_section = array();
-		
+
 		$setting_fields = fmcSearch::settings_fields();
 		$settings = array();
 		// pull, clean and compile all relevant settings for this form
 		foreach ($setting_fields as $name => $details) {
 			$value = null;
-			
+
 			if ( array_key_exists('default', $details) ) {
 				$settings[$name] = $details['default'];
 			}
-			
+
 			switch($details['type']) {
-			
+
 				case "color":
 				case "select":
 				case "text":
 					$value = esc_attr($instance[$name]);
 					break;
-				
+
 				case "list":
 					$this_val = esc_attr( trim($instance[$name]) );
-					
+
 					if ( strlen($this_val) === 0 ) {
 						$value = array();
 					}
@@ -351,20 +356,20 @@ class fmcSearch extends fmcWidget {
 						$value = explode(",", $this_val);
 					}
 					break;
-				
+
 				case "enabler":
 					$value = ($instance[$name] == "off") ? "off" : "on";
 					$hide_section[$name] = ($value == "off") ? $hidden_code : null;
 					break;
 			}
-			
+
 			if ($value != null) {
 				$settings[$name] = $value;
 			}
-			
+
 		}
-		
-		
+
+
 		$current_standard_fields = $settings['std_fields'];
 		$possible_standard_fields = array(
 				'age' => "Year Built",
@@ -373,10 +378,10 @@ class fmcSearch extends fmcWidget {
 				'square_footage' => "Square Footage",
 				'list_price' => "Price"
 		);
-		
+
 
 		$api_property_type_options = $fmc_api->GetPropertyTypes();
-		
+
 		$current_property_types = $settings['property_type'];
 		$possible_property_types = $api_property_type_options;
 
@@ -384,38 +389,38 @@ class fmcSearch extends fmcWidget {
 			return flexmlsConnect::widget_not_available($fmc_api, true);
 		}
 
-				
+
 		$new_return = "";
-		
+
 		$on_section = null;
-		
+
 		foreach ($setting_fields as $name => $details) {
-			
+
 			$this_section = ( array_key_exists('section', $details) ) ? $details['section'] : null;
-			
+
 			// show section headings if we've switched to a new section
 			if ($on_section != $this_section) {
 				$new_return .= "<br/><div style='width:95%; background-color:white; margin:0px 0px 5px 0px; padding:5px 0px 5px 5px; border: 1px solid grey;'><b>{$this_section}</b></div>\n\n";
 			}
-			
+
 			$group_show = null;
 			$group_class = null;
 			if ( !empty($details['field_grouping']) ) {
 				$group_class = " class='flexmls_connect__disable_group_{$details['field_grouping']}'";
 				$group_show = $hide_section[$details['field_grouping']];
 			}
-			
+
 			$new_return .= "<div{$group_class}{$group_show}>\n";
 			$new_return .= "<p>\n";
-			
+
 			$new_return .= "<label for='".$this->get_field_id($name)."'>" . __($details['label']. ':') . "</label>\n";
-			
+
 			$input_class = null;
 			if ($details['input_width'] == 'full') {
 				$details['input_width'] = null;
 				$details['class'] .= " widefat";
 			}
-			
+
 			// shortcut overrides
 			// change enabler into a standard select box with preset options
 			if ($details['type'] == "enabler") {
@@ -432,7 +437,7 @@ class fmcSearch extends fmcWidget {
 				$details['input_width'] = 6;
 				$details['class'] = "color";
 			}
-			
+
 			$input_class = null;
 			if ( !empty($details['class']) ) {
 				$input_class = " class='{$details['class']}'";
@@ -467,19 +472,19 @@ class fmcSearch extends fmcWidget {
 					$add_button_text = "Add Field";
 					$add_button_class = "add_std_field";
 				}
-				
+
 				if ( !is_array($current_list) ) {
 					$current_list = array();
 				}
-				
+
 				$new_return .= "<div>\n";
-				
+
 				$new_return .= "<input fmc-field='{$name}' fmc-type='text' type='hidden' name='".$this->get_field_name($name)."' class='flexmls_connect__list_values' value='". implode(",", $current_list). "' />\n";
 				$new_return .= "<ul class='flexmls_connect__sortable'>\n";
 
 				foreach ($current_list as $k) {
 					$show_label = ($name == "property_type") ? flexmlsConnect::nice_property_type_label($k) : $possible_list[$k];
-					
+
 					$new_return .= "<li data-connect-name='{$k}'>\n";
 					$new_return .= "	<span class='remove' title='Remove this from the search'>&times;</span>\n";
 					$new_return .= "	<span class='ui-icon ui-icon-arrowthick-2-n-s'></span>\n";
@@ -494,35 +499,35 @@ class fmcSearch extends fmcWidget {
 					$show_label = ($name == "property_type") ? flexmlsConnect::nice_property_type_label($fk) : $fv;
 					$new_return .= "<option value='{$fk}'>{$show_label}</option>\n";
 				}
-				
+
 				$new_return .= "</select>\n";
 				$new_return .= "<button title='Add this to the search' class='flexmls_connect__{$add_button_class}'>{$add_button_text}</button>\n";
 				$new_return .= "<img src='x' class='flexmls_connect__bootloader' onerror='flexmls_connect.sortable_setup(this);' />\n";
 				$new_return .= "</div>\n";
-					
+
 			}
 			// other
 			else {
 				$new_return .= "{$details['type']}\n";
 			}
-			
+
 			$new_return .= $details['after_input'];
-			
+
 			if ( !empty($details['description']) ) {
 				$new_return .= "<br/><span class='description'>{$details['description']}</span>";
 			}
-			
+
 			$new_return .= "</p>\n";
 			$new_return .= "</div>\n";
-			
+
 		}
-		
+
 		// fire off jscolor's init again so it can re-bind to AJAX-loaded boxes
 		$new_return .= "<script language='text/javascript'>jscolor.init();</script>";
-		
+
 		$new_return .= "<input type='hidden' name='shortcode_fields_to_catch' value='". implode(",", array_keys($setting_fields) ) ."' />\n";
 		$new_return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />\n";
-		
+
 
 		return $new_return;
 
@@ -532,11 +537,11 @@ class fmcSearch extends fmcWidget {
 
 	function update($new_instance, $old_instance) {
 		$instance = $old_instance;
-		
+
 		$setting_fields = fmcSearch::settings_fields();
-		
+
 		foreach ($setting_fields as $name => $details) {
-			
+
 			if ($details['output'] == "text") {
 				$instance[$name] = strip_tags($new_instance[$name]);
 			}
@@ -546,7 +551,7 @@ class fmcSearch extends fmcWidget {
 			elseif ($details['output'] == "enabler") {
 				$instance[$name] = ( $new_instance[$name] == "off" ) ? "off" : "on";
 			}
-			
+
 		}
 
 		return $instance;
@@ -555,30 +560,30 @@ class fmcSearch extends fmcWidget {
 
 	function submit_search() {
 		global $fmc_api;
-		
+
 		$destination_type = flexmlsConnect::wp_input_get_post('destination');
 		if ( empty($destination_type) ) {
 			$destination_type = 'remote';
 		}
-		
+
 		if ($destination_type == 'local') {
 			fmcSearch::handle_local_search();
 		}
 		else {
 			fmcSearch::handle_remote_search();
 		}
-		
-		
+
+
 	}
-	
+
 	function handle_local_search() {
 		global $fmc_api;
-		
+
 		$api_standard_fields = $fmc_api->GetStandardFields();
 		$api_standard_fields = $api_standard_fields[0];
-				
+
 		$search_conditions = array();
-		
+
 		$translate_fields = array(
 		    'beds_from' => 'MinBeds',
 		    'beds_to' => 'MaxBeds',
@@ -591,16 +596,16 @@ class fmcSearch extends fmcWidget {
 		    'list_price_from' => 'MinPrice',
 		    'list_price_to' => 'MaxPrice'
 		);
-		
+
 		foreach ($translate_fields as $local_field => $search_field) {
 			$this_value = flexmlsConnect::wp_input_get_post($local_field);
 			if ( !empty($this_value) and $this_value != 'Min' and $this_value != 'Max' ) {
 				$search_conditions[$search_field] = $this_value;
 			}
 		}
-		
+
 		parse_str( flexmlsConnect::wp_input_get_post('query') , $query_parts);
-		
+
 		// fetch other interesting values from the provided submission.
 		// mainly to catch location search values and the selected property types
 		foreach ($query_parts as $part_key => $part_value) {
@@ -608,26 +613,26 @@ class fmcSearch extends fmcWidget {
 				$search_conditions[$part_key] = stripslashes($part_value);
 			}
 		}
-		
-				
-		
+
+
+
 		// turn IDX link into SavedSearch condition if needed
 		$selected_idx_link = flexmlsConnect::wp_input_get_post('link');
 		$link_details = flexmlsConnect::get_idx_link_details($selected_idx_link);
-		
+
 		if ( array_key_exists('SearchId', $link_details) and !empty($link_details['SearchId']) ) {
 			$search_conditions['SavedSearch'] = $link_details['SearchId'];
 		}
-		
+
 		wp_redirect( flexmlsConnect::make_nice_tag_url('search', $search_conditions) );
 		exit;
-		
+
 	}
-	
+
 	function handle_remote_search() {
 		global $fmc_api;
 		/* @var $fmc_api flexmlsAPI_Core */
-		
+
 		// translate from form field names to standard names
 		$fields_to_catch = array(
 				'PropertyType' => 'PropertyType',
@@ -680,7 +685,7 @@ class fmcSearch extends fmcWidget {
 			$vals = array_map( array('flexmlsConnect', 'strip_quotes') , $vals);
 			$vals = array_map( array('flexmlsConnect', 'remove_starting_equals') , $vals);
 			$value = implode(",", $vals);
-			
+
 			$query_conditions[$key] = array('v' => $value, 'o' => $operator);
 
 		}
@@ -699,10 +704,10 @@ class fmcSearch extends fmcWidget {
 				$link_transform_params[$std_cond_field] = "*{$std_cond_field}*";
 			}
 		}
-		
+
 		// get transformed link
 		$outbound_link = $fmc_api->GetTransformedIDXLink($my_link, $link_transform_params);
-		
+
 		// change the placeholders back to actual values with the given operator
 		foreach ($std_query_conditions as $k => $sqc) {
 			$outbound_link = str_replace("=*{$k}*", $sqc['o'] . $sqc['v'], $outbound_link);
@@ -721,27 +726,27 @@ class fmcSearch extends fmcWidget {
 		else {
 			$outbound_link = $permalink . '?url=' . $outbound_link;
 		}
-        
+
 		// forward the user on if we have someplace for them to go
 		if (!empty($outbound_link)) {
 			header("Location: {$outbound_link}");
 			exit;
 		}
-		
+
 	}
-	
+
 	function settings_fields() {
 		global $fmc_api;
-		
-		
+
+
 		$api_links = flexmlsConnect::get_all_idx_links();
 		$idx_links = array();
-		
+
 		foreach ($api_links as $l_d) {
 			$idx_links[$l_d['LinkId']] = $l_d['Name'];
 		}
-		
-		
+
+
 		$settings_fields = array(
 		    // main
 		    'title' => array(
@@ -784,7 +789,7 @@ class fmcSearch extends fmcWidget {
 			   'options' => flexmlsConnect::possible_destinations(),
 			   'output' => 'text',
 			   ),
-		    
+
 		    // filters
 		    'location_search' => array(
 			   'label' => 'Location Search',
@@ -808,7 +813,7 @@ class fmcSearch extends fmcWidget {
 			   'type' => 'list',
 			   'output' => 'text', // legacy
 			   ),
-		    
+
 		    // theme
 		    'theme' => array(
 			   'label' => 'Select a Theme',
@@ -825,12 +830,12 @@ class fmcSearch extends fmcWidget {
 				  'hori_square_dark' => 'Horizontal Square Dark',
 			   ),
 			   'output' => 'text',
-			   'description' => 'Selecting a theme will override your current layout, style and color settings.  
+			   'description' => 'Selecting a theme will override your current layout, style and color settings.
 				   The default width of a vertical theme is 300px and 730px for horizontal.',
 			   'input_width' => 'full',
 			   'class' => 'flexmls_connect__theme_selector'
 			   ),
-		    
+
 		    // layout
 		    'orientation' => array(
 			   'label' => 'Orientation',
@@ -849,7 +854,7 @@ class fmcSearch extends fmcWidget {
 			   'input_width' => 5,
 			   'after_input' => ' px'
 			   ),
-		    
+
 		    // style
 		    'title_font' => array(
 			   'label' => 'Title Font',
@@ -878,7 +883,7 @@ class fmcSearch extends fmcWidget {
 			   'type' => 'enabler',
 			   'output' => 'enabler',
 			   ),
-		    
+
 		    // color
 		    'background_color' => array(
 			   'label' => 'Background',
@@ -925,11 +930,11 @@ class fmcSearch extends fmcWidget {
 			   'type' => 'color',
 			   'output' => 'text',
 			   'description' => 'Select a color shine that compliments your website or select a custom color.'
-			   ),		    
+			   ),
 		);
-		
+
 		return $settings_fields;
-		
+
 	}
 
 }
