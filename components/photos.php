@@ -38,7 +38,11 @@ class fmcPhotos extends fmcWidget {
 		global $fmc_api;
 		global $fmc_plugin_url;
 
-		extract($args);
+        extract($args);
+
+        //Fixing locations to work with API requests(need backslahes before single quotes). WP-149
+        $settings['location'] = addslashes($settings['location']);
+
 
 		if ($type == "widget" && empty($settings['title']) && flexmlsConnect::use_default_titles()) {
 			$settings['title'] = "Listings";

@@ -24,8 +24,10 @@ class fmcLocationLinks extends fmcWidget {
 
 	function jelly($args, $settings, $type) {
 		global $fmc_api;
-
 		extract($args);
+
+        //fixing locations to work with url - removing slashes WP-149
+        $settings['locations'] = stripslashes($settings['locations']);
 
 		// set default title if a widget, none given, and the default_titles setting is turned on
 		if ($type == "widget" && empty($settings['title']) && flexmlsConnect::use_default_titles()) {
