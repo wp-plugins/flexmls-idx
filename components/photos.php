@@ -460,7 +460,7 @@ class fmcPhotos extends fmcWidget {
 					$link_to_end = "</a>";
 				}
 
-				$main_photo_uri300 = "";
+				$main_photo_uri640 = "";
 				$main_photo_caption = "";
 				$main_photo_urilarge = "";
 
@@ -477,7 +477,7 @@ class fmcPhotos extends fmcWidget {
 
 					if ($photo['Primary'] == true) {
 						$main_photo_caption = $caption;
-						$main_photo_uri300 = $photo['Uri300'];
+						$main_photo_uri640 = $photo['Uri640'];
 						$main_photo_urilarge = $photo['UriLarge'];
 					}
 
@@ -486,20 +486,28 @@ class fmcPhotos extends fmcWidget {
 				// default to the first photo given if the primary isn't set
 				if (empty($main_photo_urilarge)) {
 					$main_photo_caption = htmlspecialchars($listing['Photos'][0]['Caption'], ENT_QUOTES);
-					$main_photo_uri300 = $listing['Photos'][0]['Uri300'];
+					$main_photo_uri640 = $listing['Photos'][0]['Uri640'];
 					$main_photo_urilarge = $listing['Photos'][0]['UriLarge'];
 				}
 
-				if (empty($main_photo_uri300)) {
-					$main_photo_uri300 = "{$fmc_plugin_url}/images/nophoto.gif";
-					$listing['Photos'][0]['UriLarge'] = $main_photo_uri300;
+				if (empty($main_photo_uri640)) {
+					$main_photo_uri640 = "{$fmc_plugin_url}/images/nophoto.gif";
+					$listing['Photos'][0]['UriLarge'] = $main_photo_uri640;
 					$main_photo_caption = "No Photo Available";
 				}
+                
+                
+                //Resize image to fit nicely on slideshow according to image_size setting which is the width in pixels
+                $image_width = $settings['image_size'];
+                if (! $image_width)
+                    $image_width = "134";
+                $image_height = $image_width * 0.75;
+
 
 				$return .= "<!-- Listing -->
 						<div title='{$one_line_address} | MLS #: {$listing['ListingId']} | {$price}{$extra_title_line}' link='{$this_link}' target=\"{$this_target}\">
-							<a href='{$listing['Photos'][0]['UriLarge']}' class='popup' rel='{$rand}-{$listing['ListingKey']}' title='{$main_photo_caption}'>
-								<img src='{$main_photo_uri300}' style='width:134px;height:100px' alt='' />
+                        <a href='{$listing['Photos'][0]['UriLarge']}' class='popup' rel='{$rand}-{$listing['ListingKey']}' title='{$main_photo_caption}'>
+								<img src='{$main_photo_uri640}' style='width:{$image_width}px;height:{$image_height}px;max-width:none' alt='' />
 							</a>
 							<p class='caption'>
 								{$link_to_start}
@@ -592,7 +600,8 @@ class fmcPhotos extends fmcWidget {
 
 		$title = esc_attr($instance['title']);
 		$horizontal = esc_attr($instance['horizontal']);
-		$vertical = esc_attr($instance['vertical']);
+        $vertical = esc_attr($instance['vertical']);
+        $image_size = esc_attr($instance['image_size']);
 		$auto_rotate = esc_attr($instance['auto_rotate']);
 		$source = esc_attr($instance['source']);
 		$display = esc_attr($instance['display']);
@@ -610,6 +619,14 @@ class fmcPhotos extends fmcWidget {
 		$horizontal_options = array(1, 2, 3, 4, 5, 6, 7, 8);
 
 		$vertical_options = array(1, 2, 3, 4, 5, 6, 7, 8);
+
+        $image_size_options = array(
+            134 => "Small",
+            204 => "Medium",
+            360 => "Large",
+            640 => "Extra Large",
+        );
+
 
 		$auto_rotate_options = array(
 				0 => "Off",
@@ -773,9 +790,25 @@ class fmcPhotos extends fmcWidget {
 			$return .= "<option value='{$k}'{$is_selected}>{$k}</option>\n";
 		}
 
+
+        $return .= "
+                     </select>
+                 <br /><span class='description'>Horizontal &times; Vertical</span>
+             </p>
+ 
+             <p>
+                 <label for='".$this->get_field_id('image_size')."'>" . __('Size of Image:') . "
+                     <select fmc-field='image_size' fmc-type='select' id='".$this->get_field_id('image_size')."' name='".$this->get_field_name('image_size')."'>
+                         ";
+         foreach ($image_size_options as $k => $v) {
+             $is_selected = ($k == $image_size) ? $selected_code : "";
+             $return .= "<option value='{$k}'{$is_selected}>{$v}</option>\n";
+         } 
+
+
+
 		$return .= "
 					</select>
-				<br /><span class='description'>Horizontal &times; Vertical</span>
 			</p>
 
 			<p>
@@ -942,6 +975,7 @@ class fmcPhotos extends fmcWidget {
 		$instance['title'] = strip_tags($new_instance['title']);
 		$instance['horizontal'] = strip_tags($new_instance['horizontal']);
 		$instance['vertical'] = strip_tags($new_instance['vertical']);
+        $instance['image_size'] = strip_tags($new_instance['image_size']);
 		$instance['auto_rotate'] = strip_tags($new_instance['auto_rotate']);
 		$instance['source'] = strip_tags($new_instance['source']);
 		$instance['display'] = strip_tags($new_instance['display']);

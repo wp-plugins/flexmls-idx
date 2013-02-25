@@ -42,6 +42,7 @@ class fmcSearch extends fmcWidget {
     $detailed_search_text = (array_key_exists('detailed_search_text', $settings) and !empty($settings['detailed_search_text'])) ? trim($settings['detailed_search_text']) : "More Search Options" ;
     // destination="local"
     $location_search = trim($settings['location_search']);
+    $user_sorting = trim($settings['user_sorting']);
     $property_type_enabled = (array_key_exists('property_type_enabled', $settings)) ? trim($settings['property_type_enabled']) : "on" ;
     $property_type = trim($settings['property_type']);
     $property_types_selected = explode(",", $property_type);
@@ -183,17 +184,16 @@ class fmcSearch extends fmcWidget {
 		}
 		if ($property_type_enabled == "on" and count($good_prop_types) > 0) {
 		  $property_type_return .= "<div class='label'>Property Type</div>";
-		  $property_type_return .= "<select name='PropertyType' class='property-type' size='1'>";
+          $property_type_return .= "<select name='PropertyType' class='property-type' size='1'>";
 			foreach ($good_prop_types as $type) {
 				$property_type_return .= "\t\t<option value='{$type}' ".($_GET["PropertyType"]==$type?" selected":"").">". flexmlsConnect::nice_property_type_label($type) ."</option>\n";
 			}
-		  $property_type_return .= "</select>";
-		}
+          $property_type_return .= "</select>";
+        }
 		else {
 			$property_type_return .= "\t<input type='hidden' name='PropertyType' value='".implode(",", $good_prop_types)."' />\n";
-		}
+        }
 		$search_fields[] = "PropertyType";
-
     // start the HTML
 		$return .= "<div class='flexmls_connect__search flexmls_connect__search_new {$orientation}' style='color:#{$field_text_color}; width:{$width}px; font-family:{$field_font},sans-serif; {$border_radius} {$box_shadow} background-color:#{$background_color};'>\n";
 		if ($destination == "remote") {
@@ -201,7 +201,22 @@ class fmcSearch extends fmcWidget {
     } else {
   		$return .= "<form action='" . flexmlsConnect::make_nice_tag_url('search') . "/' method='get'{$this_target}>\n";
     }
-
+        
+        if ($destination == "local" and $user_sorting == "on")
+        {
+            $order = "<div class='label'>Sort By</div>
+                <select name='OrderBy' size='1'>
+                    <option value='-ListPrice'>List price (High to Low)</option>
+                    <option value='ListPrice'>List price (Low to High)</option>
+                    <option value='-BedsTotal'># Bedrooms</option>
+                    <option value='-BathsTotal'># Bathrooms</option>
+                    <option value='-YearBuilt'>Year Built</option>
+                    <option value='-BuildingAreaTotal'>Square Footage</option>
+                    <option value='-ModificationTimestamp'>Recently Updated</option>
+                 </select>";
+        }
+        else
+            $order = "";//order not available to remote searches
 
 		// title
 		$return .= "<h1 style='color:#{$title_text_color};font-family:{$title_font},sans-serif;'>{$title}</h1>\n";
@@ -209,8 +224,9 @@ class fmcSearch extends fmcWidget {
 		// if horizontal, place the search here to float it correctly right
 		if ($orientation == "horizontal") {
 		  $return .= "<div class='right'>\n";
-		    $return .= $property_type_return;
-		    $return .= $submit_return;
+          $return .= $property_type_return;
+          $return .= $order;
+		  $return .= $submit_return;
 		  $return .= "</div>\n";
 		}
 
@@ -224,9 +240,10 @@ class fmcSearch extends fmcWidget {
   		}
 
   		// Property Type
-  		if ($orientation == "vertical")
+  		if ($orientation == "vertical"){
         $return .= $property_type_return;
-
+        $return .= $order;
+        }
       $iteration = 0;
   		foreach ($std_fields_selected as $fi) {
   		  $iteration++;
@@ -789,6 +806,13 @@ class fmcSearch extends fmcWidget {
 			   'options' => flexmlsConnect::possible_destinations(),
 			   'output' => 'text',
 			   ),
+
+            'user_sorting' => array(
+                'label' => 'User Sorting',
+                'type' => 'enabler',
+                'output' => 'enabler',
+                'section' => 'Sorting',
+            ),
 
 		    // filters
 		    'location_search' => array(
