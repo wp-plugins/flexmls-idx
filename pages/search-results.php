@@ -10,7 +10,7 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 	protected $current_page;
 	protected $total_rows;
 	
-	
+	protected $page_size;
 
 	function pre_tasks($tag) {
 		global $fmc_special_page_caught;
@@ -26,6 +26,21 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 
         //This unset was added to pull all information
         unset($params['_select']);
+        //Set page size to cookie value
+        $this->page_size=intval($_COOKIE['flexmlswordpressplugin']);
+        
+        
+        if ($this->page_size > 0 and $this->page_size <= 25){
+           //Good, don't need to to anything 
+        }
+        elseif ($this->page_size>25){
+            $this->page_size=25;
+        }
+        else
+            $this->page_size=10;
+        
+        $params['_limit'] = $this->page_size;
+
 
         if ($context == "listings") {
 			$results = $fmc_api->GetMyListings($params);
@@ -45,7 +60,6 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		$this->current_page = $fmc_api->current_page;
 		$this->total_rows = $fmc_api->last_count;
 		$this->page_size = $fmc_api->page_size;
-
 		$fmc_special_page_caught['type'] = "search-results";
 		$fmc_special_page_caught['page-title'] = "Property Search";
 		$fmc_special_page_caught['post-title'] = "Property Search";
@@ -99,10 +113,18 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		
 		echo "<div class='flexmls_connect__page_content'>\n";
     
-  	echo "	<div class='flexmls_connect__sr_matches'>\n";
+  	echo "	<span class='flexmls_connect__sr_matches'>\n";
 		echo "		<div class='flexmls_connect__sr_matches_count'>" . number_format($this->total_rows, 0, '.', ',') ."</div>\n";
 		echo "		matches found\n";
-		echo "	</div><!-- matches -->\n\n\n";
+            echo  '<select class="flexmls_connect_select listingsperpage flexmls_connect_hasJavaScript" style="float:right;">
+             <option value="'.$this->page_size.'">Listings per page</option>
+             <option value="5">5</option>
+             <option value="10">10</option>
+             <option value="15">15</option>
+             <option value="20">20</option>
+             <option value="25">25</option>
+             </select> ';
+		echo "	</span><!-- matches/listings per page -->\n\n\n";
 
 		// echo "	<div class='flexmls_connect__sr_email_updates'>\n";
 		// echo "		<a href='#'>Get Email Updates for New Listings</a>\n";
@@ -373,7 +395,6 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		if ($current_page != $total_pages) {
 			$return .= "		 <button href='". $this->make_pagination_link($current_page + 1) ."'>Next</button>\n";
 		}
-		
 		$return .= "	</div><!-- pagination -->\n";
 
 		return $return;
@@ -397,7 +418,7 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		}
 		else {
 			$page_conditions = $this->search_criteria;
-			$page_conditions['pg'] = $page;
+            $page_conditions['pg'] = $page;
 			return flexmlsConnect::make_nice_tag_url('search', $page_conditions);
 		}
 		
