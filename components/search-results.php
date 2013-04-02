@@ -39,6 +39,7 @@ class fmcSearchResults extends fmcWidget {
 		$title = trim($settings['title']);
 		$source = trim($settings['source']);
 		$display = trim($settings['display']);
+		$days = trim($settings['days']);
 		$property_type = trim($settings['property_type']);
 		$link = trim($settings['link']);
 		$location = html_entity_decode(flexmlsConnect::clean_comma_list($settings['location']));
@@ -50,33 +51,58 @@ class fmcSearchResults extends fmcWidget {
 		}
 		
 		$source = (empty($source)) ? "my" : $source;
-		
+
 		$filter_conditions = array();
 		$pure_conditions = array();
-		
-		$hours = 24;
-		if (date("l") == "Monday") {
-			$hours = 72;
+
+
+		if ($settings['days']){
+			$days = $settings['days'];
 		}
+		elseif ($display == "open_houses"){
+			//For backward compatibility. Set # of days for open house default to 10
+			$days = 10;
+		}
+		else{
+			$days = 1;
+			if (date("l") == "Monday")
+				$days = 3;
+		}
+
+
+
+		$flexmls_temp_date = date_default_timezone_get();
+		date_default_timezone_set('America/Chicago');
+		$specific_time = date("Y-m-d\TH:i:s.u",strtotime("-".$days." days"));
+		date_default_timezone_set($flexmls_temp_date);
+		$flexmls_hours = $days*24;
 		
 		if ($display == "all") {
 			// nothing to do
 		}
 		elseif ($display == "new") {
-			$pure_conditions['HotSheet'] = "new";
-			$outbound_criteria .= "&listingevent=new&listingeventhours={$hours}";
+            $params['_pagination'] = 1;
+            $filter_conditions[] = "OnMarketDate Ge {$specific_time}";
+            $outbound_criteria .= "&listingevent=new&listingeventhours={$flexmls_hours}";
+            $pure_conditions["OnMarketDate"] = $specific_time;
 		}
 		elseif ($display == "open_houses") {
-			$pure_conditions['OpenHouses'] = 10;
-			$outbound_criteria .= "&openhouse=10";
+			$params['OpenHouses'] = $days;
+			$pure_conditions['OpenHouses'] = $days;
+			$params['_expand'] .= ',OpenHouses';
+			$outbound_criteria .= "&openhouse={$days}";
 		}
 		elseif ($display == "price_changes") {
-			$pure_conditions['HotSheet'] = "price";
-			$outbound_criteria .= "&listingevent=price&listingeventhours={$hours}";
+            $params['_pagination'] = 1;
+            $filter_conditions[] = "PriceChangeTimestamp Gt {$specific_time}";
+            $outbound_criteria .= "&listingevent=price&listingeventhours={$flexmls_hours}";
+            $pure_conditions["PriceChangeTimestamp"] = $specific_time;
 		}
 		elseif ($display == "recent_sales") {
-			$pure_conditions['HotSheet'] = "sold";
-			$outbound_criteria .= "&status=C&listingevent=status&listingeventhours={$hours}";
+            $params['_pagination'] = 1;
+            $filter_conditions[] = "StatusChangeTimestamp Gt {$specific_time}";
+			$outbound_criteria .= "&status=C&listingevent=status&listingeventhours={$flexmls_hours}";
+			$pure_conditions["StatusChangeTimestamp"] = $specific_time;
 		}
 
 		if ($sort == "recently_changed") {
@@ -181,6 +207,7 @@ class fmcSearchResults extends fmcWidget {
 		$title = esc_attr($instance['title']);
 		$source = esc_attr($instance['source']);
 		$display = esc_attr($instance['display']);
+		$days = esc_attr($instance['days']);
 		$property_type = esc_attr($instance['property_type']);
 		$link = esc_attr($instance['link']);
 		$location = $instance['location'];
@@ -223,6 +250,25 @@ class fmcSearchResults extends fmcWidget {
 				"price_changes" => "Recent Price Changes",
 				"recent_sales" => "Recent Sales"
 		);
+
+		$display_day_options = array(
+            null => "1 (3 on Monday)",
+            1 => 1,
+            2 => 2,
+            3 => 3,
+            4 => 4,
+            5 => 5,
+            6 => 6,
+            7 => 7,
+            8 => 8,
+            9 => 9,
+            10 => 10,
+            11 => 11,
+            12 => 12,
+            13 => 13,
+            14 => 14,
+            15 => 15,
+        );
 
 		$sort_options = array(
 				"recently_changed" => "Recently changed first",
@@ -360,7 +406,7 @@ class fmcSearchResults extends fmcWidget {
 		// display
 		$return .= "<p>\n";
 		$return .= "<label for='".$this->get_field_id('display')."'>" . __('Display:') . "\n";
-		$return .= "<select fmc-field='display' fmc-type='select' id='".$this->get_field_id('display')."' name='".$this->get_field_name('display')."'>\n";
+		$return .= "<select class='photos_display' fmc-field='display' fmc-type='select' id='".$this->get_field_id('display')."' name='".$this->get_field_name('display')."'>\n";
 
 		foreach ($display_options as $k => $v) {
 			$is_selected = ($k == $display) ? $selected_code : "";
@@ -370,7 +416,17 @@ class fmcSearchResults extends fmcWidget {
 		$return .= "</select>\n";
 		$return .= "</label>\n";
 		$return .= "</p>\n";
-		
+
+		 $return .= "<p>
+                 <label class='photos_days' style='display:none' for='".$this->get_field_id('day')."'>" . __('Number of Days:') . "
+                     <select fmc-field='day' fmc-type='select' id='".$this->get_field_id('days')."' name='".$this->get_field_name('days')."'>
+                         ";
+		foreach ($display_day_options as $k => $v) {
+            $is_selected = ($k == $days) ? $selected_code : "";
+            $return .= "<option value='{$k}'{$is_selected}{$is_disabled}>{$v}</option>\n";
+        }
+
+		$return .= "</select> </label> </p>";
 		
 		// sort
 		$return .= "<p>\n";
@@ -391,7 +447,7 @@ class fmcSearchResults extends fmcWidget {
 		$return .= "<img src='x' class='flexmls_connect__bootloader' onerror='flexmls_connect.location_setup(this);' />\n";
 		
 
-		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,source,property_type,location,display,sort,agent' />\n";
+		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,source,property_type,location,display,sort,agent,days' />\n";
 		$return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />\n";
 
 		return $return;
@@ -405,6 +461,7 @@ class fmcSearchResults extends fmcWidget {
 		$instance['title'] = strip_tags($new_instance['title']);
 		$instance['source'] = strip_tags($new_instance['source']);
 		$instance['display'] = strip_tags($new_instance['display']);
+		$instance['days'] = strip_tags($new_instance['days']);
 		$instance['property_type'] = strip_tags($new_instance['property_type']);
 		$instance['link'] = strip_tags($new_instance['link']);
 		$instance['location'] = strip_tags($new_instance['location']);

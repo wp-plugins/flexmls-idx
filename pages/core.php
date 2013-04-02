@@ -281,6 +281,16 @@ class flexmlsConnectPageCore {
 		//echo "<BR>";
 		*/
 
+		
+		if ($this->fetch_input_data('OnMarketDate') != null)
+			$search_criteria[]= "OnMarketDate Gt " .$this->fetch_input_data('OnMarketDate');
+
+		if ($this->fetch_input_data('PriceChangeTimestamp') != null)
+			$search_criteria[]= "PriceChangeTimestamp Gt " .$this->fetch_input_data('PriceChangeTimestamp');
+
+		if ($this->fetch_input_data('StatusChangeTimestamp') != null)
+			$search_criteria[]= "StatusChangeTimestamp Gt " .$this->fetch_input_data('StatusChangeTimestamp');
+
 		// check for ListAgentId
 		$list_agent_id = $this->fetch_input_data('ListAgentId');
 		if ($list_agent_id != null) {

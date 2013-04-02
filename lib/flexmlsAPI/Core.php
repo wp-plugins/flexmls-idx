@@ -385,8 +385,12 @@ class flexmlsAPI_Core {
 	function GetSharedListingNotes($id) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listings/".$id."/shared/notes", '10m') );
 	}
-	
-	
+
+
+	function GetFieldOrder($property_type, $id){
+		return $this->return_all_results( $this->MakeAPICall("GET", "fields/order/".$property_type.".".$id) );
+	}
+
 	/*
 	 * Account services
 	 */
@@ -657,7 +661,9 @@ class flexmlsAPI_Core {
 
 	function GetUnitFields($mls) {
 		return $this->return_first_result( $this->MakeAPICall("GET", "mls/".$mls."/units", '24h') );
-	}		
+	}
+
+	
 	
 	
 }

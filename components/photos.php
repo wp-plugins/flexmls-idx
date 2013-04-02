@@ -57,7 +57,8 @@ class fmcPhotos extends fmcWidget {
 		$vertical = trim($settings['vertical']);
 		$auto_rotate = trim($settings['auto_rotate']);
 		$source = trim($settings['source']);
-		$display = trim($settings['display']);
+        $display = trim($settings['display']);
+        $days = trim($settings['days']);
 		$property_type = trim($settings['property_type']);
 		$link = trim($settings['link']);
 		$location = html_entity_decode(flexmlsConnect::clean_comma_list($settings['location']));
@@ -121,39 +122,58 @@ class fmcPhotos extends fmcWidget {
 			$params['_page'] = $page;
 		}
 		$params['_limit'] = $api_limit;
+        
+        
+        
+        if ($settings['days']){
+            $days = $settings['days'];
+        }
+        elseif ($display == "open_houses"){
+            //For backward compatibility. Set # of days for open house default to 10
+            $days = 10;
+        }
+        else
+        {
+            $days = 1;
+			if (date("l") == "Monday")
+				$days = 3;
+        }
 
-		$hours = 24;
-		if (date("l") == "Monday") {
-			$hours = 72;
-		}
-
+		$flexmls_temp_date = date_default_timezone_get();
+		date_default_timezone_set('America/Chicago');
+		$specific_time = date("Y-m-d\TH:i:s.u",strtotime("-".$days." days"));
+		date_default_timezone_set($flexmls_temp_date);
+		$flexmls_hours = $days*24;
 		if ($display == "all") {
 			// nothing to do
 		}
-		elseif ($display == "new") {
-			$params['HotSheet'] = "new";
-			$pure_conditions['HotSheet'] = "new";
-			$outbound_criteria .= "&listingevent=new&listingeventhours={$hours}";
+        elseif ($display == "new") {
+            $params['_pagination'] = 1;
+            $filter_conditions[] = "OnMarketDate Ge {$specific_time}";
+            $outbound_criteria .= "&listingevent=new&listingeventhours={$flexmls_hours}";
+            $pure_conditions["OnMarketDate"] = $specific_time;
 		}
 		elseif ($display == "open_houses") {
-			$params['OpenHouses'] = 10;
-			$pure_conditions['OpenHouses'] = 10;
+			$params['OpenHouses'] = $days;
+			$pure_conditions['OpenHouses'] = $days;
 			$params['_expand'] .= ',OpenHouses';
-			$outbound_criteria .= "&openhouse=10";
+			$outbound_criteria .= "&openhouse={$days}";
 		}
 		elseif ($display == "price_changes") {
-			$params['HotSheet'] = "price";
-			$pure_conditions['HotSheet'] = "price";
-			$outbound_criteria .= "&listingevent=price&listingeventhours={$hours}";
+            $params['_pagination'] = 1;
+            $filter_conditions[] = "PriceChangeTimestamp Gt {$specific_time}";
+            $outbound_criteria .= "&listingevent=price&listingeventhours={$flexmls_hours}";
+            $pure_conditions["PriceChangeTimestamp"] = $specific_time;
 		}
 		elseif ($display == "recent_sales") {
-			$params['HotSheet'] = "sold";
-			$pure_conditions['HotSheet'] = "sold";
-			$outbound_criteria .= "&status=C&listingevent=status&listingeventhours={$hours}";
-		}
+            $params['_pagination'] = 1;
+            $filter_conditions[] = "StatusChangeTimestamp Gt {$specific_time}";
+			$outbound_criteria .= "&status=C&listingevent=status&listingeventhours={$flexmls_hours}";
+			$pure_conditions["StatusChangeTimestamp"] = $specific_time;
+        }
 
 		if ($sort == "recently_changed") {
-			// nothing to do.  this is the default
+            $params['_orderby'] = "-ModificationTimestamp";
 		}
 		elseif ($sort == "price_low_high") {
 			$params['_orderby'] = "+ListPrice";
@@ -164,7 +184,6 @@ class fmcPhotos extends fmcWidget {
 
 		$pure_conditions['OrderBy'] = ($params['_orderby']) ? $params['_orderby'] : 'natural';
 		$pure_conditions['Limit'] = $params['_limit'];
-
 
 		$api_system_info = $fmc_api->GetSystemInfo();
 		
@@ -215,8 +234,8 @@ class fmcPhotos extends fmcWidget {
 
 		$params['_filter'] = implode(" And ", $filter_conditions);
 		$params['_select'] = 'ListPrice,ListOfficeId,ListOfficeName,OpenHouses,BedsTotal,BathsTotal,BuildingAreaTotal,ListingKey,Photos,ListingId,SubdivisionName,PublicRemarks,StreetNumber,StreetDirPrefix,StreetName,StreetSuffix,StreetDirSuffix,StreetAdditionalInfo,City,StateOrProvince,PostalCode';
-		
 
+		
 		$only_our_listings = false;
 		if ($source == "my") {
 			$outbound_criteria .= "&my_listings=true";
@@ -306,7 +325,7 @@ class fmcPhotos extends fmcWidget {
 			// replace all remaining placeholders with a blank value since it doesn't apply to this link
 			$this_link = preg_replace('/\*(.*?)\*/', "", $this_link);
 			$this_link .= $outbound_criteria;
-
+			
 
 			$search_destination_link = "";
 
@@ -597,15 +616,16 @@ class fmcPhotos extends fmcWidget {
 
 	function settings_form($instance) {
 		global $fmc_api;
-
-		$title = esc_attr($instance['title']);
+        
+        $title = esc_attr($instance['title']);
 		$horizontal = esc_attr($instance['horizontal']);
         $vertical = esc_attr($instance['vertical']);
         $image_size = esc_attr($instance['image_size']);
 		$auto_rotate = esc_attr($instance['auto_rotate']);
 		$source = esc_attr($instance['source']);
-		$display = esc_attr($instance['display']);
-		$property_type = esc_attr($instance['property_type']);
+        $display = esc_attr($instance['display']);
+        $days = esc_attr($instance['days']);
+        $property_type = esc_attr($instance['property_type']);
 		$link = esc_attr($instance['link']);
 		$location = $instance['location'];
 		$sort = esc_attr($instance['sort']);
@@ -680,6 +700,25 @@ class fmcPhotos extends fmcWidget {
 				"price_changes" => "Recent Price Changes",
 				"recent_sales" => "Recent Sales"
 		);
+
+        $display_day_options = array(
+            null => "1 (3 on Monday)",
+            1 => 1,
+            2 => 2,
+            3 => 3,
+            4 => 4,
+            5 => 5,
+            6 => 6,
+            7 => 7,
+            8 => 8,
+            9 => 9,
+            10 => 10,
+            11 => 11,
+            12 => 12,
+            13 => 13,
+            14 => 14,
+            15 => 15,
+        );
 
 		$sort_options = array(
 				"recently_changed" => "Recently changed first",
@@ -892,16 +931,34 @@ class fmcPhotos extends fmcWidget {
 
 			<p>
 				<label for='".$this->get_field_id('display')."'>" . __('Display:') . "
-					<select fmc-field='display' fmc-type='select' id='".$this->get_field_id('display')."' name='".$this->get_field_name('display')."'>
+					<select class='photos_display' fmc-field='display' fmc-type='select' id='".$this->get_field_id('display')."' name='".$this->get_field_name('display')."'>
 						";
 
 		foreach ($display_options as $k => $v) {
 			$is_selected = ($k == $display) ? $selected_code : "";
 			$return .= "<option value='{$k}'{$is_selected}{$is_disabled}>{$v}</option>\n";
-		}
+        }
+
+            
+
+         $return .= "
+                     </select>
+                 </label>
+             </p>
+ 
+             <p>
+                 <label class='photos_days' style='display:none' for='".$this->get_field_id('day')."'>" . __('Number of Days:') . "
+                     <select fmc-field='day' fmc-type='select' id='".$this->get_field_id('days')."' name='".$this->get_field_name('days')."'>
+                         ";
+
+        foreach ($display_day_options as $k => $v) {
+            $is_selected = ($k == $days) ? $selected_code : "";
+            $return .= "<option value='{$k}'{$is_selected}{$is_disabled}>{$v}</option>\n";
+        }
 
 		$return .= "
-					</select>
+            </select>
+            <br /><span class='description'>The number of days in the past for display: new listings, open houses, etc.</span>
 				</label>
 			</p>
 
@@ -959,7 +1016,7 @@ class fmcPhotos extends fmcWidget {
 		}
 
 
-		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,horizontal,vertical,auto_rotate,source,property_type,location,display,sort,additional_fields,destination,agent' />\n";
+		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,horizontal,vertical,auto_rotate,source,property_type,location,display,sort,additional_fields,destination,agent,days,image_size' />\n";
 		$return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />\n";
 
 		return $return;
@@ -978,7 +1035,8 @@ class fmcPhotos extends fmcWidget {
         $instance['image_size'] = strip_tags($new_instance['image_size']);
 		$instance['auto_rotate'] = strip_tags($new_instance['auto_rotate']);
 		$instance['source'] = strip_tags($new_instance['source']);
-		$instance['display'] = strip_tags($new_instance['display']);
+        $instance['display'] = strip_tags($new_instance['display']);
+        $instance['days'] = strip_tags($new_instance['days']);
 		$instance['property_type'] = strip_tags($new_instance['property_type']);
 		$instance['link'] = strip_tags($new_instance['link']);
 		$instance['location'] = strip_tags($new_instance['location']);

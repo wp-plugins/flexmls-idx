@@ -3,7 +3,7 @@ Tags: flexmls, IDX, MLS search
 Contributors: flexmls
 Requires at least: 3.0.0
 Tested up to: 3.5.1
-Stable tag: 3.2.3
+Stable tag: 3.2.4
 
 Add flexmls IDX listings, market statistics, IDX searches, and a contact form on your web site.
 
@@ -55,6 +55,16 @@ Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a hre
 
 
 == Changelog ==
+
+= 3.2.4 =
+
+* Full screen photo on details page now shows currently selected photo
+* Now only one photo box will come up when selecting photos
+* Details page now uses the api field ordering service
+* Request a showing button will now work if agent name has an apostrophe
+* Users can now choose how many days for new listings, open houses, etc.
+* Fixed minor bug which would cause possible issues in the future with api requests
+* Removed wildcard from uneccessary parameters in location search
 
 = 3.2.3 =
 
