@@ -4,17 +4,17 @@ Plugin Name: flexmls&reg; IDX
 Plugin URI: http://www.flexmls.com/wpdemo/
 Description: Provides flexmls&reg; Customers with flexmls&reg; IDX features on their WordPress blog. <strong>Tips:</strong> <a href="options-general.php?page=flexmls_connect">Activate your flexmls IDX plugin</a> on the settings page; <a href="widgets.php">add widgets to your sidebar</a> using the Widgets Admin under Appearance; and include widgets on your posts or pages using the flexmls IDX Widget Short-Code Generator on the Visual page editor.
 Author: FBS
-Version: 3.2.4
+Version: 3.3
 Author URI: http://www.flexmls.com/
 */
 
-$fmc_version = '3.2.4';
+$fmc_version = '3.3';
 $fmc_plugin_dir = dirname(realpath(__FILE__));
-$fmc_plugin_url = get_home_url() .'/wp-content/plugins/flexmls-idx';
+$fmc_plugin_url = plugins_url() .'/flexmls-idx';
 
 /*
- * Define widget information
- */
+* Define widget information
+*/
 
 $fmc_widgets = array(
 		'fmcMarketStats' => array(
@@ -84,19 +84,29 @@ $fmc_widgets = array(
 				'component' => 'listing-details.php',
 				'title' => "flexmls&reg;: IDX Listing Details",
 				'description' => "Insert listing details into a page or post",
-		    		'requires_key' => true,
-		    		'shortcode' => 'idx_listing_details',
-		    		'max_cache_time' => 0,
-		    		'widget' => false
+				'requires_key' => true,
+				'shortcode' => 'idx_listing_details',
+				'max_cache_time' => 0,
+				'widget' => false
 				),
 		'fmcSearchResults' => array(
 				'component' => 'search-results.php',
 				'title' => "flexmls&reg;: IDX Listing Summary",
 				'description' => "Insert a summary of listings into a page or post",
-		    		'requires_key' => true,
-		    		'shortcode' => 'idx_listing_summary',
-		    		'max_cache_time' => 0,
-		    		'widget' => false
+				'requires_key' => true,
+				'shortcode' => 'idx_listing_summary',
+				'max_cache_time' => 0,
+				'widget' => false
+				),
+		/*The agent search widget is only available to Offices and Mls's (not of usertype member)*/
+		'fmcAgents' => array(
+				'component' => 'fmc-agents.php',
+				'title' => "flexmls&reg;: IDX Agent List",
+				'description' => "Insert agent information into a page or post",
+				'requires_key' => true,
+				'shortcode' => 'idx_agent_search',
+				'max_cache_time' => 0,
+				'widget' => false
 				),
 		);
 
@@ -104,8 +114,8 @@ $fmc_widgets = array(
 
 
 /*
- * Load in the basics
- */
+* Load in the basics
+*/
 
 require_once('lib/base.php');
 require_once('lib/flexmls-json.php');
@@ -122,6 +132,7 @@ require_once('pages/core.php');
 require_once('pages/full-page.php');
 require_once('pages/listing-details.php');
 require_once('pages/search-results.php');
+require_once('pages/fmc-agents.php');
 require_once('pages/next-listing.php');
 require_once('pages/prev-listing.php');
 // i4 TODO
@@ -151,8 +162,8 @@ $fmc_instance_cache = array();
 
 
 /*
- * register the init functions with the appropriate WP hooks
- */
+* register the init functions with the appropriate WP hooks
+*/
 add_action('widgets_init', array('flexmlsConnect', 'widget_init') );
 add_action('admin_init', array('flexmlsConnectSettings', 'settings_init') );
 add_action('admin_menu', array('flexmlsConnect', 'admin_menus_init') );
@@ -166,8 +177,8 @@ add_action('wp', array('flexmlsConnect', 'wp_init') );
 $fmc_search_results_loaded = false;
 
 /**
- * since WordPress doesn't garbage collect expired cache items, we'll force it to every ~1,000 requests
- */
+* since WordPress doesn't garbage collect expired cache items, we'll force it to every ~1,000 requests
+*/
 if (rand(1, 1000) === 1) {
 	flexmlsConnect::garbage_collect_bad_caches();
 }

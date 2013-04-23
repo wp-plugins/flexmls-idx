@@ -674,6 +674,7 @@ function settings_field_listing() {
 		echo "<blockquote>";
 		
 		echo "<b>Site URL:</b> ". get_home_url() ."<br/>\n";
+		echo "<b>Wordpress URL:</b> ". get_site_url() ."<br/>\n";
 		echo "<b>Web Server:</b> {$_SERVER['SERVER_SOFTWARE']}<br/>\n";
 		echo "<b>PHP Version:</b> ". phpversion() ."<br/>\n";
 		echo "<b>WP Version:</b> {$wp_version}<br/>\n";

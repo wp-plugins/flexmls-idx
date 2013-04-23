@@ -522,10 +522,16 @@ class fmcPhotos extends fmcWidget {
                     $image_width = "134";
                 $image_height = $image_width * 0.75;
 
-
+				//Check setting to have details pop up on photo click.
+				$fmc_send_to = "<a href='{$listing['Photos'][0]['UriLarge']}' class='popup' rel='{$rand}-{$listing['ListingKey']}' title='{$main_photo_caption}'>";
+				if ($settings['send_to'] == 'detail'){
+					$fmc_send_to = "<a class='popup_no_link' href='{$this_link}'{$this_target}>";
+				}
+				$photo_link = "{$listing['Photos'][0]['UriLarge']}";
+				
 				$return .= "<!-- Listing -->
 						<div title='{$one_line_address} | MLS #: {$listing['ListingId']} | {$price}{$extra_title_line}' link='{$this_link}' target=\"{$this_target}\">
-                        <a href='{$listing['Photos'][0]['UriLarge']}' class='popup' rel='{$rand}-{$listing['ListingKey']}' title='{$main_photo_caption}'>
+                        $fmc_send_to
 								<img src='{$main_photo_uri640}' style='width:{$image_width}px;height:{$image_height}px;max-width:none' alt='' />
 							</a>
 							<p class='caption'>
@@ -1010,13 +1016,20 @@ class fmcPhotos extends fmcWidget {
 			<img src='x' class='flexmls_connect__bootloader' onerror='flexmls_connect.location_setup(this);' />
 
 					";
+		
+		$return .= "<p>When Slideshow Photo Is Clicked Send Users To: ";
+		$return .= "<select name='send_to' fmc-type='select'>
+						<option value='photo'>Large Photo View</option>
+						<option value='detail'>Listing Detail</option>
+					</select>";
+		$return .= "</p>";
 
 		if ($fmc_api->HasBasicRole()) {
 			$return .= "<p><span style='color:red;'>Note:</span> <a href='http://flexmls.com/' target='_blank'>flexmls&reg; IDX subscription</a> is required in order to show IDX listings and to link listings to full detail pages.</p>";
 		}
 
 
-		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,horizontal,vertical,auto_rotate,source,property_type,location,display,sort,additional_fields,destination,agent,days,image_size' />\n";
+		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,horizontal,vertical,auto_rotate,source,property_type,location,display,sort,additional_fields,destination,agent,days,image_size,send_to' />\n";
 		$return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />\n";
 
 		return $return;

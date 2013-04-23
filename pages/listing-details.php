@@ -379,7 +379,9 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		echo "<div class='flexmls_connect__tab_div'>";
 		echo "<div class='flexmls_connect__tab active' group='flexmls_connect__detail_group'>Details</div>";
 			if ($sf['Latitude'] && $sf['Longitude'] && $sf['Latitude'] != "********" && $sf['Longitude'] != "********")
-			echo "<div class='flexmls_connect__tab' group='flexmls_connect__map_group'>Maps</div>";
+				echo "<div class='flexmls_connect__tab' group='flexmls_connect__map_group'>Maps</div>";
+			if ($sf['DocumentsCount'])
+				echo "<div class='flexmls_connect__tab' group='flexmls_connect__document_group'>Documents</div>";
 		echo "</div>";
 
 
@@ -588,6 +590,44 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 				</div>";
 			}
 
+
+			//Documents tab
+			if ($sf['DocumentsCount'])
+			{
+
+				echo "<div class='flexmls_connect__tab_group' id='flexmls_connect__document_group' style='display:none'>";
+				echo "<div class='flexmls_connect__detail_header'>Listing Documents</div>\n";
+				echo "<table>";
+				
+				//Image extensions to show colorbox for
+				$fmc_colorbox_extensions = array('gif', 'png');
+				
+				foreach ($sf['Documents'] as $fmc_document){
+					if ($fmc_document['Privacy']=='Public'){
+						echo "<tr class=flexmls_connect__zebra><td>";
+						$fmc_extension = explode('.',$fmc_document['Uri']);
+						$fmc_extension = ($fmc_extension[count($fmc_extension)-1]);
+						if ($fmc_extension == 'pdf'){
+							$fmc_file_image = $fmc_plugin_url . '/images/pdf-tiny.gif';
+							$fmc_docs_class = "class='fmc_document_pdf'";
+						}
+						elseif (in_array($fmc_extension, $fmc_colorbox_extensions)){
+							$fmc_file_image = $fmc_plugin_url . '/images/image_16.gif';
+							$fmc_docs_class = "class='fmc_document_colorbox'";
+						}
+						else{
+							$fmc_file_image = $fmc_plugin_url . '/images/docs_16.gif';
+						}
+						echo "<a $fmc_docs_class value={$fmc_document['Uri']}><img src='{$fmc_file_image}' align='absmiddle' /> {$fmc_document['Name']} </a>";
+
+						echo "</td></tr>";
+					}
+				
+				}
+				echo "</table>";
+				echo "</div>";
+			}
+			
 
 			echo "  <hr class='flexmls_connect__sr_divider'>\n";
 		// disclaimer

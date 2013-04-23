@@ -106,7 +106,7 @@ class fmcSearchResults extends fmcWidget {
 		}
 
 		if ($sort == "recently_changed") {
-			$pure_conditions['OrderBy'] = "natural"; // special tag caught later
+			$pure_conditions['OrderBy'] = "-ModificationTimestamp"; // special tag caught later
 		}
 		elseif ($sort == "price_low_high") {
 			$pure_conditions['OrderBy'] = "+ListPrice";

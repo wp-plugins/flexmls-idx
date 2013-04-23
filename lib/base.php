@@ -133,9 +133,30 @@ class flexmlsConnect {
 
 	}
 
+	
+	function br_trigger_error($message, $errno) {
+	
+		if(isset($_GET['action'])
+			&& $_GET['action'] == 'error_scrape') {
+			echo '<strong>' . $message . '</strong>';
+			exit;
+	
+		} else {
+	
+			trigger_error($message, $errno);
+	
+		}
+	}
+	
+	
 
 	function plugin_activate() {
 
+		if (!extension_loaded("curl")){
+			flexmlsConnect::br_trigger_error('Your server does not have cURL enabled.
+			<br />Please contact your webmaster and ask them to enable this.', E_USER_ERROR);
+		}
+ 
 		flexmlsConnect::clear_temp_cache();
 		$options = get_option('fmc_settings');
 
@@ -333,13 +354,20 @@ class flexmlsConnect {
 
 	function shortcode_container() {
 		global $fmc_widgets;
-
+		global $fmc_api;
+		
+		$fmc_my_type = $fmc_api->GetMyAccount();
+		$fmc_my_type = $fmc_my_type['UserType'];
+		
 		$return = '';
 
 		$return .= "<div id='fmc_box_body'>";
 		$return .= "<ul class='flexmls_connect__widget_menu'>\n";
 
 		foreach ($fmc_widgets as $class => $widg) {
+			if ($widg['shortcode'] == 'idx_agent_search' and $fmc_my_type == 'Member')
+				continue;
+
 			$short_title = str_replace("flexmls&reg;: ", "", $widg['title']);
 			$return .= "<li class='flexmls_connect__widget_menu_item'><a class='fmc_which_shortcode' data-connect-shortcode='{$class}' style='cursor:pointer;'>{$short_title}</a></li>\n";
 		}
@@ -873,7 +901,7 @@ class flexmlsConnect {
 			$query_parts = explode("&", $query_string);
 			$manual = array();
 			foreach ($query_parts as $p) {
-				list($k, $v) = @explode("=", $p, 2);
+				list($k, $v) = array_pad(@explode("=", $p, 2),-2,null);
 				if (array_key_exists($k, $manual)) {
 					$manual[$k] .= ",".urldecode($v);
 				}
