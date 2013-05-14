@@ -636,8 +636,13 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 					$compList = flexmlsConnect::mls_required_fields_and_values("Detail",$record);
 
 					foreach ($compList as $reqs){
-							if (flexmlsConnect::is_not_blank_or_restricted($reqs[1]))
-									echo "<p>{$reqs[0]}: {$reqs[1]}</p>";
+							if (flexmlsConnect::is_not_blank_or_restricted($reqs[1])){
+								if ($reqs[0] == 'LOGO'){
+									echo "<img style='padding-bottom: 5px' src=$reqs[1]></img>";
+									continue;
+								}
+								echo "<p>{$reqs[0]}: {$reqs[1]}</p>";
+							}
 					}
 
 			echo "<p>";

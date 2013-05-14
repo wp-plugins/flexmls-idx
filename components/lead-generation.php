@@ -71,7 +71,7 @@ class fmcLeadGen extends fmcWidget {
 		}
 
 		$return .= "<form data-connect-validate='true' data-connect-ajax='true' action='".admin_url('admin-ajax.php')."'>\n";
-
+		$return .= "<input type=text name=flexmls_connect__important id=flexmls_connect__important />";
 		$return .= "<input type='hidden' name='action' value='fmcLeadGen_submit' />\n";
 		$return .= "<input type='hidden' name='nonce' value='".wp_create_nonce('fmcLeadGen')."' />\n";
 		$return .= "<input type='hidden' name='callback' value='?' />\n";
@@ -254,8 +254,11 @@ class fmcLeadGen extends fmcWidget {
 			$success = false;
 			$message = "Phone Number is a required field.";
 		}
-
-		if ($success == true) {
+		$fmc_verify = flexmlsConnect::wp_input_get_post('flexmls_connect__important');
+		if (!empty($fmc_verify)){
+			$return = array('success' => true, 'nonce' => wp_create_nonce('fmcLeadGen'));
+		}
+		elseif ($success == true) {
 			$contact = $fmc_api->AddContact($data, flexmlsConnect::send_notification());
 			$return = array('success' => true, 'nonce' => wp_create_nonce('fmcLeadGen'));
 		}

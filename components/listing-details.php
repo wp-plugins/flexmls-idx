@@ -29,18 +29,22 @@ class fmcListingDetails extends fmcWidget {
 	}
 
 	function schedule_showing($attr = array()) {
-    try {
+		try {
+		//This is our bot blocker... if it is set, then pretend like everything went okay
+    		if (!empty($_POST['flexmls_connect__important'])){
+			exit("SUCCESS");
+		}
 
-      if(filter_var(flexmlsConnect::wp_input_get_post('flexmls_connect__from'), FILTER_VALIDATE_EMAIL) === FALSE) {
-        throw new Exception("From e-mail is invalid");
-      }      
-      $headers = 'From: '. flexmlsConnect::wp_input_get_post('flexmls_connect__from') . "\r\n";
-      $message = flexmlsConnect::wp_input_get_post('flexmls_connect__message') . "\r\n\r\n". flexmlsConnect::wp_input_get_post('flexmls_connect__from_name');
-      wp_mail(flexmlsConnect::wp_input_get_post('flexmls_connect__to'), flexmlsConnect::wp_input_get_post('flexmls_connect__subject'), $message, $headers);
-    	die("SUCCESS");
-    } catch(Exception $e) {
-      die('There was an error sending the e-mail: ' .$e->getMessage());
-    }
+		if(filter_var(flexmlsConnect::wp_input_get_post('flexmls_connect__from'), FILTER_VALIDATE_EMAIL) === FALSE) {
+			throw new Exception("From e-mail is invalid");
+		}      
+		$headers = 'From: '. flexmlsConnect::wp_input_get_post('flexmls_connect__from') . "\r\n";
+		$message = flexmlsConnect::wp_input_get_post('flexmls_connect__message') . "\r\n\r\n". flexmlsConnect::wp_input_get_post('flexmls_connect__from_name');
+		wp_mail(flexmlsConnect::wp_input_get_post('flexmls_connect__to'), flexmlsConnect::wp_input_get_post('flexmls_connect__subject'), $message, $headers);
+			die("SUCCESS");
+		} catch(Exception $e) {
+			die('There was an error sending the e-mail: ' .$e->getMessage());
+		}
 	}
 
 
@@ -49,6 +53,13 @@ class fmcListingDetails extends fmcWidget {
         $api_my_account = $fmc_api->GetMyAccount();
 
         $send_email=($api_my_account['Emails'][0]['Address']);
+        $mytest = flexmlsConnect::wp_input_get_post('flexmls_connect__important');
+        
+        //This is our bot blocker... if it is set, then pretend like everything went okay
+		if (!empty($_POST['flexmls_connect__important'])){
+			exit("SUCCESS");
+		}
+        
         $action = $api_my_account['UserType'];
         if ($action=="Mls"){
             if (flexmlsConnect::is_not_blank_or_restricted(flexmlsConnect::wp_input_get_post('flexmls_connect__to_agent'))){

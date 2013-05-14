@@ -1189,14 +1189,14 @@ class flexmlsConnect {
 	static function mls_required_fields_and_values($type, &$record){
 		//$type		String 	 "Summary" | "Detail"
 		//$record	GetListings(params)[0]
-
+		global $fmc_plugin_url;
 		global $fmc_api;
         	$api_system_info = $fmc_api->GetSystemInfo();
         	$mlsId = $api_system_info["MlsId"];
 		$compList = ($api_system_info["DisplayCompliance"][$mlsId]["View"][$type]['DisplayCompliance']);
 		$sf = $record["StandardFields"];
 
-
+		
 		//Get Adresses
         	//Since these fields take a considerable amount of time to get, check if they are required from the compliance list beforehand.
         	if (in_array('ListOfficeAddress',$compList)){
@@ -1247,6 +1247,17 @@ class flexmlsConnect {
 		//format last modified date
 		$LastModifiedDate = flexmlsConnect::format_date("F - d - Y", $sf["ModificationTimestamp"]);
 
+		$logo="";
+		if ($api_system_info['Configuration'][0]['IdxLogoSmall']){
+			$logo = $api_system_info['Configuration'][0]['IdxLogoSmall'];
+		}
+		elseif ($api_system_info['Configuration'][0]['IdxLogo']){
+		    $logo = $api_system_info['Configuration'][0]['IdxLogo'];
+		}
+		else{
+			$logo = "IDX";
+		}
+		
 		//These will be printed in this order.
 		$possibleRequired = array(
 			"ListOfficeName" 	=> array("Listing Office",$sf["ListOfficeName"]),
@@ -1269,10 +1280,10 @@ class flexmlsConnect {
 			"CoListAgentEmail"	=> array("Co Agent Email",$sf["CoListAgentEmail"]),
 			"CoListAgentURL"	=> array("Co Agent Webpage",$sf["CoListAgentURL"]),
 			"CoListAgentAddress"	=> array("Co Agent Address",$CoAgentAddress),
-			"ListingUpdateTimestamp"=> array("Listing Was Last Updated",$LastModifiedDate),
-			"IDXLogo"               => array("LOGO",""),//Todo -- Print Logo?
+			"ListingUpdateTimestamp"=> array("Last Updated",$LastModifiedDate),
+			"IDXLogo"               => array("LOGO",$logo),//Todo -- Print Logo?
 		);
-
+		//var_dump($logo);
         	$values= array();
 
         	/*foreach ($compList as $test){

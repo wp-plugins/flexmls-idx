@@ -132,7 +132,7 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		
 		echo "<hr class='flexmls_connect__sr_divider'>\n\n";
 		
-		$mls_custom_idx_badge = flexmlsConnect::mls_custom_idx_logo();
+		
 		
 		$result_count = 0;
 		
@@ -221,7 +221,7 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
       
       // Details table
       echo "		<div class='flexmls_connect__sr_listing_facts_container'>\n";
-      echo "    <table class='flexmls_connect__sr_listing_facts' cellspacing='0' style='border-bottom: none;'>\n";
+      echo "    <table class='flexmls_connect__sr_listing_facts' cellspacing='0'>\n";
 			$detail_count = 0;
 			foreach ($primary_details as $k => $v) {
 				if ($v == 'PropertyType' and $exclude_property_type) {
@@ -257,31 +257,32 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 			}
 
 
-                        $compList = flexmlsConnect::mls_required_fields_and_values("Summary",$record);
-                        foreach ($compList as $reqs){
-				            $zebra = (flexmlsConnect::is_odd($detail_count)) ? 'on' : 'off';
-                        	if (flexmlsConnect::is_not_blank_or_restricted($reqs[1])){
-                        		echo	"<tr class='flexmls_connect__sr_zebra_{$zebra}'><td><b>{$reqs[0]}</b>:</td><td>{$reqs[1]}</td></tr>\n";
+			$compList = flexmlsConnect::mls_required_fields_and_values("Summary",$record);
+			foreach ($compList as $reqs){
+				$zebra = (flexmlsConnect::is_odd($detail_count)) ? 'on' : 'off';
+				if (flexmlsConnect::is_not_blank_or_restricted($reqs[1])){
+					if ($reqs[0]=='LOGO'){
+						echo "<tr class='flexmls_connect__sr_zebra_{$zebra}'>";
+						echo "<td colspan=2 flexmls_connect__sr_idx>";
+						if ($reqs[1]=='IDX'){
+							echo "<span style='float: right' class='flexmls_connect__badge' title='{$sf['ListOfficeName']}'>IDX</span>";
+						}
+						else {
+							echo "<img class='flexmls_connect__badge' style='background:none; border:none; float: right' src=$reqs[1]></img>";
+						}
+						echo '</td>';
+						echo '</tr>';
+						$detail_count++;
+						continue;
+					}
+					echo	"<tr class='flexmls_connect__sr_zebra_{$zebra}'><td><b>{$reqs[0]}</b>:</td><td>{$reqs[1]}</td></tr>";
 					$detail_count++;
 				}
-                        }
-			
-			
-			echo "			<tr><td colspan='2' class='flexmls_connect__sr_idx'>";
-			if ( flexmlsConnect::get_office_id() != $sf['ListOfficeId'] ) {
-				if ($mls_custom_idx_badge) {
-					echo "			<img src='{$mls_custom_idx_badge}' class='flexmls_connect__badge_image' title='{$sf['ListOfficeName']}' />\n";
-				}
-				else {
-					echo "			<span style='float: right' class='flexmls_connect__badge' title='{$sf['ListOfficeName']}'>IDX</span>\n";
-				}
 			}
-
-  	  echo "			</td></tr>\n";
-		
+			
 			
 			// end table
-			echo "		</table></div>\n\n";
+			echo "		</table></div>";
       
       // Detail Links
             $count_photos = count($sf['Photos']);

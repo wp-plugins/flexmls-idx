@@ -140,7 +140,8 @@ class flexmlsConnectPageCore {
 				array(
 						'input' => 'MLSAreaMinor',
 						'operator' => 'Eq',
-						'field' => 'MLSAreaMinor'
+						'field' => 'MLSAreaMinor',
+						'allow_or' => true
 				),
 		);
 
