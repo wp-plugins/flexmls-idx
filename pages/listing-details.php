@@ -45,9 +45,10 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			$fmc_special_page_caught['page-url'] = flexmlsConnect::make_nice_address_url($listing);
 		}
 		else {
+			$page = flexmlsConnect::get_no_listings_page_number();
+			$page_data = get_page($page);
 			$fmc_special_page_caught['page-title'] = "Listing Not Available";
-			$fmc_special_page_caught['post-title'] = "Listing Not Available";
-//			$fmc_special_page_caught['page-url'] = flexmlsConnect::make_nice_address_url($listing);
+			$fmc_special_page_caught['post-title'] = $page_data->post_title;
 		}
 
 	}
@@ -67,11 +68,12 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		if ($this->listing_data == null) {
 			if (flexmlsConnect::get_no_listings_pref() == 'page')
 			{
-				if (!(isset($_SESSION['prevent_looping'])))
+				if (!(isset($_SESSION['prevent_recursion'])))
 				{
-					$_SESSION['prevent_looping'] = true;
+					$_SESSION['prevent_recursion'] = true;
 					$page = flexmlsConnect::get_no_listings_page_number();
 					$page_data = get_page($page);
+					remove_filter('the_content', array('flexmlsConnectPage', 'custom_post_content'));
 					echo apply_filters('the_content', $page_data->post_content);
 				}
 			}
@@ -79,8 +81,8 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			{
 				echo "This listing is no longer available.";
 			}
-			if (isset($_SESSION['prevent_looping']))
-				unset($_SESSION['prevent_looping']);
+			if (isset($_SESSION['prevent_recursion']))
+				unset($_SESSION['prevent_recursion']);
 			return;
 		}
 
@@ -393,54 +395,54 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		$custom_fields = array();
 		if (is_array($record["CustomFields"][0]["Main"])){
 			foreach ($record["CustomFields"][0]["Main"] as $data){
-				foreach ($data as $fields)
+				foreach ($data as $group_name => $fields)
 					foreach ($fields as $field)
 							foreach ($field as $field_name => $val)
-								$custom_fields["Main"][$field_name]= $val;
+								$custom_fields["Main"][$group_name][$field_name]= $val;
 			}
 		}
 		
 		if (is_array($record["CustomFields"][0]["Details"])) {
 			foreach ($record["CustomFields"][0]["Details"] as $data){
-				foreach ($data as $fields)
+				foreach ($data as $group_name => $fields)
 					foreach ($fields as $field)
 							foreach ($field as $field_name => $val)
-								$custom_fields["Details"][$field_name]= $val;
+								$custom_fields["Details"][$group_name][$field_name]= $val;
 			}
 		}
 
 
-		$MlsFieldOrder = $fmc_api->GetFieldOrder($sf["PropertyType"],$sf["ListingId"]);
+		$MlsFieldOrder = $fmc_api->GetFieldOrder($sf["PropertyType"],$sf["MlsId"]);
 		$property_features_values = array();
 		foreach ($MlsFieldOrder as $field){
 			foreach ($field as $name => $key){
 				foreach ($key as $property){
 					$is_custom_field = false;
 
-					if (in_array($property["Field"],$mls_fields_to_suppress)){
+					if (in_array($property["Label"],$mls_fields_to_suppress)){
 						continue;
 					}
 
 					//Standard Fields
-					if ($property["Domain"] == "StandardFields" and flexmlsConnect::is_not_blank_or_restricted($sf[$property["Field"]])){
-						$property_detail_values[$name][] = "<b>".$property["Label"].":</b> ".$sf[$property["Field"]];
+					if ($property["Domain"] == "StandardFields" and flexmlsConnect::is_not_blank_or_restricted($sf[$property["Label"]])){
+						$property_detail_values[$name][] = "<b>".$property["Label"].":</b> ".$sf[$property["Label"]];
 					}
 
 					//Custom Fields with value of true are placed in property feature section
-					else if (($custom_fields["Details"][$property["Field"]] === true) or ($custom_fields["Main"][$property["Field"]]=== true)){
+					else if (($custom_fields["Details"][$name][$property["Label"]] === true) or ($custom_fields["Main"][$name][$property["Label"]]=== true)){
 						$property_features_values[$name][]= $property["Label"];
 					}
 					//Custom Fields - DETAIL
- 					else if ($property["Detail"] and flexmlsConnect::is_not_blank_or_restricted($custom_fields["Details"][$property["Field"]])){
- 						$property_detail_values[$name][] = "<b>".$property["Label"].":</b> ".$custom_fields["Details"][$property["Field"]];
+ 					else if ($property["Detail"] and flexmlsConnect::is_not_blank_or_restricted($custom_fields["Details"][$name][$property["Label"]])){
+ 						$property_detail_values[$name][] = "<b>".$property["Label"].":</b> ".$custom_fields["Details"][$name][$property["Label"]];
  					}
 
  					//Custom Fields - MAIN
- 					else if (flexmlsConnect::is_not_blank_or_restricted($custom_fields["Main"][$property["Field"]])){
-						/*if (is_int($custom_fields["Main"][$property["Field"]])){
+ 					else if (flexmlsConnect::is_not_blank_or_restricted($custom_fields["Main"][$name][$property["Label"]])){
+						/*if (is_int($custom_fields["Main"][$property["Label"]])){
 							continue;
 						}*/
-						$property_detail_values[$name][] = "<b>".$property["Label"].":</b> ".$custom_fields["Main"][$property["Field"]];
+						$property_detail_values[$name][] = "<b>".$property["Label"].":</b> ".$custom_fields["Main"][$name][$property["Label"]];
 					}
 						
 				}

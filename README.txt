@@ -3,7 +3,7 @@ Tags: flexmls, IDX, MLS search
 Contributors: flexmls
 Requires at least: 3.0.0
 Tested up to: 3.5.1
-Stable tag: 3.3.1
+Stable tag: 3.3.2
 
 Add flexmls IDX listings, market statistics, IDX searches, and a contact form on your web site.
 
@@ -55,6 +55,12 @@ Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a hre
 
 
 == Changelog ==
+
+= 3.3.2 =
+
+* Fixed rare bug on agent search where Array could show as value for email
+* Fixed bug in Field Order on Detail's page
+* Removed Wildcard for search on Subdivisions
 
 = 3.3.1 =
 

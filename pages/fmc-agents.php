@@ -135,9 +135,9 @@ class flexmlsConnectAgentSearchResults extends flexmlsConnectPageCore {
 		//Phone
 		$fmc_agent_phone=false;
 		if (is_array($agent['Phones'])){
-			foreach ($agent['Phones'] as $fmc_agent_phone){
-				if ($fmc_agent_phone['Primary']){
-					$fmc_agent_phone = $fmc_agent_phone['Number'];
+			foreach ($agent['Phones'] as $fmc_agent_phone2){
+				if ($fmc_agent_phone2['Primary']){
+					$fmc_agent_phone = $fmc_agent_phone2['Number'];
 					break;
 				}
 			}
@@ -149,9 +149,9 @@ class flexmlsConnectAgentSearchResults extends flexmlsConnectPageCore {
 		//Primary Email
 		$fmc_agent_email = false;
 		if (is_array($agent['Emails'])){
-			foreach ($agent['Emails'] as $fmc_agent_email){
-				if ($fmc_agent_email['Primary']){
-					$fmc_agent_email = $fmc_agent_email['Address'];
+			foreach ($agent['Emails'] as $fmc_agent_email2){
+				if ($fmc_agent_email2['Primary']){
+					$fmc_agent_email = $fmc_agent_email2['Address'];
 					break;
 				}
 			}
