@@ -1,6 +1,6 @@
 <?php
 
-class flexmlsAPI_OAuth extends flexmlsAPI_Core implements flexmlsAPI_AuthInterface {
+class flexmlsAPI_OAuth extends flexmlsAPI_Core  {
 	protected $force_https = true;
 	protected $api_client_id = null;
 	protected $api_client_secret = null;
@@ -95,5 +95,6 @@ class flexmlsAPI_OAuth extends flexmlsAPI_Core implements flexmlsAPI_AuthInterfa
 	function Ping() {
 		return $this->return_all_results( $this->MakeAPICall("GET", "my/account") );
 	}
+
 
 }

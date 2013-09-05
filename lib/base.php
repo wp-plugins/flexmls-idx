@@ -5,7 +5,6 @@ class flexmlsConnect {
 
 
 	function __construct() {
-
 	}
 
 
@@ -15,28 +14,10 @@ class flexmlsConnect {
 
 		// turn on PHP sessions handling if they aren't on already
 		if (!session_id()) {
-			session_start();
-		}
-
+            session_start();
+        }
 
 		if (!is_admin()) {
-
-			// check if the user appears to be logged in.  if so, switch to OAuth mode
-			if ( array_key_exists('fmc_oauth_logged_in', $_SESSION) and $_SESSION['fmc_oauth_logged_in'] === true ) {
-				$temp_api = flexmlsConnect::new_oauth_client();
-				$temp_api->SetAccessToken($_SESSION['fmc_oauth_access_token']);
-				$temp_api->SetRefreshToken($_SESSION['fmc_oauth_refresh_token']);
-
-				$ping = $temp_api->Ping();
-				if ($ping) {
-					// ping to the live API succeded so change API mode to OAuth for the rest of this process
-					$fmc_api = $temp_api;
-				}
-				else {
-					// ping failed so leave API in APIAuth mode and set the session variable to save a ping later
-					$_SESSION['fmc_oauth_logged_in'] = false;
-				}
-			}
 
 			wp_enqueue_script('jquery');
 
@@ -45,6 +26,15 @@ class flexmlsConnect {
 
 			wp_register_style('fmc_connect', $fmc_plugin_url .'/includes/connect.min.css');
 			wp_enqueue_style('fmc_connect');
+
+			wp_register_style('font-awesome', "http://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css");
+			wp_enqueue_style('font-awesome');
+
+            wp_enqueue_script( 'jquery-ui-dialog' );
+            wp_enqueue_style('wp-jquery-ui-dialog');
+
+			wp_register_script('fmc_portal', $fmc_plugin_url .'/includes/portal.min.js', array('jquery', 'fmc_connect'));
+			wp_enqueue_script('fmc_portal');
 
 			if (flexmlsConnect::is_ie() && flexmlsConnect::ie_version() < 9) {
 				wp_register_script('fmc_excanvas', $fmc_plugin_url .'/includes/excanvas.min.js');
@@ -72,11 +62,8 @@ class flexmlsConnect {
 
 		add_shortcode("idx_frame", array('flexmlsConnect', 'shortcode'));
 
-		$options = get_option('fmc_settings');
-		add_rewrite_rule( $options['permabase'] .'/([^/]+)?' , 'index.php?plugin=flexmls-idx&fmc_tag=$matches[1]&page_id='. $options['destlink'] , 'top' );
 
 	}
-
 
 	function widget_init() {
 		// Load all of the widgets we need for the plugin.
@@ -120,12 +107,6 @@ class flexmlsConnect {
 	}
 
 
-	function query_vars_init($qvars) {
-		$qvars[] = 'fmc_tag';
-		return $qvars;
-	}
-
-
 	function plugin_deactivate() {
 
 		flexmlsConnect::clear_temp_cache();
@@ -133,22 +114,22 @@ class flexmlsConnect {
 
 	}
 
-	
+
 	function br_trigger_error($message, $errno) {
-	
+
 		if(isset($_GET['action'])
 			&& $_GET['action'] == 'error_scrape') {
 			echo '<strong>' . $message . '</strong>';
 			exit;
-	
+
 		} else {
-	
+
 			trigger_error($message, $errno);
-	
+
 		}
 	}
-	
-	
+
+
 
 	function plugin_activate() {
 
@@ -156,7 +137,7 @@ class flexmlsConnect {
 			flexmlsConnect::br_trigger_error('Your server does not have cURL enabled.
 			<br />Please contact your webmaster and ask them to enable this.', E_USER_ERROR);
 		}
- 
+
 		flexmlsConnect::clear_temp_cache();
 		$options = get_option('fmc_settings');
 
@@ -228,7 +209,7 @@ class flexmlsConnect {
 				$_REQUEST['template'] = "default";
 			}
 
-			$loc = flexmlsConnect::parse_location_search_string( flexmlsConnect::unescape_request_var($_REQUEST['location']) );
+			$loc = flexmlsConnect::parse_location_search_string( stripcslashes($_REQUEST['location']) );
 			$loc_title = $loc[0]['l'];
 			$loc_raw = $loc[0]['r'];
 
@@ -355,10 +336,10 @@ class flexmlsConnect {
 	function shortcode_container() {
 		global $fmc_widgets;
 		global $fmc_api;
-		
+
 		$fmc_my_type = $fmc_api->GetMyAccount();
 		$fmc_my_type = $fmc_my_type['UserType'];
-		
+
 		$return = '';
 
 		$return .= "<div id='fmc_box_body'>";
@@ -404,6 +385,7 @@ class flexmlsConnect {
 	}
 
 
+
 	function clean_spaces_and_trim($value) {
 		$value = trim($value);
 		// keep looking for sequences of multiple spaces until they no longer exist
@@ -432,7 +414,7 @@ class flexmlsConnect {
 		if (is_array($args)) {
 			$return .= $args['before_widget'];
 			$return .= $args['before_title'];
-			$return .= $settings['title'];
+			$return .= isset($settings['title']) ? $settings['title'] : '';
 			$return .= $args['after_title'];
 		}
 
@@ -865,20 +847,11 @@ class flexmlsConnect {
 		else {
 			$neigh_template_page_id = $page_id;
 		}
-
 		if (empty($neigh_template_page_id)) {
 			return false;
 		}
-
 		return $neigh_template_page_id;
-
 	}
-
-
-	function unescape_request_var($string) {
-		return stripslashes($string);
-	}
-
 
 	function special_location_tag_text() {
 		return "<br /><span class='description'>You can use <code>{Location}</code> on neighborhood templates to customize.</span>";
@@ -888,7 +861,7 @@ class flexmlsConnect {
 	static function wp_input_get($key) {
 
 		if (isset($_GET) && is_array($_GET) && array_key_exists($key, $_GET)) {
-			return self::wp_input_clean($_GET[$key]);
+			return stripslashes($_GET[$key]);
 		}
 		else {
 			// parse the query string manually.  some kind of internal redirect
@@ -921,7 +894,7 @@ class flexmlsConnect {
 
 	static function wp_input_post($key) {
 		if (isset($_POST) && is_array($_POST) && array_key_exists($key, $_POST)) {
-			return self::wp_input_clean($_POST[$key]);
+			return stripslashes($_POST[$key]);
 		}
 		else {
 			return null;
@@ -943,15 +916,6 @@ class flexmlsConnect {
 		return null;
 	}
 
-
-	static function wp_input_clean($string) {
-
-		$string = stripslashes($string);
-		return $string;
-
-	}
-
-
 	static function send_notification() {
 
 		$options = get_option('fmc_settings');
@@ -967,7 +931,6 @@ class flexmlsConnect {
 		}
 
 	}
-
 
 
 	static function format_listing_street_address($data) {
@@ -1015,7 +978,7 @@ class flexmlsConnect {
 		return $wp_rewrite->using_mod_rewrite_permalinks();
 	}
 
-	static function make_nice_tag_url($tag, $params = array()) {
+	static function make_nice_tag_url($tag, $params = array(), $type='fmc_tag') {
 
 		$query_string = null;
 		if ( count($params) > 0 ) {
@@ -1023,15 +986,20 @@ class flexmlsConnect {
 		}
 
 		if (flexmlsConnect::generate_nice_urls()) {
-			$options = get_option('fmc_settings');
-			return get_home_url() . '/' . $options['permabase'] . '/' . $tag . $query_string;
+			if ($type == 'fmc_tag'){
+				$options = get_option('fmc_settings');
+				return get_home_url() . '/' . $options['permabase'] . '/' . $tag . $query_string;
+			}
+			elseif ($type == 'fmc_vow_tag'){
+				return get_home_url() . '/' . 'portal' . '/' . $tag . $query_string;
+			}
 		}
 		else {
-			return flexmlsConnect::make_destination_link($tag, 'fmc_tag', $params);
+			return flexmlsConnect::make_destination_link($tag, $type, $params);
 		}
 	}
 
-	static function make_nice_address_url($data, $params = array()) {
+	static function make_nice_address_url($data, $params = array(), $type='fmc_tag') {
 		$address = flexmlsConnect::format_listing_street_address($data);
 
 		$return = $address[0] .'-'. $address[1] .'-mls_'. $data['StandardFields']['ListingId'];
@@ -1051,10 +1019,15 @@ class flexmlsConnect {
 				$return .= '?'. http_build_query($params);
 			}
 
-			return get_home_url() . '/' . $options['permabase'] . '/' . $return;
+			if ($type == 'fmc_vow_tag'){
+				return get_home_url() . '/' . 'portal' . '/' . $return;
+			}
+			else {
+				return get_home_url() . '/' . $options['permabase'] . '/' . $return;
+			}
 		}
 		else {
-			return flexmlsConnect::make_destination_link($return, 'fmc_tag', $params);
+			return flexmlsConnect::make_destination_link($return, $type, $params);
 		}
 	}
 
@@ -1077,10 +1050,7 @@ class flexmlsConnect {
                 }
 		return $LastModifiedDate;
 	}
-	
-	static function generate_api_query($conditions) {
 
-	}
 
 	static function make_api_formatted_value($value, $type) {
 
@@ -1104,46 +1074,11 @@ class flexmlsConnect {
 
 	}
 
-	static function make_api_displayable_value($value, $type) {
-
-		$formatted_value = null;
-
-		if ($type == 'Character') {
-			$formatted_value = (string) $value;
-		}
-		elseif ($type == 'Integer') {
-			$formatted_value = (int) number_format($value, 0, '', ',');
-		}
-		elseif ($type == 'Decimal') {
-			$formatted_value = number_format($value, 2, '.', ',');
-		}
-		elseif ($type == 'Date') {
-			$date_parts = explode("-", $value);
-			$formatted_value = $date_parts[1].'/'.$date_parts[2].'/'.$date_parts[0];
-		}
-		else { }
-
-		return $formatted_value;
-	}
-
 	static function get_big_idx_disclosure_text() {
 		global $fmc_api;
 
 		$api_system_info = $fmc_api->GetSystemInfo();
 		return trim( $api_system_info['Configuration'][0]['IdxDisclaimer'] );
-	}
-
-	static function mls_custom_idx_logo() {
-		global $fmc_api;
-
-		$api_system_info = $fmc_api->GetSystemInfo();
-
-		if (array_key_exists('IdxLogoSmall', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogoSmall'])) {
-			return $api_system_info['Configuration'][0]['IdxLogoSmall'];
-		}
-		else {
-			return false;
-		}
 	}
 
 	static function add_contact($content){
@@ -1165,8 +1100,6 @@ class flexmlsConnect {
 	}
 
 	static function mls_requires_office_name_in_search_results() {
-	
-
 		global $fmc_api;
                 $api_system_info = $fmc_api->GetSystemInfo();
                 $mlsId = $api_system_info["MlsId"];
@@ -1175,17 +1108,6 @@ class flexmlsConnect {
 		return (in_array("ListOfficeName",$compList));
 	}
 
-	static function mls_requires_agent_name_in_search_results() {
-
-                global $fmc_api;
-                $api_system_info = $fmc_api->GetSystemInfo();
-                $mlsId = $api_system_info["MlsId"];
-                $compList = ($api_system_info["DisplayCompliance"][$mlsId]["View"]["Summary"]["DisplayCompliance"]);
-
-                return (in_array("ListAgentName",$compList));
-
-	}
-	
 	static function mls_required_fields_and_values($type, &$record){
 		//$type		String 	 "Summary" | "Detail"
 		//$record	GetListings(params)[0]
@@ -1196,22 +1118,25 @@ class flexmlsConnect {
 		$compList = ($api_system_info["DisplayCompliance"][$mlsId]["View"][$type]['DisplayCompliance']);
 		$sf = $record["StandardFields"];
 
-		
-		//Get Adresses
-        	//Since these fields take a considerable amount of time to get, check if they are required from the compliance list beforehand.
-        	if (in_array('ListOfficeAddress',$compList)){
-            		$OfficeInfo = $fmc_api->GetAccountsByOffice($sf["ListOfficeId"]);
-            		$OfficeAddress = ($OfficeInfo[0]["Addresses"][0]["Address"]);
-       		}
 
-        	if (in_array('ListMemberAddress',$compList)){
+		//Get Adresses
+		//Since these fields take a considerable amount of time to get, check if they are required from the compliance list beforehand.
+		$OfficeAddress = '';
+		if (in_array('ListOfficeAddress',$compList)){
+				$OfficeInfo = $fmc_api->GetAccountsByOffice($sf["ListOfficeId"]);
+				$OfficeAddress = ($OfficeInfo[0]["Addresses"][0]["Address"]);
+		}
+
+		$AgentAddress = '';
+		if (in_array('ListMemberAddress',$compList)){
 		    $AgentInfo  = $fmc_api->GetAccount($sf["ListAgentId"]);
 		    $AgentAddress = ($AgentInfo[0]["Addresses"][0]["Address"]);
         	}
 
-        	if (in_array('CoListAgentAddress',$compList)){
-		    	$CoAgentInfo	= $fmc_api->GetAccount($sf["CoListAgentId"]);
-            		$CoAgentAddress	= ($CoAgentInfo[0]["Addresses"][0]["Address"]);
+        	$CoAgentAddress = '';
+		if (in_array('CoListAgentAddress',$compList)){
+			$CoAgentInfo	= $fmc_api->GetAccount($sf["CoListAgentId"]);
+			$CoAgentAddress	= ($CoAgentInfo[0]["Addresses"][0]["Address"]);
         	}
 
 		//Names
@@ -1257,7 +1182,7 @@ class flexmlsConnect {
 		else{
 			$logo = "IDX";
 		}
-		
+
 		//These will be printed in this order.
 		$possibleRequired = array(
 			"ListOfficeName" 	=> array("Listing Office",$sf["ListOfficeName"]),
@@ -1289,7 +1214,7 @@ class flexmlsConnect {
         	/*foreach ($compList as $test){
             	array_push($values,array($possibleRequired[$test][0],$possibleRequired[$test][1]));
        	 	} */
-        
+
         	foreach ($possibleRequired as $key => $value){
 			if (in_array($key, $compList))
 				array_push($values,array($value[0],$value[1]));
@@ -1331,7 +1256,6 @@ class flexmlsConnect {
 	static function clean_comma_list($var) {
 
 		$return = "";
-
 		if ( strpos($var, ',') !== false ) {
 			// $var contains a comma so break it apart into a list...
 			$list = explode(",", $var);
@@ -1344,37 +1268,12 @@ class flexmlsConnect {
 			// trim the extra spaces and weird characters from the beginning and end of the string to be returned
 			$return = trim($var);
 		}
-
 		return $return;
-
 	}
 
 	static function page_slug_tag() {
 		global $wp_query;
 		return $wp_query->get('fmc_tag');
-	}
-
-	static function oauth_login_link() {
-		global $fmc_api;
-		$api_system_info = $fmc_api->GetSystemInfo();
-		$base_url = $api_system_info['Configuration'][0]['OAuth2ServiceEndpointPortal'];
-
-		$options = get_option('fmc_settings');
-
-		$options['oauth_client_id'] = '33v3wnk3mi8sw2k8g8h9petwo';
-		$options['oauth_client_secret'] = 'jyxib0a75tbikly4vbtk1uxs';
-
-		$params = array(
-		    'client_id' => $options['oauth_client_id'],
-		    'redirect_uri' => flexmlsConnect::oauth_login_landing_page(),
-		    'response_type' => 'code'
-		);
-
-		return $base_url .'?'. http_build_query($params);
-	}
-
-	static function oauth_login_landing_page() {
-		return flexmlsConnect::make_nice_tag_url('oauth-login');
 	}
 
 	static function new_apiauth_client() {
@@ -1394,64 +1293,6 @@ class flexmlsConnect {
 		return $fmc_api;
 	}
 
-	static function new_oauth_client() {
-		global $fmc_version;
-
-		$options = get_option('fmc_settings');
-
-		$options['oauth_client_id'] = '33v3wnk3mi8sw2k8g8h9petwo';
-		$options['oauth_client_secret'] = 'jyxib0a75tbikly4vbtk1uxs';
-
-		$fmc_api = new flexmlsAPI_OAuth($options['oauth_key'], $options['oauth_secret'], flexmlsConnect::oauth_login_landing_page());
-		// enable API caching via WordPress transient cache system
-		$fmc_api->SetCache( new flexmlsAPI_WordPressCache );
-		// set application name
-		$fmc_api->SetApplicationName("flexmls WordPress Plugin/{$fmc_version}");
-		$fmc_api->SetNewAccessCallback( array('flexmlsConnect', 'new_access_keys') );
-
-		$fmc_api->SetCachePrefix("1");
-
-		return $fmc_api;
-	}
-
-	static function new_access_keys($type, $values) {
-		if ($type == "oauth") {
-			// save to session since OAuth tokens are user-specific
-			$_SESSION['fmc_oauth_access_token'] = $values['access_token'];
-			$_SESSION['fmc_oauth_refresh_token'] = $values['refresh_token'];
-		}
-		elseif ($type == "api") {
-			// managed via cache automatically since API auth is only site-specific
-		}
-	}
-
-	static function is_logged_in() {
-		return (array_key_exists('fmc_oauth_logged_in', $_SESSION) and $_SESSION['fmc_oauth_logged_in']) ? true : false;
-	}
-
-	static function is_oauth() {
-		global $fmc_api;
-		return ($fmc_api->auth_mode == "oauth") ? true : false;
-	}
-
-	static function expand_link_id($string) {
-
-		$maximum = flexmlsConnect::bc_base_convert($string, 36, 10);
-
-		$prefix = '20';
-		if (substr($maximum, 0, 1) == '9' and strlen($maximum) == 18) {
-			$prefix = '19';
-		}
-
-		while ( strlen($prefix . $maximum) < 20 ) {
-			$prefix .= '0';
-		}
-
-		$short = $prefix . $maximum . '000000';
-
-		return (string) $short;
-
-	}
 
 	static function get_all_idx_links($only_saved_search = false) {
 		global $fmc_api;
@@ -1591,21 +1432,22 @@ class flexmlsConnect {
 		}
 	}
 
+	//todo: check if this works as expected
 	static public function gentle_price_rounding($val) {
 		// check if the value has decimal places and if those aren't just zeros
 
-    if ( !flexmlsConnect::is_not_blank_or_restricted($val) )
-      return "";
+		if ( !flexmlsConnect::is_not_blank_or_restricted($val) )
+		return "";
 
-		if ( strpos($val, '.') !== false ) {
-			// has a decimal
-			$places = explode(".", $val);
-			if ($places[1] != "00") {
-				return number_format($val, 2);
+			if ( strpos($val, '.') !== false ) {
+				// has a decimal
+				$places = explode(".", $val);
+				if ($places[1] != "00") {
+					return number_format($val, 2);
+				}
 			}
-		}
 
-		return number_format($val, 0);
+			return number_format($val, 0);
 	}
 
 	/*
@@ -1627,44 +1469,6 @@ class flexmlsConnect {
 
 		return true;
 	}
-
-
-
-	// source: http://www.technischedaten.de/pmwiki2/pmwiki.php?n=Php.BaseConvert
-	function bc_base_convert($value, $quellformat, $zielformat) {
-		$vorrat = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-		if (max($quellformat, $zielformat) > strlen($vorrat))
-			trigger_error('Bad Format max: ' . strlen($vorrat), E_USER_ERROR);
-		if (min($quellformat, $zielformat) < 2)
-			trigger_error('Bad Format min: 2', E_USER_ERROR);
-		$dezi = '0';
-		$level = 0;
-		$result = '';
-		$value = trim((string) $value, "\r\n\t +");
-		$vorzeichen = '-' === $value{0} ? '-' : '';
-		$value = ltrim($value, "-0");
-		$len = strlen($value);
-		for ($i = 0; $i < $len; $i++) {
-			$wert = strpos($vorrat, $value{$len - 1 - $i});
-			if (FALSE === $wert)
-				trigger_error('Bad Char in input 1', E_USER_ERROR);
-			if ($wert >= $quellformat)
-				trigger_error('Bad Char in input 2', E_USER_ERROR);
-			$dezi = bcadd($dezi, bcmul(bcpow($quellformat, $i), $wert));
-		}
-		if (10 == $zielformat)
-			return $vorzeichen . $dezi; // abk�rzung
-		while (1 !== bccomp(bcpow($zielformat, $level++), $dezi));
-		for ($i = $level - 2; $i >= 0; $i--) {
-			$factor = bcpow($zielformat, $i);
-			$zahl = bcdiv($dezi, $factor, 0);
-			$dezi = bcmod($dezi, $factor);
-			$result .= $vorrat{$zahl};
-		}
-		$result = empty($result) ? '0' : $result;
-		return $vorzeichen . $result;
-	}
-
 
 }
 

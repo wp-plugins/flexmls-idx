@@ -4,7 +4,7 @@ class flexmlsConnectPageCore {
 
 	public $input_data = array();
 	public $input_source = 'page';
-
+	protected $api;
 
 	protected function parse_search_parameters_into_api_request() {
 		global $fmc_api;
@@ -24,11 +24,17 @@ class flexmlsConnectPageCore {
 		$searchable_fields[] = 'SavedSearch';
 		$searchable_fields[] = 'StreetAddress';
 		$searchable_fields[] = 'MapOverlay';
+		$searchable_fields[] = 'ListingCart';
 
 		// start catching and building API search criteria
 		$search_criteria = array();
 
 		$catch_fields = array(
+				array(
+				    'input' => 'ListingCart',
+				    'operator' => 'Eq',
+				    'field' => 'ListingCart'
+				),
 				array(
 						'input' => 'SavedSearch',
 						'operator' => 'Eq',
@@ -282,7 +288,7 @@ class flexmlsConnectPageCore {
 		//echo "<BR>";
 		*/
 
-		
+
 		if ($this->fetch_input_data('OnMarketDate') != null)
 			$search_criteria[]= "OnMarketDate Gt " .$this->fetch_input_data('OnMarketDate');
 
@@ -310,7 +316,8 @@ class flexmlsConnectPageCore {
 			$cleaned_raw_criteria['My'] = $context;
 		}
 
-		$desired_orderby = $this->fetch_input_data('OrderBy');
+		$desired_orderby = flexmlsConnect::wp_input_get_post('OrderBy') ? flexmlsConnect::wp_input_get_post('OrderBy') : $this->fetch_input_data('OrderBy');
+
 		$orderby = ( !empty($desired_orderby) ) ? $desired_orderby : "-ListPrice";
 
 		$desired_limit = $this->fetch_input_data('Limit');
@@ -394,9 +401,9 @@ class flexmlsConnectPageCore {
 		}
 
 		if (flexmlsConnect::wp_input_get('m')) {
-  		$previous_listing_url .= "&m=".flexmlsConnect::wp_input_get('m');
-  		$next_listing_url .= "&m=".flexmlsConnect::wp_input_get('m');
-  	}
+			$previous_listing_url .= "&m=".flexmlsConnect::wp_input_get('m');
+			$next_listing_url .= "&m=".flexmlsConnect::wp_input_get('m');
+		}
 
 		return array($previous_listing_url, $next_listing_url);
 
@@ -405,6 +412,11 @@ class flexmlsConnectPageCore {
 
 	function build_browse_list($pg) {
 		global $fmc_api;
+
+		if (!$this->api){
+			$this->api = $fmc_api;
+		}
+
 
 		// parse passed parameters for browsing capability
 		list($params, $cleaned_raw_criteria, $context) = $this->parse_search_parameters_into_api_request();
@@ -416,32 +428,32 @@ class flexmlsConnectPageCore {
 		unset($modified_params['_expand']);
 		$modified_params['_page'] = $pg;
 		$modified_raw_criteria['pg'] = $pg;
-
+		$modified_params['_limit'] = empty($_COOKIE['flexmlswordpressplugin']) ? 10 : intval($_COOKIE['flexmlswordpressplugin']) ;
 		if ($context == "listings") {
-			$results = $fmc_api->GetMyListings($modified_params);
+			$results = $this->api->GetMyListings($modified_params);
 		}
 		elseif ($context == "office") {
-			$results = $fmc_api->GetOfficeListings($modified_params);
+			$results = $this->api->GetOfficeListings($modified_params);
 		}
 		elseif ($context == "company") {
-			$results = $fmc_api->GetCompanyListings($modified_params);
+			$results = $this->api->GetCompanyListings($modified_params);
 		}
 		else {
-			$results = $fmc_api->GetListings($modified_params);
+			$results = $this->api->GetListings($modified_params);
 		}
 
 		$result_count = 0;
 		foreach ($results as $record) {
 			$result_count++;
 
-			$this_result_overall_index = ($fmc_api->page_size * ($fmc_api->current_page - 1)) + $result_count;
+			$this_result_overall_index = ($this->api->page_size * ($this->api->current_page - 1)) + $result_count;
 
 			$link_to_details_criteria = $modified_raw_criteria;
 			// figure out if there's a previous listing
 			$link_to_details_criteria['p'] = ($this_result_overall_index != 1) ? 'y' : 'n';
 
 			// figure out if there's a next listing possible
-			$link_to_details_criteria['n'] = ( $this_result_overall_index < $fmc_api->last_count ) ? 'y' : 'n';
+			$link_to_details_criteria['n'] = ( $this_result_overall_index < $this->api->last_count ) ? 'y' : 'n';
 
 			if ($link_to_details_criteria['n'] == 'n') {
 				$this->no_more = true;
@@ -451,7 +463,7 @@ class flexmlsConnectPageCore {
 			    'Index' => $this_result_overall_index,
 			    'Id' => $record['Id'],
 			    'ListingId' => $record['StandardFields']['ListingId'],
-			    'Uri' => flexmlsConnect::make_nice_address_url($record, $link_to_details_criteria)
+			    'Uri' => flexmlsConnect::make_nice_address_url($record, $link_to_details_criteria, $this->type)
 			);
 
 		}

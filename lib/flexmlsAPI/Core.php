@@ -1,6 +1,6 @@
 <?php
 
-include_once("AuthInterface.php");
+
 include_once("CacheInterface.php");
 include_once("TransportInterface.php");
 
@@ -29,14 +29,14 @@ class flexmlsAPI_Core {
 
 	public $last_token = null;
 	protected $access_change_callback = null;
-	
+
 	public $auth_mode = null;
-	
+
 	public $last_count = null;
 	public $total_pages = null;
 	public $current_page = null;
 	public $page_size = null;
-	
+
 	public $last_error_code = null;
 	public $last_error_mess = null;
 
@@ -47,7 +47,7 @@ class flexmlsAPI_Core {
 
 	function __construct() {
 		$this->SetHeader("Content-Type", "application/json");
-		$this->SetHeader('User-Agent', 'flexmls API PHP Client/'. $this->api_client_version);		
+		$this->SetHeader('User-Agent', 'flexmls API PHP Client/'. $this->api_client_version);
 	}
 
 	function SetApplicationName($name) {
@@ -85,7 +85,7 @@ class flexmlsAPI_Core {
 			throw new Exception("SetCache() called but value isn't a valid cache object");
 		}
 	}
-	
+
 	function SetCachePrefix($prefix) {
 		$this->cache_prefix = $prefix;
 		return true;
@@ -104,27 +104,27 @@ class flexmlsAPI_Core {
 		unset($this->headers[$key]);
 		return true;
 	}
-	
+
 	function SetNewAccessCallback($func) {
 		$this->access_change_callback = $func;
 		return true;
 	}
-	
+
 	function make_sendable_body($data) {
 		return json_encode( array('D' => $data ) );
 	}
-	
+
 	function parse_cache_time($val) {
 		$val = trim($val);
-		
+
 		$tag = substr($val, -1);
 		$time = substr($val, 0, -1);
-		
+
 		if (empty($time)) {
 			// no trailing identifier given so assuming that what was given was in seconds
 			$time = $val;
 		}
-		
+
 		switch ($tag) {
 			case 'w':
 				$time = $time * 7;
@@ -135,10 +135,10 @@ class flexmlsAPI_Core {
 			case 'm':
 				$time = $time * 60;
 		}
-		
-		return $time;		
+
+		return $time;
 	}
-	
+
 	// source: http://www.php.net/manual/en/function.utf8-encode.php#83777
 	function utf8_encode_mix($input, $encode_keys = false) {
 
@@ -159,12 +159,12 @@ class flexmlsAPI_Core {
 		return $result;
 
 	}
-	
+
 	function make_cache_key($request) {
 		$string = $request['uri'] .'|'. serialize($request['headers']) .'|'. $request['cacheable_query_string'];
 		return $this->cache_prefix . md5( $string );
 	}
-	
+
 	function return_all_results($response) {
 		if ($response['success'] == true) {
 			return $response['results'];
@@ -173,7 +173,7 @@ class flexmlsAPI_Core {
 			return false;
 		}
 	}
-	
+
 	function return_first_result($response) {
 		if ($response['success'] == true) {
 			if ( count($response['results']) > 0 ) {
@@ -188,7 +188,7 @@ class flexmlsAPI_Core {
 		}
 	}
 
-	
+
 	/*
 	 * API services
 	 */
@@ -198,7 +198,7 @@ class flexmlsAPI_Core {
 		if ($this->transport == null) {
 			$this->SetTransport( new flexmlsAPI_CurlTransport );
 		}
-		
+
 		// parse format like "5m" into 300 seconds
 		$seconds_to_cache = $this->parse_cache_time($cache_time);
 
@@ -211,50 +211,50 @@ class flexmlsAPI_Core {
 				'params' => $params,
 				'post_data' => $post_data
 		);
-		
+
 		//print_r( $params);
 		//print_r( $post_data);
-		
+
 		// delegate to chosen authentication method for necessary changes to request
 		$request = $this->sign_request($request);
-				
+
 		$served_from_cache = false;
-		
+
 		if ($this->cache and $method == "GET" and $a_retry != true and $seconds_to_cache > 0) {
 			$response = $this->cache->get( $this->make_cache_key($request) );
 			if ($response !== null) {
 				$served_from_cache = true;
 			}
 		}
-		
+
 		if ($served_from_cache !== true) {
 			$response = $this->transport->make_request($request);
 			$response = $this->utf8_encode_mix($response);
 		}
-		
+
 		$json = json_decode($response['body'], true);
-		
+
 
 		$return = array();
 		$return['http_code'] = $response['http_code'];
-		
+
 		if (!is_array($json)) {
 			// the response wasn't JSON as expected so bail out with the original, unparsed body
 			$return['body'] = $response['body'];
 			return $return;
 		}
-		
+
 		if (array_key_exists('D', $json)) {
 			if (array_key_exists('Code', $json['D'])) {
 				$this->last_error_code = $json['D']['Code'];
 				$return['api_code'] = $json['D']['Code'];
 			}
-		
+
 			if (array_key_exists('Message', $json['D'])) {
 				$this->last_error_mess = $json['D']['Message'];
 				$return['api_message'] = $json['D']['Message'];
 			}
-			
+
 			if (array_key_exists('Pagination', $json['D'])) {
 				$this->last_count = $json['D']['Pagination']['TotalRows'];
 				$this->page_size = $json['D']['Pagination']['PageSize'];
@@ -267,7 +267,7 @@ class flexmlsAPI_Core {
 				$this->total_pages = null;
 				$this->current_page = null;
 			}
-			
+
 			if ($json['D']['Success'] == true) {
 				$return['success'] = true;
 				$return['results'] = $json['D']['Results'];
@@ -276,26 +276,26 @@ class flexmlsAPI_Core {
 				$return['success'] = false;
 			}
 		}
-		
+
 		if ( array_key_exists('access_token', $json) ) {
 			// looks like a successful OAuth grant response
 			$return['success'] = true;
 			$return['results'] = $json;
 		}
-		
+
 		if ( array_key_exists('error', $json) ) {
 			// looks like a failed OAuth grant response
 			$return['success'] = false;
 			$this->last_error_code = $json['error'];
 			$this->last_error_mess = $json['error_description'];
 		}
-		
+
 		if ($return['success'] == true and $served_from_cache != true and $method == "GET" and $seconds_to_cache > 0) {
 			if ($this->cache) {
 				$this->cache->set( $this->make_cache_key($request) , $response, $seconds_to_cache);
 			}
 		}
-		
+
 		if ($return['success'] == false and $a_retry == false) {
 			// see if this is a retry-type request
 			if ($this->is_auth_request($request) == false and ($this->last_error_code == 1020 or $this->last_error_code == 1000) ) {
@@ -307,11 +307,11 @@ class flexmlsAPI_Core {
 				return $return;
 			}
 		}
-						
+
 		return $return;
-		
+
 	}
-	
+
 
 	function HasBasicRole() {
 		return false;
@@ -322,10 +322,10 @@ class flexmlsAPI_Core {
 	 * Listing services
 	 */
 
-	function GetListings($params = array()) {
-		return $this->return_all_results( $this->MakeAPICall("GET", "listings", '10m', $params) );
+	function GetListings($params = array(), $cache='10m') {
+		return $this->return_all_results( $this->MakeAPICall("GET", "listings", $cache, $params) );
 	}
-	
+
 	function GetListing($id, $params = array()) {
 		return $this->return_first_result( $this->MakeAPICall("GET", "listings/".$id, '10m', $params) );
 	}
@@ -333,93 +333,93 @@ class flexmlsAPI_Core {
 	function GetMyListings($params = array()) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "my/listings", '10m', $params) );
 	}
-	
+
 	function GetOfficeListings($params = array()) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "office/listings", '10m', $params) );
 	}
-	
+
 	function GetCompanyListings($params = array()) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "company/listings", '10m', $params) );
 	}
-	
+
 	function GetListingPhotos($id) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listings/".$id."/photos", '10m') );
 	}
-	
+
 	function GetListingPhoto($id, $sid) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listings/".$id."/photos/".$sid, '10m') );
 	}
-	
+
 	function GetListingVideos($id) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listings/".$id."/videos", '10m') );
 	}
-	
+
 	function GetListingVideo($id, $sid) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listings/".$id."/videos/".$sid, '10m') );
 	}
-	
+
 	function GetListingOpenHouses($id) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listings/".$id."/openhouses", '10m') );
 	}
-	
+
 	function GetListingOpenHouse($id, $sid) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listings/".$id."/openhouses/".$sid, '10m') );
 	}
-	
+
 	function GetListingVirtualTours($id) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listings/".$id."/virtualtours", '10m') );
 	}
-	
+
 	function GetListingVirtualTour($id, $sid) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listings/".$id."/virtualtours/".$sid, '10m') );
 	}
-	
+
 	function GetListingDocuments($id) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listings/".$id."/documents", '10m') );
 	}
-	
+
 	function GetListingDocument($id, $sid) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listings/".$id."/documents/".$sid, '10m') );
 	}
-	
+
 	function GetSharedListingNotes($id) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listings/".$id."/shared/notes", '10m') );
 	}
 
 
-	function GetFieldOrder($property_type, $id){
-		return $this->return_all_results( $this->MakeAPICall("GET", "fields/order/".$property_type.".".$id) );
+	function GetFieldOrder($property_type){
+		return $this->return_all_results( $this->MakeAPICall("GET", "fields/order/".$property_type, '24h') );
 	}
 
 	/*
 	 * Account services
 	 */
-	
+
 	function GetAccounts($params = array()) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "accounts", '1h', $params) );
 	}
-	
+
 	function GetAccount($id) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "accounts/".$id, '1h') );
 	}
-	
+
 	function GetAccountsByOffice($id, $params = array()) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "accounts/by/office/".$id, '1h', $params) );
 	}
-	
-	function GetMyAccount() {
-		return $this->return_first_result( $this->MakeAPICall("GET", "my/account", '1h') );
+
+	function GetMyAccount($params = array()) {
+		return $this->return_first_result( $this->MakeAPICall("GET", "my/account", '1h', $params) );
 	}
-	
+
 	function UpdateMyAccount($data) {
 		return $this->return_all_results( $this->MakeAPICall("PUT", "my/account", '1h', array(), $this->make_sendable_body($data) ) );
 	}
-	
-	
+
+
 	/*
 	 * Contacts services
 	 */
-	
+
 	function GetContacts($tags = null, $params = array()) {
                 if (!is_null($tags)) {
                         return $this->return_all_results($this->MakeAPICall("GET", "contacts/tags/" . rawurlencode($tags), 0, $params));
@@ -428,7 +428,7 @@ class flexmlsAPI_Core {
                         return $this->return_all_results($this->MakeAPICall("GET", "contacts", 0, $params));
                 }
         }
-	
+
 	function AddContact($contact_data, $notify = false) {
 		$data = array(
 			'Contacts' => array($contact_data),
@@ -436,18 +436,25 @@ class flexmlsAPI_Core {
 		);
 		return $this->return_all_results( $this->MakeAPICall("POST", "contacts", 0, array(), $this->make_sendable_body($data) ) );
 	}
-	
+
 	function GetContact($id) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "contacts/".$id) );
 	}
-	
-	function MyContact() {
-		return $this->return_first_result( $this->MakeAPICall("GET", "my/contact") );
+
+	function CreateOauthKey($data) {
+		$this->force_https = true;
+		$return = ( $this->return_all_results($this->MakeAPICall('POST', 'oauth2/clients', 0, array(), $this->make_sendable_body($data) )));
+		$this->force_https = false;
+		return $return;
+	}
+
+	function MyContact($params = array()) {
+		return $this->return_first_result( $this->MakeAPICall("GET", "my/contact", "10m", $params) );
 	}
 
 
-	
-	
+
+
 	/*
 	 * Listing Carts services
 	 */
@@ -455,47 +462,47 @@ class flexmlsAPI_Core {
 	function GetListingCarts() {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listingcarts") );
 	}
-	
+
 	function GetListingCartsWithListing($id) {
-		return $this->return_all_results( $this->MakeAPICall("GET", "listingcarts/for/listing/".$id) );
+		return $this->return_all_results( $this->MakeAPICall("GET", "listingcarts/for/".$id) );
 	}
-	
+
 	function GetPortalListingCarts() {
 		return $this->return_all_results( $this->MakeAPICall("GET", "listingcarts/portal") );
 	}
-	
+
 	function AddListingCart($name, $listings) {
 		$data = array('ListingCarts' => array( array('Name' => $name, 'ListingIds' => $listings) ) );
 		return $this->return_all_results( $this->MakeAPICall("POST", "listingcarts", 0, array(), $this->make_sendable_body($data) ) );
 	}
-	
-	function GetListingCart($id) {
-		return $this->return_all_results( $this->MakeAPICall("GET", "listingcarts/".$id) );
+
+	function GetListingCart($id, $params = array()) {
+		return $this->return_all_results( $this->MakeAPICall("GET", "listingcarts/".$id,0,$params) );
 	}
-	
+
 	function AddListingsToCart($id, $listings) {
 		$data = array('ListingIds' => $listings);
 		return $this->return_all_results( $this->MakeAPICall("POST", "listingcarts/".$id, 0, array(), $this->make_sendable_body($data) ) );
 	}
-	
+
 	function UpdateListingsInCart($id, $listings) {
 		$data = array('ListingIds' => $listings);
 		return $this->return_all_results( $this->MakeAPICall("PUT", "listingcarts/".$id, 0, array(), $this->make_sendable_body($data) ) );
 	}
-	
+
 	function DeleteListingCart($id) {
 		return $this->return_all_results( $this->MakeAPICall("DELETE", "listingcarts/".$id) );
 	}
-	
-	function DeleteListingsFromCart($id, $listings) {
-		return $this->return_all_results( $this->MakeAPICall("DELETE", "listingcarts/".$id."/listings/".$listings) );
+
+	function DeleteListingsFromCart($id, $listing) {
+		return $this->return_all_results( $this->MakeAPICall("DELETE", "listingcarts/".$id."/listings/".$listing) );
 	}
-	
-	
+
+
 	/*
 	 * Market Statistics services
 	 */
-	
+
 	function GetMarketStats($type, $options = "", $property_type = "", $location_name = "", $location_value = "") {
 
 		$args = array();
@@ -515,15 +522,15 @@ class flexmlsAPI_Core {
 
 		return $this->return_first_result( $this->MakeAPICall("GET", "marketstatistics/".$type, '48h', $args) );
 	}
-	
-	
+
+
 	/*
 	 * Messaging services
 	 */
 
 	function AddMessage($content) {
                 $data = array('Messages' => $content);
-                $x= ($this->MakeAPICall("POST", "messages", 0, array(), $this->make_sendable_body($data)));
+                $x = ($this->MakeAPICall("POST", "messages", 0, array(), $this->make_sendable_body($data)));
 		return($x["success"]);
 	}
 
@@ -531,34 +538,37 @@ class flexmlsAPI_Core {
 	/*
 	 * Saved Searches services
 	 */
-	
+
 	function GetSavedSearches() {
-		return $this->return_all_results( $this->MakeAPICall("GET", "savedsearches", '30m') );
+		return $this->return_all_results( $this->MakeAPICall("GET", "savedsearches", '0', array('_select'=>'Name')) );
 	}
-	
+
 	function GetSavedSearch($id) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "savedsearches/".$id, '30m') );
 	}
-	
-	
+
+	function CreateSavedSearch($data){
+		return $this->return_all_results( $this->MakeAPICall("POST", "savedsearches", 0, array(), $this->make_sendable_body($data)) );
+	}
+
 	/*
 	 * Shared Listings services
 	 * TODO
 	 */
-	
-	
+
+
 	/*
 	 * IDX Links services
 	 */
-	
+
 	function GetIDXLinks($params = array()) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "idxlinks", '24h', $params) );
 	}
-	
+
 	function GetIDXLink($id) {
 		return $this->return_first_result( $this->MakeAPICall("GET", "idxlinks/".$id, '24h') );
 	}
-	
+
 	function GetTransformedIDXLink($link, $args = array()) {
 		$response = $this->return_first_result( $this->MakeAPICall("GET", "redirect/idxlink/".$link, '30m', $args) );
 
@@ -568,12 +578,12 @@ class flexmlsAPI_Core {
 
 		return $response;
 	}
-	
-	
+
+
 	/*
 	 * Preferences services
 	 */
-	
+
 	function GetPreferences() {
 		$response = $this->return_all_results( $this->MakeAPICall("GET", "connect/prefs", '24h') );
 
@@ -581,48 +591,48 @@ class flexmlsAPI_Core {
 		foreach ($response as $pref) {
 			$records[$pref['Name']] = $pref['Value'];
 		}
-		
+
 		return $records;
 	}
-	
-	
+
+
 	/*
 	 * Property Types services
 	 */
-	
+
 	function GetPropertyTypes() {
 		$response = $this->MakeAPICall("GET", "propertytypes", '24h');
-		
+
 		if ($response['success'] == true) {
 			$records = array();
 			foreach ($response['results'] as $res) {
 				$records[$res['MlsCode']] = $res['MlsName'];
 			}
-		
+
 			return $records;
 		}
 		else {
 			return false;
 		}
 	}
-	
-	
+
+
 	/*
 	 * Standard Fields services
 	 */
-	
+
 	function GetStandardFields() {
 		return $this->return_all_results( $this->MakeAPICall("GET", "standardfields", '24h') );
 	}
-	
+
   function GetStandardField($field) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "standardfields/".$field, '24h') );
-	}	
-	
+	}
+
 	function GetStandardFieldByMls($field, $mls) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "mls/".$mls."/standardfields/".$field, '24h') );
-	}	
-	
+	}
+
 	function GetStandardFieldsPlusHasList() {
 	  $stan = $this->GetStandardFields();
 	  $stan = $stan[0];
@@ -634,36 +644,37 @@ class flexmlsAPI_Core {
 	  }
 	  return $stan;
 	}
-	
+
 	/*
 	 * Custom Fields services
 	 */
-	
+
 	function GetCustomFields() {
 		return $this->return_all_results( $this->MakeAPICall("GET", "customfields", '24h') );
 	}
-	
+
 	function GetCustomField($field) {
 		return $this->return_all_results( $this->MakeAPICall("GET", "customfields/".rawurlencode($field), '24h') );
 	}
-	
+
 	/*
 	 * System Info services
 	 */
-	
+
 	function GetSystemInfo() {
 		return $this->return_first_result( $this->MakeAPICall("GET", "system", '24h') );
 	}
-	
+
 	function GetRoomFields($mls) {
 		return $this->return_first_result( $this->MakeAPICall("GET", "mls/".$mls."/rooms", '24h') );
-	}		
+	}
 
 	function GetUnitFields($mls) {
 		return $this->return_first_result( $this->MakeAPICall("GET", "mls/".$mls."/units", '24h') );
 	}
 
-	
-	
-	
+    function GetPortal($params=array()){
+        return $this->return_all_results( $this->MakeAPICall("GET", "portal",0,$params));
+    }
+
 }

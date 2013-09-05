@@ -1,6 +1,6 @@
 <?php
 
-class flexmlsAPI_APIAuth extends flexmlsAPI_Core implements flexmlsAPI_AuthInterface {
+class flexmlsAPI_APIAuth extends flexmlsAPI_Core  {
 	protected $api_key = null;
 	protected $api_secret = null;
 

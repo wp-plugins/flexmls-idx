@@ -4,7 +4,22 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 
 	private $listing_data;
 	protected $search_criteria;
+	protected $api;
+	protected $type;
 
+	function __construct( $tag ){
+
+		if ($tag == 'fmc_vow_tag'){
+			global $fmc_api_portal;
+			$this->api = $fmc_api_portal;
+			$this->type = $tag;
+		}
+		else {
+			global $fmc_api;
+			$this->api = $fmc_api;
+			$this->type = 'fmc_tag';
+		}
+	}
 
 	function pre_tasks($tag) {
 		global $fmc_special_page_caught;
@@ -29,7 +44,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 				'_limit' => 1,
 				'_expand' => 'Photos,Videos,OpenHouses,VirtualTours,Documents,Rooms,CustomFields'
 		);
-		$result = $fmc_api->GetListings($params);
+		$result = $this->api->GetListings($params);
 		$listing = $result[0];
 
 		//david debug
@@ -51,6 +66,8 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			$fmc_special_page_caught['post-title'] = $page_data->post_title;
 		}
 
+
+
 	}
 
 
@@ -58,12 +75,15 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		global $fmc_api;
 		global $fmc_special_page_caught;
 		global $fmc_plugin_url;
-
+		global $fmc_api_portal;
 		//david debug
 		//var_dump($fmc_api->last_error_code);
 		//var_dump($fmc_api->last_error_mess);
 
 
+		if ($this->type == 'fmc_vow_tag' && !$fmc_api_portal->is_logged_in()){
+			return "Sorry, but you must <a href={$fmc_api_portal->get_portal_page()}>log in</a> to see this page.<br />";
+		}
 
 		if ($this->listing_data == null) {
 			if (flexmlsConnect::get_no_listings_pref() == 'page')
@@ -86,7 +106,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			return;
 		}
 
-		$standard_fields_plus = $fmc_api->GetStandardFields();
+		$standard_fields_plus = $this->api->GetStandardFields();
 		$standard_fields_plus = $standard_fields_plus[0];
 		// $custom_fields = $fmc_api->GetCustomFields();
 
@@ -202,6 +222,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 
 
 		ob_start();
+		flexmlsPortalPopup::popup_portal('detail_page');
 		// disable display of the H1 entry title on this page only
 		echo "<style type='text/css'>\n  .entry-title { display:none; }\n</style>\n\n\n";
 		//This was added to give grid lines on details page
@@ -236,13 +257,25 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		echo "  <div class='flexmls_connect__sr_address'>\n";
 
 			// show price
-		echo "<div class='flexmls_connect__sr_price'>$". flexmlsConnect::gentle_price_rounding($sf['ListPrice']) . "</div>\n";
-
+		echo "<div class='flexmls_connect__sr_price'>$". flexmlsConnect::gentle_price_rounding($sf['ListPrice']);
+			fmcAccount::write_carts($record);
+		echo "</div>";
 		// show top address details
 		echo "{$first_line_address}<br>\n";
+
 		echo "{$second_line_address}<br>\n";
 
 		echo "MLS# {$sf['ListingId']}<br>\n";
+
+
+		if ($sf['MlsStatus'] == 'Closed')
+			$color='Blue';
+		else
+		    $color='Orange';
+
+		if (($sf['MlsStatus'] != 'Active') and !in_array( "MlsStatus", $mls_fields_to_suppress))
+			echo "Status: <span style='color: $color; font-weight:bold;'>{$sf['MlsStatus']}</span><br />";
+
 
 		// show under address details (beds, baths, etc.)
 		$under_address_details = array();
@@ -279,22 +312,22 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		// first, media buttons are on the right
 		echo "    <div class='flexmls_connect__right'>\n";
 		if ($count_videos > 0) {
-				echo "		  <button class='video_click' rel='v{$rand}-{$sf['ListingKey']}'>Videos ({$count_videos})</button>\n";
+				echo "		  <button class='video_click' rel='v-{$sf['ListingKey']}'>Videos ({$count_videos})</button>\n";
 			if ($count_tours > 0) {
 				echo " &nbsp;|&nbsp; ";
 			}
 			}
 			if ($count_tours > 0) {
-				echo "		  <button class='tour_click' rel='t{$rand}-{$sf['ListingKey']}'>Virtual Tours ({$count_tours})</button>\n";
+				echo "		  <button class='tour_click' rel='t-{$sf['ListingKey']}'>Virtual Tours ({$count_tours})</button>\n";
 			}
 		echo "    </div>\n";
 
 		// Share and Print buttons
 			echo "		  <button class='print_click' onclick='flexmls_connect.print(this);'><img src='{$fmc_plugin_url}/images/print.png'align='absmiddle' /> Print</button>\n";
 
-			$api_my_account = $fmc_api->GetMyAccount();
+			$api_my_account = $this->api->GetMyAccount();
 
-			if ($api_my_account['Name'] && $api_my_account['Emails'][0]['Address']) {
+			if (isset($api_my_account['Name']) && isset($api_my_account['Emails'][0]['Address'])) {
   			echo "		  <button onclick=\"flexmls_connect.scheduleShowing('{$sf['ListingKey']}','{$one_line_address} - MLS# {$sf['ListingId']}','". addslashes(htmlspecialchars($api_my_account['Name'])) . "','{$api_my_account['Emails'][0]['Address']}');\"><img src='{$fmc_plugin_url}/images/showing.png'align='absmiddle' /> Schedule a Showing</button>\n";
 			}
 
@@ -303,7 +336,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
             echo "'{$one_line_address} - MLS# {$sf['ListingId']}',";
             echo "'{$sf['ListAgentEmail']}',";
             echo "'{$sf['ListOfficeEmail']}',";
-            echo "''";    
+            echo "''";
             echo ");\"><img src='{$fmc_plugin_url}/images/admin_16.png'align='absmiddle' /> Ask a Question</button>\n";
 
 
@@ -355,7 +388,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		echo "    <div class='flexmls_connect__hidden'>\n";
 			if ($count_photos > 0) {
 				foreach ($sf['Photos'] as $p) {
-					echo "<a href='{$p['UriLarge']}' data-connect-ajax='true' rel='p{$rand}-{$sf['ListingKey']}' title='".htmlspecialchars($p['Caption'], ENT_QUOTES)."'></a>\n";
+					echo "<a href='{$p['UriLarge']}' data-connect-ajax='true' rel='p-{$sf['ListingKey']}' title='".htmlspecialchars($p['Caption'], ENT_QUOTES)."'></a>\n";
 				}
 			}
 			echo "    </div>\n";
@@ -401,8 +434,8 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 								$custom_fields["Main"][$group_name][$field_name]= $val;
 			}
 		}
-		
-		if (is_array($record["CustomFields"][0]["Details"])) {
+
+		if (isset($record["CustomFields"][0]["Details"]) and is_array($record["CustomFields"][0]["Details"])) {
 			foreach ($record["CustomFields"][0]["Details"] as $data){
 				foreach ($data as $group_name => $fields)
 					foreach ($fields as $field)
@@ -412,39 +445,62 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 		}
 
 
-		$MlsFieldOrder = $fmc_api->GetFieldOrder($sf["PropertyType"],$sf["MlsId"]);
+		$MlsFieldOrder = $this->api->GetFieldOrder($sf["PropertyType"]);
 		$property_features_values = array();
 		foreach ($MlsFieldOrder as $field){
 			foreach ($field as $name => $key){
 				foreach ($key as $property){
-					$is_custom_field = false;
-
 					if (in_array($property["Label"],$mls_fields_to_suppress)){
 						continue;
 					}
 
+					$is_standard_Field = false;
+					if (isset($property["Domain"]) and (isset($sf[$property["Field"]]))){
+						if ($property["Domain"] == "StandardFields" and flexmlsConnect::is_not_blank_or_restricted($sf[$property["Field"]])){
+							$is_standard_Field = true;
+						}
+					}
+
+
+					$detail_custom_bool = false;
+					$custom_custom_bool = false;
+					// If a field has a boolean for a value, mark it in the features section
+					if (isset($custom_fields["Details"][$name][$property["Label"]])) {
+						$detail_custom_bool = $custom_fields["Details"][$name][$property["Label"]] === true;
+					}
+					if (isset($custom_fields["Main"][$name][$property["Label"]])) {
+						$custom_custom_bool = $custom_fields["Main"][$name][$property["Label"]] === true;
+					}
+
+					// Check if for Custom field Details
+					$custom_details = false;
+					if (isset($property["Detail"]) and isset($custom_fields["Details"][$name][$property["Label"]])){
+						$custom_details = $property["Detail"] and flexmlsConnect::is_not_blank_or_restricted($custom_fields["Details"][$name][$property["Label"]]);
+					}
+
+					$custom_main = false;
+					if (isset($custom_fields["Main"][$name][$property["Label"]]))
+						$custom_main = flexmlsConnect::is_not_blank_or_restricted($custom_fields["Main"][$name][$property["Label"]]);
+
 					//Standard Fields
-					if ($property["Domain"] == "StandardFields" and flexmlsConnect::is_not_blank_or_restricted($sf[$property["Label"]])){
-						$property_detail_values[$name][] = "<b>".$property["Label"].":</b> ".$sf[$property["Label"]];
+					if ($is_standard_Field){
+						$property_detail_values[$name][] = "<b>".$property["Label"].":</b> ".$sf[$property["Field"]];
 					}
 
 					//Custom Fields with value of true are placed in property feature section
-					else if (($custom_fields["Details"][$name][$property["Label"]] === true) or ($custom_fields["Main"][$name][$property["Label"]]=== true)){
+					else if ($detail_custom_bool or $custom_custom_bool){
 						$property_features_values[$name][]= $property["Label"];
 					}
 					//Custom Fields - DETAIL
- 					else if ($property["Detail"] and flexmlsConnect::is_not_blank_or_restricted($custom_fields["Details"][$name][$property["Label"]])){
+ 					else if ($custom_details){
  						$property_detail_values[$name][] = "<b>".$property["Label"].":</b> ".$custom_fields["Details"][$name][$property["Label"]];
  					}
 
  					//Custom Fields - MAIN
- 					else if (flexmlsConnect::is_not_blank_or_restricted($custom_fields["Main"][$name][$property["Label"]])){
-						/*if (is_int($custom_fields["Main"][$property["Label"]])){
-							continue;
-						}*/
+ 					else if ($custom_main){
 						$property_detail_values[$name][] = "<b>".$property["Label"].":</b> ".$custom_fields["Main"][$name][$property["Label"]];
 					}
-						
+
 				}
 			}
 		}
@@ -465,9 +521,6 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 					$row_count++;
 					echo "	<tr " . ($row_count % 2 == 1 ? "" : "class='flexmls_connect__sr_zebra_on'") . ">\n";
 				}
-
-				$left_val = $v[$left_det];
-				$right_val = (array_key_exists((int) $right_det, $v)) ? $v[$right_det] : "";
 
 				echo "		<td width='50%' valign='top'>{$value}</td>\n";
 
@@ -496,7 +549,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 				$value .= $x."; ";
 			}
 			$value = trim($value,"; ");
-			
+
 			echo "	<tr " . ($index % 2 == 1 ? "class='flexmls_connect__sr_zebra_on'" : "") . "><td>{$value}</td></tr>\n";
 			$index++;
 		}
@@ -507,9 +560,9 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 
 
 
-		
+
 		// build the Room Information portion of the page
-		$room_fields = $fmc_api->GetRoomFields($sf['MlsId']);
+		$room_fields = $this->api->GetRoomFields($sf['MlsId']);
 		$room_names = array();
 		$room_values = array();
 		foreach ($room_fields as $mls_named_room){
@@ -560,7 +613,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			$room_values=array_values($room_values);
 			$room_names= array_values($room_names);
 
-			$room_count = count($room_values[0]);
+			$room_count = isset($room_values[0]) ? count($room_values[0]) : false;
 			if ($room_count) {
 				echo "<div class='flexmls_connect__detail_header'>Room Information</div>\n";
 				echo "<table width='100%'>\n";
@@ -600,10 +653,10 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 				echo "<div class='flexmls_connect__tab_group' id='flexmls_connect__document_group' style='display:none'>";
 				echo "<div class='flexmls_connect__detail_header'>Listing Documents</div>\n";
 				echo "<table>";
-				
+
 				//Image extensions to show colorbox for
 				$fmc_colorbox_extensions = array('gif', 'png');
-				
+
 				foreach ($sf['Documents'] as $fmc_document){
 					if ($fmc_document['Privacy']=='Public'){
 						echo "<tr class=flexmls_connect__zebra><td>";
@@ -624,12 +677,12 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 
 						echo "</td></tr>";
 					}
-				
+
 				}
 				echo "</table>";
 				echo "</div>";
 			}
-			
+
 
 			echo "  <hr class='flexmls_connect__sr_divider'>\n";
 		// disclaimer
@@ -651,8 +704,6 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			echo flexmlsConnect::get_big_idx_disclosure_text();
 			echo "</p>\n";
 
-	// make sure the timezone is set properly
-	date_default_timezone_set(get_option('timezone_string'));
 	echo "<p>".date('l jS \of F Y  h:i A')."</p>\n";
 
 			echo "</div>\n\n";
@@ -678,15 +729,13 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 	function browse_next_url() {
 		$link_criteria = $this->search_criteria;
 		$link_criteria['id'] = $this->listing_data['StandardFields']['ListingId'];
-		$link_criteria['m'] = $this->listing_data['StandardFields']['MlsId'];
-		return flexmlsConnect::make_nice_tag_url('next-listing', $link_criteria);
+		return flexmlsConnect::make_nice_tag_url('next-listing', $link_criteria, $this->type);
 	}
 
 	function browse_previous_url() {
 		$link_criteria = $this->search_criteria;
 		$link_criteria['id'] = $this->listing_data['StandardFields']['ListingId'];
-		$link_criteria['m'] = $this->listing_data['StandardFields']['MlsId'];
-		return flexmlsConnect::make_nice_tag_url('prev-listing', $link_criteria);
+		return flexmlsConnect::make_nice_tag_url('prev-listing', $link_criteria,$this->type);
 	}
 
 

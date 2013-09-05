@@ -4,11 +4,11 @@ Plugin Name: flexmls&reg; IDX
 Plugin URI: http://www.flexmls.com/wpdemo/
 Description: Provides flexmls&reg; Customers with flexmls&reg; IDX features on their WordPress blog. <strong>Tips:</strong> <a href="options-general.php?page=flexmls_connect">Activate your flexmls IDX plugin</a> on the settings page; <a href="widgets.php">add widgets to your sidebar</a> using the Widgets Admin under Appearance; and include widgets on your posts or pages using the flexmls IDX Widget Short-Code Generator on the Visual page editor.
 Author: FBS
-Version: 3.3.2
+Version: 3.4
 Author URI: http://www.flexmls.com/
 */
 
-$fmc_version = '3.3.2';
+$fmc_version = '3.4';
 $fmc_plugin_dir = dirname(realpath(__FILE__));
 $fmc_plugin_url = plugins_url() .'/flexmls-idx';
 
@@ -108,6 +108,15 @@ $fmc_widgets = array(
 				'max_cache_time' => 0,
 				'widget' => false
 				),
+		'fmcAccount' => array(
+				'component' => 'my-account.php',
+				'title' => "flexmls&reg;: Log in",
+				'description' => "Change me",
+				'requires_key' => true,
+				'shortcode' => 'idx_portal_login',
+				'max_cache_time' => 0,
+				'widget' => true
+				),
 		);
 
 
@@ -118,15 +127,19 @@ $fmc_widgets = array(
 */
 
 require_once('lib/base.php');
+
 require_once('lib/flexmls-json.php');
 require_once('lib/settings-page.php');
 require_once('lib/flexmlsAPI/Core.php');
-require_once("lib/flexmlsAPI/WordPressCache.php");
+require_once('lib/flexmlsAPI/WordPressCache.php');
+require_once('lib/oauth-api.php');
+require_once 'pages/portal-popup.php';
 require_once('components/widget.php');
 
 $fmc_special_page_caught = array(
 		'type' => null
 );
+
 
 require_once('pages/core.php');
 require_once('pages/full-page.php');
@@ -135,13 +148,13 @@ require_once('pages/search-results.php');
 require_once('pages/fmc-agents.php');
 require_once('pages/next-listing.php');
 require_once('pages/prev-listing.php');
-// i4 TODO
-//require_once('pages/oauth-login.php');
-//require_once('pages/logout.php');
-//require_once('pages/my-account.php');
+require_once('pages/oauth-login.php');
 
 
 $fmc_api = flexmlsConnect::new_apiauth_client();
+
+
+$fmc_api_portal = new flexmlsConnectPortalUser();
 
 $api_ini_file = $fmc_plugin_dir . '/lib/api.ini';
 
@@ -151,6 +164,7 @@ if (file_exists($api_ini_file)) {
 	$local_settings = parse_ini_file($api_ini_file);
 	if (array_key_exists('api_base', $local_settings)) {
 		$fmc_api->api_base = trim($local_settings['api_base']);
+		$fmc_api_portal->api_base = trim($local_settings['api_base']);
 	}
 	if (array_key_exists('location_search_url', $local_settings)) {
 		$fmc_location_search_url = trim($local_settings['location_search_url']);
@@ -168,9 +182,13 @@ add_action('widgets_init', array('flexmlsConnect', 'widget_init') );
 add_action('admin_init', array('flexmlsConnectSettings', 'settings_init') );
 add_action('admin_menu', array('flexmlsConnect', 'admin_menus_init') );
 add_action('init', array('flexmlsConnect', 'initial_init') );
+
+
+
 register_deactivation_hook( __FILE__, array('flexmlsConnect', 'plugin_deactivate') );
 register_activation_hook( __FILE__, array('flexmlsConnect', 'plugin_activate') );
-add_filter('query_vars', array('flexmlsConnect', 'query_vars_init') );
+add_filter('query_vars', array('flexmlsConnectPage', 'query_vars_init') );
+add_action('init', array('flexmlsConnectPage','do_rewrite'));
 add_action('wp', array('flexmlsConnectPage', 'catch_special_request') );
 add_action('wp', array('flexmlsConnect', 'wp_init') );
 

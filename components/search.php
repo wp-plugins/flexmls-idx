@@ -34,38 +34,38 @@ class fmcSearch extends fmcWidget {
 
 		$rand = mt_rand();
 
-    // presentation variables from settings
-		$title = trim($settings['title']);
-		$my_link = trim($settings['link']);
+		// presentation variables from settings
+		$title = isset($title) ? trim($settings['title']) : null;
+		$my_link = isset($settings['link']) ? ($settings['link']): null;
 		$buttontext = (array_key_exists('buttontext', $settings) and !empty($settings['buttontext'])) ? htmlspecialchars(trim($settings['buttontext']), ENT_QUOTES) : "Search";
-    $detailed_search = trim($settings['detailed_search']);
-    $detailed_search_text = (array_key_exists('detailed_search_text', $settings) and !empty($settings['detailed_search_text'])) ? trim($settings['detailed_search_text']) : "More Search Options" ;
-    // destination="local"
-    $location_search = trim($settings['location_search']);
-    $user_sorting = trim($settings['user_sorting']);
-    $property_type_enabled = (array_key_exists('property_type_enabled', $settings)) ? trim($settings['property_type_enabled']) : "on" ;
-    $property_type = trim($settings['property_type']);
-    $property_types_selected = explode(",", $property_type);
-    $std_fields = trim($settings['std_fields']);
+		$detailed_search = trim($settings['detailed_search']);
+		$detailed_search_text = (array_key_exists('detailed_search_text', $settings) and !empty($settings['detailed_search_text'])) ? trim($settings['detailed_search_text']) : "More Search Options" ;
+		// destination="local"
+		$location_search = trim($settings['location_search']);
+		$user_sorting = trim($settings['user_sorting']);
+		$property_type_enabled = (array_key_exists('property_type_enabled', $settings)) ? trim($settings['property_type_enabled']) : "on" ;
+		$property_type = isset($settings['property_type'])? trim($settings['property_type']) : null;
+		$property_types_selected = explode(",", $property_type);
+		$std_fields = isset($settings['std_fields'])? trim($settings['std_fields']) : null;
 		$std_fields_selected = explode(",", $std_fields);
-    // theme="vert_round_dark"
-    $orientation = (array_key_exists('orientation', $settings)) ? trim($settings['orientation']) : "horizontal" ;
-    $width = (array_key_exists('width', $settings)) ? trim($settings['width']) : 400;
-    $width = $width - 40; // subtract 40 from width to deal with the padding
-    $border_style = (array_key_exists('border_style', $settings)) ? trim($settings['border_style']) : "squared" ;
-    $widget_drop_shadow = (array_key_exists('widget_drop_shadow', $settings)) ? trim($settings['widget_drop_shadow']) : "on" ;
-    $background_color = (array_key_exists('background_color', $settings)) ? trim($settings['background_color']) : "FFFFFF" ;
-    $title_text_color = (array_key_exists('title_text_color', $settings) and !empty($settings['title_text_color'])) ? trim($settings['title_text_color']) : "000000" ;
-    $field_text_color = (array_key_exists('field_text_color', $settings) and !empty($settings['field_text_color'])) ? trim($settings['field_text_color']) : "000000" ;
-    $detailed_search_text_color = (array_key_exists('detailed_search_text_color', $settings) and !empty($settings['detailed_search_text_color'])) ? trim($settings['detailed_search_text_color']) : "FFFFFF" ;
-    $submit_button_shine = (array_key_exists('submit_button_shine', $settings)) ? trim($settings['submit_button_shine']) : "shine" ;
-    $submit_button_background = (array_key_exists('submit_button_background', $settings) and !empty($settings['submit_button_background'])) ? trim($settings['submit_button_background']) : "000000" ;
-    $submit_button_text_color = (array_key_exists('submit_button_text_color', $settings) and !empty($settings['submit_button_text_color'])) ? trim($settings['submit_button_text_color']) : "FFFFFF" ;
-    $title_font = (array_key_exists('title_font', $settings)) ? trim($settings['title_font']) : "Arial" ;
-    $field_font = (array_key_exists('field_font', $settings)) ? trim($settings['field_font']) : "Arial" ;
-    $destination = (array_key_exists('destination', $settings)) ? trim($settings['destination']) : "local" ;
+		// theme="vert_round_dark"
+		$orientation = (array_key_exists('orientation', $settings)) ? trim($settings['orientation']) : "horizontal" ;
+		$width = (array_key_exists('width', $settings)) ? trim($settings['width']) : 400;
+		$width = $width - 40; // subtract 40 from width to deal with the padding
+		$border_style = (array_key_exists('border_style', $settings)) ? trim($settings['border_style']) : "squared" ;
+		$widget_drop_shadow = (array_key_exists('widget_drop_shadow', $settings)) ? trim($settings['widget_drop_shadow']) : "on" ;
+		$background_color = (array_key_exists('background_color', $settings)) ? trim($settings['background_color']) : "FFFFFF" ;
+		$title_text_color = (array_key_exists('title_text_color', $settings) and !empty($settings['title_text_color'])) ? trim($settings['title_text_color']) : "000000" ;
+		$field_text_color = (array_key_exists('field_text_color', $settings) and !empty($settings['field_text_color'])) ? trim($settings['field_text_color']) : "000000" ;
+		$detailed_search_text_color = (array_key_exists('detailed_search_text_color', $settings) and !empty($settings['detailed_search_text_color'])) ? trim($settings['detailed_search_text_color']) : "FFFFFF" ;
+		$submit_button_shine = (array_key_exists('submit_button_shine', $settings)) ? trim($settings['submit_button_shine']) : "shine" ;
+		$submit_button_background = (array_key_exists('submit_button_background', $settings) and !empty($settings['submit_button_background'])) ? trim($settings['submit_button_background']) : "000000" ;
+		$submit_button_text_color = (array_key_exists('submit_button_text_color', $settings) and !empty($settings['submit_button_text_color'])) ? trim($settings['submit_button_text_color']) : "FFFFFF" ;
+		$title_font = (array_key_exists('title_font', $settings)) ? trim($settings['title_font']) : "Arial" ;
+		$field_font = (array_key_exists('field_font', $settings)) ? trim($settings['field_font']) : "Arial" ;
+		$destination = (array_key_exists('destination', $settings)) ? trim($settings['destination']) : "local" ;
 
-    // API variables
+		// API variables
 		$api_prop_types = $fmc_api->GetPropertyTypes();
 		$api_system_info = $fmc_api->GetSystemInfo();
 		$api_location_search_api = flexmlsConnect::get_locationsearch_url();
@@ -201,7 +201,7 @@ class fmcSearch extends fmcWidget {
     } else {
   		$return .= "<form action='" . flexmlsConnect::make_nice_tag_url('search') . "/' method='get'{$this_target}>\n";
     }
-        
+
         if ($destination == "local" and $user_sorting == "on")
         {
             $order = "<div class='label'>Sort By</div>
