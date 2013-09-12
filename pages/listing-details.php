@@ -7,7 +7,7 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 	protected $api;
 	protected $type;
 
-	function __construct( $tag ){
+	function __construct( $tag = '' ){
 
 		if ($tag == 'fmc_vow_tag'){
 			global $fmc_api_portal;
