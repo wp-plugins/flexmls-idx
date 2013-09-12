@@ -146,11 +146,10 @@ class fmcSearchResults extends fmcWidget {
 		}
 
 		if ($link) {
-			$link_details = flexmlsConnect::get_idx_link_details($link);
-            if ($link_details['LinkType'] == "SavedSearch") {
-
-				$pure_conditions['SavedSearch'] = $link_details['SearchId'];
-			}
+			$link_details = $fmc_api->GetIDXLinkFromTinyId($link);
+			if ($link_details['LinkType'] == "SavedSearch") {
+					$pure_conditions['SavedSearch'] = $link_details['SearchId'];
+				}
 		}
 
 		if ($source == "my") {

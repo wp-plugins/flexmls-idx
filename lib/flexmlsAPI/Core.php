@@ -565,6 +565,11 @@ class flexmlsAPI_Core {
 		return $this->return_all_results( $this->MakeAPICall("GET", "idxlinks", '24h', $params) );
 	}
 
+	function GetIDXLinkFromTinyId($tiny_id){
+		$id = flexmlsConnect::translate_tiny_code($tiny_id);
+		return $this->return_first_result( $this->MakeAPICall("GET", "idxlinks/".$id, '24h') );
+	}
+
 	function GetIDXLink($id) {
 		return $this->return_first_result( $this->MakeAPICall("GET", "idxlinks/".$id, '24h') );
 	}
