@@ -3,7 +3,7 @@ Tags: flexmls, IDX, MLS search
 Contributors: flexmls
 Requires at least: 3.0.0
 Tested up to: 3.5.1
-Stable tag: 3.4.01
+Stable tag: 3.4.1
 
 Add flexmls IDX listings, market statistics, IDX searches, and a contact form on your web site.
 
