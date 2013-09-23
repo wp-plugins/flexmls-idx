@@ -21,10 +21,10 @@ class fmcPhotos extends fmcWidget {
 
 		add_action('wp_ajax_'.get_class($this).'_additional_photos', array(&$this, 'additional_photos') );
 		add_action('wp_ajax_nopriv_'.get_class($this).'_additional_photos', array(&$this, 'additional_photos') );
-		
+
 		add_action('wp_ajax_'.get_class($this).'_additional_videos', array(&$this, 'additional_videos') );
 		add_action('wp_ajax_nopriv_'.get_class($this).'_additional_videos', array(&$this, 'additional_videos') );
-		
+
 		add_action('wp_ajax_'.get_class($this).'_additional_vtours', array(&$this, 'additional_vtours') );
 		add_action('wp_ajax_nopriv_'.get_class($this).'_additional_vtours', array(&$this, 'additional_vtours') );
 
@@ -67,7 +67,8 @@ class fmcPhotos extends fmcWidget {
 		$additional_fields = trim($settings['additional_fields']);
 		$destination = trim($settings['destination']);
 		$agent = trim($settings['agent']);
-		
+		$send_to = trim($settings['send_to']);
+
 
 		$show_additional_fields = array();
 		if (!empty($additional_fields)) {
@@ -122,9 +123,9 @@ class fmcPhotos extends fmcWidget {
 			$params['_page'] = $page;
 		}
 		$params['_limit'] = $api_limit;
-        
-        
-        
+
+
+
         if ($settings['days']){
             $days = $settings['days'];
         }
@@ -186,14 +187,14 @@ class fmcPhotos extends fmcWidget {
 		$pure_conditions['Limit'] = $params['_limit'];
 
 		$api_system_info = $fmc_api->GetSystemInfo();
-		
+
 		if ($source == 'location') {
 			$apply_property_type = true;
 		}
 		else {
 			$apply_property_type = false;
 		}
-		
+
 		if ($source == 'agent') {
 			$pure_conditions['ListAgentId'] = $agent;
 			$filter_conditions[] = "(ListAgentId Eq '{$agent}' Or CoListAgentId Eq '{$agent}')";
@@ -235,7 +236,7 @@ class fmcPhotos extends fmcWidget {
 		$params['_filter'] = implode(" And ", $filter_conditions);
 		$params['_select'] = 'ListPrice,ListOfficeId,ListOfficeName,OpenHouses,BedsTotal,BathsTotal,BuildingAreaTotal,ListingKey,Photos,ListingId,SubdivisionName,PublicRemarks,StreetNumber,StreetDirPrefix,StreetName,StreetSuffix,StreetDirSuffix,StreetAdditionalInfo,City,StateOrProvince,PostalCode';
 
-		
+
 		$only_our_listings = false;
 		if ($source == "my") {
 			$outbound_criteria .= "&my_listings=true";
@@ -264,16 +265,16 @@ class fmcPhotos extends fmcWidget {
 		else {
 			$api_listings = $fmc_api->GetListings( $params );
 		}
-		
+
 		$pure_conditions['pg'] = ($params['_page']) ? $params['_page'] : 1;
-		
+
 		if ($fmc_api->last_count == 1) {
 			$show_count = "1 Listing";
 		}
 		else {
 			$show_count = number_format($fmc_api->last_count) . " Listings";
 		}
-		
+
 		$api_page_size = $fmc_api->page_size;
 		$api_current_page = $fmc_api->current_page;
 		$api_last_count = $fmc_api->last_count;
@@ -282,10 +283,10 @@ class fmcPhotos extends fmcWidget {
 		if ($api_listings === false || $api_system_info === false) {
 			return flexmlsConnect::widget_not_available($fmc_api, false, $args, $settings);
 		}
-		
+
 		$search_destination_target = null;
 		$full_search_destination_link = null;
-		
+
 		if ($destination == 'local') {
 			$full_search_destination_link = flexmlsConnect::make_nice_tag_url('search', $pure_conditions );
 			$listing_destination_link = $full_search_destination_link;
@@ -325,27 +326,27 @@ class fmcPhotos extends fmcWidget {
 			// replace all remaining placeholders with a blank value since it doesn't apply to this link
 			$this_link = preg_replace('/\*(.*?)\*/', "", $this_link);
 			$this_link .= $outbound_criteria;
-			
+
 
 			$search_destination_link = "";
 
 			if (!empty($this_link) && !$fmc_api->HasBasicRole()) {
 				$search_destination_link = $this_link;
 			}
-			
+
 			if (flexmlsConnect::get_destination_window_pref() == "new") {
 				$search_destination_target = " target='_blank'";
 			}
-			
+
 			$full_search_destination_link = flexmlsConnect::make_destination_link($search_destination_link);
 			$listing_destination_link = $search_destination_link;
-			
+
 		}
 
 		$return .= $before_widget;
 
 		$carousel_class = "flexmls_connect__carousel";
-		
+
 		if ( flexmlsConnect::mls_requires_office_name_in_search_results() and !$only_our_listings) {
 			$carousel_class .= " extratall";
 		}
@@ -388,14 +389,14 @@ class fmcPhotos extends fmcWidget {
 		if (is_array($api_listings)) {
 			foreach ($api_listings as $li) {
 				$result_count++;
-				
+
 				$this_result_overall_index = ($api_page_size * ($api_current_page - 1)) + $result_count;
 				// figure out if there's a previous listing
 				$pure_conditions['p'] = ($this_result_overall_index != 1) ? 'y' : 'n';
 
 				// figure out if there's a next listing possible
 				$pure_conditions['n'] = ( $this_result_overall_index < $api_last_count ) ? 'y' : 'n';
-				
+
 				$total_listings++;
 				$show_idx_badge = "";
 
@@ -430,7 +431,7 @@ class fmcPhotos extends fmcWidget {
 				$tall_line = "";
 				$extra_title_line = "";
 				$address_line = "<small>{$first_line_address}<br />{$second_line_address}</small>";
-				
+
 				if ( flexmlsConnect::mls_requires_office_name_in_search_results() and !$only_our_listings ) {
 					// swap some of them around to make room for a dim Listing Office
 					$address_line = "<small>Listing office: {$listing['ListOfficeName']}</small>\n";
@@ -453,7 +454,7 @@ class fmcPhotos extends fmcWidget {
 					$extra_title_line = ' | '. implode(" | ", $show_additional_field_line);
 					$tall_line = "<small class='dark'>". implode(" &nbsp;", $show_additional_field_line) ."</small>";
 				}
-				
+
 
 
 				$link_to_start = "<a>";
@@ -462,14 +463,14 @@ class fmcPhotos extends fmcWidget {
 				$this_target = "";
 
 				if (!empty($listing_destination_link)) {
-					
+
 					$this_link = null;
 					$this_target = null;
-					
+
 					if ($destination == 'local') {
 						$this_link = flexmlsConnect::make_nice_address_url($li, $pure_conditions);
 					}
-					else {					
+					else {
 						$this_link = flexmlsConnect::make_destination_link("{$listing_destination_link}&start=details&start_id={$listing['ListingKey']}");
 						if (flexmlsConnect::get_destination_window_pref() == "new") {
 							$this_target = " target='_blank'";
@@ -514,8 +515,8 @@ class fmcPhotos extends fmcWidget {
 					$listing['Photos'][0]['UriLarge'] = $main_photo_uri640;
 					$main_photo_caption = "No Photo Available";
 				}
-                
-                
+
+
                 //Resize image to fit nicely on slideshow according to image_size setting which is the width in pixels
                 $image_width = $settings['image_size'];
                 if (! $image_width)
@@ -528,7 +529,7 @@ class fmcPhotos extends fmcWidget {
 					$fmc_send_to = "<a class='popup_no_link' href='{$this_link}'{$this_target}>";
 				}
 				$photo_link = "{$listing['Photos'][0]['UriLarge']}";
-				
+
 				$return .= "<!-- Listing -->
 						<div title='{$one_line_address} | MLS #: {$listing['ListingId']} | {$price}{$extra_title_line}' link='{$this_link}' target=\"{$this_target}\">
                         $fmc_send_to
@@ -622,7 +623,7 @@ class fmcPhotos extends fmcWidget {
 
 	function settings_form($instance) {
 		global $fmc_api;
-        
+
         $title = esc_attr($instance['title']);
 		$horizontal = esc_attr($instance['horizontal']);
         $vertical = esc_attr($instance['vertical']);
@@ -633,6 +634,7 @@ class fmcPhotos extends fmcWidget {
         $days = esc_attr($instance['days']);
         $property_type = esc_attr($instance['property_type']);
 		$link = esc_attr($instance['link']);
+		$send_to = esc_attr($instance['send_to']);
 		$location = $instance['location'];
 		$sort = esc_attr($instance['sort']);
 		$additional_fields = esc_attr($instance['additional_fields']);
@@ -672,12 +674,12 @@ class fmcPhotos extends fmcWidget {
 				30000 => "30 seconds",
 				60000 => "1 minute"
 				);
-		
+
 		$source_options = array();
 		$roster_feature = false;
-		
+
 		$my_company_id = flexmlsConnect::get_company_id();
-				
+
 		if ( flexmlsConnect::is_agent() ) {
 			$source_options['my'] = "My Listings";
 			$source_options['office'] = "My Office's Listings";
@@ -685,7 +687,7 @@ class fmcPhotos extends fmcWidget {
 				$source_options['company'] = "My Company's Listings";
 			}
 		}
-		
+
 		if ( flexmlsConnect::is_office() ) {
 			$source_options['office'] = "My Office's Listings";
 			if ( !empty($my_company_id) ) {
@@ -694,7 +696,7 @@ class fmcPhotos extends fmcWidget {
 			$source_options['agent'] = "Specific agent";
 			$roster_feature = true;
 		}
-		
+
 		if ( flexmlsConnect::is_company() ) {
 			$source_options['company'] = "My Company's Listings";
 		}
@@ -737,9 +739,9 @@ class fmcPhotos extends fmcWidget {
 			'baths' => "Bathrooms",
 			'sqft' => "Square Footage"
 		);
-		
+
 		$possible_destinations = flexmlsConnect::possible_destinations();
-		
+
 		if (empty($destination)) {
 			$destination = 'remote';
 		}
@@ -762,14 +764,14 @@ class fmcPhotos extends fmcWidget {
 		if (!$fmc_api->HasBasicRole()) {
 			$source_options['location'] = "Location";
 		}
-		
+
 		if ($roster_feature) {
 			$office_roster = $fmc_api->GetAccountsByOffice( $api_my_account['Id'] );
 		}
 		else {
 			$office_roster = array();
 		}
-		
+
 
 		if (empty($source)) {
 			$source = "location";
@@ -840,7 +842,7 @@ class fmcPhotos extends fmcWidget {
                      </select>
                  <br /><span class='description'>Horizontal &times; Vertical</span>
              </p>
- 
+
              <p>
                  <label for='".$this->get_field_id('image_size')."'>" . __('Size of Image:') . "
                      <select fmc-field='image_size' fmc-type='select' id='".$this->get_field_id('image_size')."' name='".$this->get_field_name('image_size')."'>
@@ -848,7 +850,7 @@ class fmcPhotos extends fmcWidget {
          foreach ($image_size_options as $k => $v) {
              $is_selected = ($k == $image_size) ? $selected_code : "";
              $return .= "<option value='{$k}'{$is_selected}>{$v}</option>\n";
-         } 
+         }
 
 
 
@@ -915,23 +917,23 @@ class fmcPhotos extends fmcWidget {
 				<input fmc-field='location' fmc-type='text' type='hidden' name='".$this->get_field_name('location')."' class='flexmls_connect__location_fields' value=\"{$location}\" />
 				</p>
 			</div>
-				
+
 			<div class='flexmls_connect__roster'{$hidden_roster}>
 				<p>
 				<label for='".$this->get_field_id('agent')."'>" . __('Agent:') . "
 					<select fmc-field='agent' fmc-type='select' id='".$this->get_field_id('agent')."' name='".$this->get_field_name('agent')."'>
 						<option value=''>  - Select One -  </option>
 						";
-			
+
 			foreach ($office_roster as $a) {
 				$is_selected = ($a['Id'] == $agent) ? $selected_code : "";
 				$return .= "<option value='{$a['Id']}'{$is_selected}>". htmlspecialchars($a['Name']) ."</option>";
 			}
-			
+
 			$return .= "
 					</select>
 				</label>
-			
+
 				</p>
 			</div>
 
@@ -945,15 +947,15 @@ class fmcPhotos extends fmcWidget {
 			$return .= "<option value='{$k}'{$is_selected}{$is_disabled}>{$v}</option>\n";
         }
 
-            
 
+			$do_not_display= ($display == 'all') ? "style='display:none'" : '';
          $return .= "
                      </select>
                  </label>
              </p>
- 
+
              <p>
-                 <label class='photos_days' style='display:none' for='".$this->get_field_id('day')."'>" . __('Number of Days:') . "
+                 <label class='photos_days' $do_not_display for='".$this->get_field_id('day')."'>" . __('Number of Days:') . "
                      <select fmc-field='day' fmc-type='select' id='".$this->get_field_id('days')."' name='".$this->get_field_name('days')."'>
                          ";
 
@@ -998,7 +1000,7 @@ class fmcPhotos extends fmcWidget {
 
 		$return .= "
 			</p>
-			
+
 			<p>
 				<label for='".$this->get_field_id('destination')."'>" . __('Send users to:') . "</label>
 				<select fmc-field='destination' fmc-type='select' id='".$this->get_field_id('destination')."' name='".$this->get_field_name('destination')."'>
@@ -1016,12 +1018,14 @@ class fmcPhotos extends fmcWidget {
 			<img src='x' class='flexmls_connect__bootloader' onerror='flexmls_connect.location_setup(this);' />
 
 					";
-		
-		$return .= "<p>When Slideshow Photo Is Clicked Send Users To: ";
-		$return .= "<select name='send_to' fmc-type='select'>
-						<option value='photo'>Large Photo View</option>
-						<option value='detail'>Listing Detail</option>
-					</select>";
+
+		$return .= "<p><label for='".$this->get_field_id('send_to')."'>" . __('When Slideshow Photo Is Clicked Send Users To:') . "</label>";
+		$return .= "<select fmc-field='send_to' id='".$this->get_field_id('send_to')."' name='".$this->get_field_name('send_to')."' fmc-type='select'>";
+		$selected = ($send_to == 'photo') ? 'selected' : '';
+		$return .= "<option $selected value='photo'>Large Photo View</option>";
+		$selected = ($send_to == 'detail') ? 'selected' : '';
+		$return .= "<option $selected value='detail'>Listing Detail</option>";
+		$return .= "</select>";
 		$return .= "</p>";
 
 		if ($fmc_api->HasBasicRole()) {
@@ -1056,7 +1060,7 @@ class fmcPhotos extends fmcWidget {
 		$instance['sort'] = strip_tags($new_instance['sort']);
 		$instance['destination'] = strip_tags($new_instance['destination']);
 		$instance['agent'] = strip_tags($new_instance['agent']);
-
+		$instance['send_to'] = strip_tags($new_instance['send_to']);
 		$additional_fields_selected = "";
 		if (is_array($new_instance['additional_fields'])) {
 			foreach ($new_instance['additional_fields'] as $v) {
@@ -1097,7 +1101,7 @@ class fmcPhotos extends fmcWidget {
 		die();
 
 	}
-	
+
 	function additional_videos() {
 		global $fmc_api;
 
@@ -1122,7 +1126,7 @@ class fmcPhotos extends fmcWidget {
 		die();
 
 	}
-	
+
 	function additional_vtours() {
 		global $fmc_api;
 
