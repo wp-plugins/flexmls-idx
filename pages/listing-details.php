@@ -326,19 +326,23 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 			echo "		  <button class='print_click' onclick='flexmls_connect.print(this);'><img src='{$fmc_plugin_url}/images/print.png'align='absmiddle' /> Print</button>\n";
 
 			$api_my_account = $this->api->GetMyAccount();
-
-			if (isset($api_my_account['Name']) && isset($api_my_account['Emails'][0]['Address'])) {
-  			echo "		  <button onclick=\"flexmls_connect.scheduleShowing('{$sf['ListingKey']}','{$one_line_address} - MLS# {$sf['ListingId']}','". addslashes(htmlspecialchars($api_my_account['Name'])) . "','{$api_my_account['Emails'][0]['Address']}');\"><img src='{$fmc_plugin_url}/images/showing.png'align='absmiddle' /> Schedule a Showing</button>\n";
-			}
-
-
-            echo "<button onclick=\"flexmls_connect.contactForm('Ask a Question',";
-            echo "'{$one_line_address} - MLS# {$sf['ListingId']}',";
-            echo "'{$sf['ListAgentEmail']}',";
-            echo "'{$sf['ListOfficeEmail']}',";
-            echo "''";
-            echo ");\"><img src='{$fmc_plugin_url}/images/admin_16.png'align='absmiddle' /> Ask a Question</button>\n";
-
+			?>
+			<?php if (isset($api_my_account['Name']) && isset($api_my_account['Emails'][0]['Address'])) : ?>
+					<button onclick="flexmls_connect.scheduleShowing('<?php addslashes($sf['ListingKey']) ?>',
+						'<?php echo addslashes($one_line_address) ?> - MLS# <?php echo addslashes($sf['ListingId']) ?>',
+						'<?php echo addslashes($api_my_account['Name'])?>',
+						'<?php echo addslashes($api_my_account['Emails'][0]['Address']) ?>');">
+							<img src='<?php echo $fmc_plugin_url ?>/images/showing.png' align='absmiddle' /> Schedule a Showing
+					</button>
+			<?php endif ?>
+			<button onclick="flexmls_connect.contactForm('Ask a Question',
+				'<?php echo addslashes($one_line_address); ?> - MLS# <?php echo addslashes($sf['ListingId'])?> ',
+				'<?php echo addslashes($sf['ListAgentEmail']);?>',
+				'<?php echo addslashes($sf['ListOfficeEmail']); ?>',
+				'<?php echo addslashes($sf['ListingId']); ?>');"> <img src='<?php echo $fmc_plugin_url ?>/images/admin_16.png'align='absmiddle' /> Ask a Question
+			</button>
+			<?php
+           
 
 			echo "<div style='display:none;color:green;font-weight:bold;text-align:center;padding:10px' id='flexmls_connect__success_message'></div>";
 

@@ -339,14 +339,13 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
             echo "		  <button href='{$link_to_details}'>View Details</button>\n";
 
 
-
-            echo "<button onclick=\"flexmls_connect.contactForm('Ask a Question',";
-            echo "'{$one_line_address} - MLS# {$sf['ListingId']}',";
-            echo "'{$sf['ListAgentEmail']}',";
-            echo "'{$sf['ListOfficeEmail']}',";
-            echo "'{$sf['ListingId']}'";
-            echo ");\"> Ask Question</button>\n";
-
+			?>
+			<button onclick="flexmls_connect.contactForm('Ask a Question',
+				'<?php echo addslashes($one_line_address); ?> - MLS# <?php echo addslashes($sf['ListingId'])?> ',
+				'<?php echo addslashes($sf['ListAgentEmail']);?>',
+				'<?php echo addslashes($sf['ListOfficeEmail']); ?>',
+				'<?php echo addslashes($sf['ListingId']); ?>');"> Ask Question</button>;
+			<?php
 
 			if ($count_photos > 0) {
 			  echo "		  <a class='photo_click'>View Photos ({$count_photos})</a>\n";

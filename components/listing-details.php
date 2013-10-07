@@ -41,7 +41,7 @@ class fmcListingDetails extends fmcWidget {
 		if(filter_var(flexmlsConnect::wp_input_get_post('flexmls_connect__from'), FILTER_VALIDATE_EMAIL) === FALSE) {
 			throw new Exception("From e-mail is invalid");
 		}
-		$headers = 'From: '. flexmlsConnect::wp_input_get_post('flexmls_connect__from_name') .' <'. flexmlsConnect::wp_input_get_post('flexmls_connect__from') . ">\r\n";
+		$headers = 'From: '. flexmlsConnect::wp_input_get_post('flexmls_connect__from') . "\r\n";
 		$message = flexmlsConnect::wp_input_get_post('flexmls_connect__message') . "\r\n\r\n". flexmlsConnect::wp_input_get_post('flexmls_connect__from_name').' <'. flexmlsConnect::wp_input_get_post('flexmls_connect__from') . ">\r\n";
 		wp_mail(flexmlsConnect::wp_input_get_post('flexmls_connect__to'), flexmlsConnect::wp_input_get_post('flexmls_connect__subject'), $message, $headers);
 			die("SUCCESS");
