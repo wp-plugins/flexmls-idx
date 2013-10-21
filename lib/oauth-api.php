@@ -11,7 +11,7 @@
 */
 class flexmlsConnectPortalUser extends flexmlsAPI_OAuth {
 
-	function __construct() {
+	function __construct($oauth_key, $oauth_secret) {
 		global $fmc_version;
 
 		$options = get_option('fmc_settings');
@@ -19,12 +19,13 @@ class flexmlsConnectPortalUser extends flexmlsAPI_OAuth {
 		$this->SetApplicationName("flexmls WordPress Plugin/{$fmc_version}/VOW");
 		$this->SetCachePrefix("fmc_".get_option('fmc_cache_version')."_VOW");
 		$this->user_start_time();
-		parent::__construct($options['oauth_key'], $options['oauth_secret'], $this->redirect_uri(), null);
+		parent::__construct($oauth_key, $oauth_secret, $this->redirect_uri(), null);
+		
 	}
 
 	/**
 	*	This function tracks how long the visitor has been on the site while not logged in
-	*	@return time The time the user visited the website, NULL if the user is logged in
+	*	@return time When the user visited the website, NULL if the user is logged in
 	*/
 	function user_start_time(){
 		if ($this->is_logged_in() and isset($_COOKIE['user_start_time'])){
@@ -70,7 +71,8 @@ class flexmlsConnectPortalUser extends flexmlsAPI_OAuth {
 
 	/**
 	* Gets the URI of the Site Owner's Portal Page
-	* @param bool $signup If true, returns the portal signup page.
+	* @param bool $signup If true, returns the portal signup page instead of login page.
+	* @param string $page_override URI of current page/state (For Ajax Use)
 	* @return string URI of the portal page
 	*/
 	public function get_portal_page($signup=false, $additional_state_params=array(), $page_override=null){
@@ -82,7 +84,12 @@ class flexmlsConnectPortalUser extends flexmlsAPI_OAuth {
 		if ($page_override != null and count($additional_state_params)>0){
 			$raw_state = parse_url($page_override);
 		}
-		parse_str($raw_state['query'], $query_params);
+		
+		if (isset($raw_state['query'])){
+			parse_str($raw_state['query'], $query_params);
+		} else {
+			$query_params=array();
+		}
 		$raw_state['query'] = http_build_query(array_merge($query_params, $additional_state_params));
 
 		if ($page_override != null and count($additional_state_params)>0){
@@ -125,7 +132,10 @@ class flexmlsConnectPortalUser extends flexmlsAPI_OAuth {
 		return $this->carts;
 	}
 
-	/*All of the Following functions were overloaded from the parent function to use SESSION vars for acces tokens*/
+	/*
+	All of the Following functions were overloaded 
+	from the parent function to use SESSION vars for access tokens
+	*/
 	function Grant($code, $type = 'authorization_code') {
 		$body = array(
 			'client_id' => $this->api_client_id,
@@ -149,7 +159,7 @@ class flexmlsConnectPortalUser extends flexmlsAPI_OAuth {
 			$this->SetRefreshToken( $response['results']['refresh_token'] );
 
 			if ( is_callable($this->access_change_callback) ) {
-				call_user_func($this->access_change_callback, 'oauth', array('access_token' => $_SESSION['oauth_access_token'], 'refresh_token' => $_SESSION['oauth_refresh_token']) );
+				call_user_func($this->access_change_callback, 'oauth', array('access_token' => unserialize( $_SESSION['oauth_access_token'] ), 'refresh_token' => unserialize( $_SESSION['oauth_refresh_token']) ));
 			}
 
 			return true;
@@ -160,23 +170,25 @@ class flexmlsConnectPortalUser extends flexmlsAPI_OAuth {
 	}
 
 	function SetAccessToken($token) {
+		$token = serialize($token);
 		$_SESSION['oauth_access_token'] = $token;
 		$_SESSION['last_token'] = $token;
 	}
 
 	function SetRefreshToken($token) {
+		$token = serialize($token);
 		$_SESSION['oauth_refresh_token'] = $token;
 	}
 
 	function ReAuthenticate() {
-		if ( !empty($this->oauth_refresh_token) ) {
-			return $this->Grant($_SESSION['oauth_refresh_token'], 'refresh_token');
+		if ( !empty( $_SESSION['oauth_refresh_token'] ) ) {
+			return $this->Grant(unserialize( $_SESSION['oauth_refresh_token'] ), 'refresh_token');
 		}
 		return false;
 	}
 
 	function sign_request($request) {
-		$last_token = isset($_SESSION['last_token']) ? $_SESSION['last_token'] : '';
+		$last_token = isset($_SESSION['last_token']) ? unserialize($_SESSION['last_token']) : '';
 		$this->SetHeader('Authorization', 'OAuth '. $last_token);
 		// reload headers into request
 		$request['headers'] = $this->headers;

@@ -32,7 +32,6 @@ class flexmlsConnectAgentSearchResults extends flexmlsConnectPageCore {
 		global $fmc_api;
 		global $fmc_special_page_caught;
 		global $fmc_plugin_url;
-		global $fmc_search_results_loaded;
 
 		ob_start();
 		

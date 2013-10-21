@@ -4,11 +4,11 @@ Plugin Name: flexmls&reg; IDX
 Plugin URI: http://www.flexmls.com/wpdemo/
 Description: Provides flexmls&reg; Customers with flexmls&reg; IDX features on their WordPress blog. <strong>Tips:</strong> <a href="options-general.php?page=flexmls_connect">Activate your flexmls IDX plugin</a> on the settings page; <a href="widgets.php">add widgets to your sidebar</a> using the Widgets Admin under Appearance; and include widgets on your posts or pages using the flexmls IDX Widget Short-Code Generator on the Visual page editor.
 Author: FBS
-Version: 3.4.4
+Version: 3.4.5
 Author URI: http://www.flexmls.com/
 */
 
-$fmc_version = '3.4.4';
+$fmc_version = '3.4.5';
 $fmc_plugin_dir = dirname(realpath(__FILE__));
 $fmc_plugin_url = plugins_url() .'/flexmls-idx';
 
@@ -133,6 +133,7 @@ require_once('lib/settings-page.php');
 require_once('lib/flexmlsAPI/Core.php');
 require_once('lib/flexmlsAPI/WordPressCache.php');
 require_once('lib/oauth-api.php');
+require_once('lib/apiauth-api.php');
 require_once 'pages/portal-popup.php';
 require_once('components/widget.php');
 
@@ -150,11 +151,9 @@ require_once('pages/next-listing.php');
 require_once('pages/prev-listing.php');
 require_once('pages/oauth-login.php');
 
-
-$fmc_api = flexmlsConnect::new_apiauth_client();
-
-
-$fmc_api_portal = new flexmlsConnectPortalUser();
+$options = get_option('fmc_settings');
+$fmc_api = new flexmlsConnectUser($options['api_key'],$options['api_secret']);
+$fmc_api_portal = new flexmlsConnectPortalUser($options['oauth_key'], $options['oauth_secret']);
 
 $api_ini_file = $fmc_plugin_dir . '/lib/api.ini';
 

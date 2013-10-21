@@ -14,8 +14,8 @@ class flexmlsConnect {
 
 		// turn on PHP sessions handling if they aren't on already
 		if (!session_id()) {
-            session_start();
-        }
+			session_start();
+		}
 
 		if (!is_admin()) {
 
@@ -1275,24 +1275,6 @@ class flexmlsConnect {
 		global $wp_query;
 		return $wp_query->get('fmc_tag');
 	}
-
-	static function new_apiauth_client() {
-		global $fmc_version;
-
-		$options = get_option('fmc_settings');
-
-		$fmc_api = new flexmlsAPI_APIAuth($options['api_key'], $options['api_secret']);
-		// enable API caching via WordPress transient cache system
-		$fmc_api->SetCache( new flexmlsAPI_WordPressCache );
-		// set application name
-		$fmc_api->SetApplicationName("flexmls WordPress Plugin/{$fmc_version}");
-		$fmc_api->SetNewAccessCallback( array('flexmlsConnect', 'new_access_keys') );
-
-		$fmc_api->SetCachePrefix('fmc_'. get_option('fmc_cache_version') .'_');
-
-		return $fmc_api;
-	}
-
 
 	static function get_all_idx_links($only_saved_search = false) {
 		global $fmc_api;
