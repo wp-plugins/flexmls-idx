@@ -25,7 +25,7 @@ class flexmlsConnectPageCore {
 		$searchable_fields[] = 'StreetAddress';
 		$searchable_fields[] = 'MapOverlay';
 		$searchable_fields[] = 'ListingCart';
-
+		
 		// start catching and building API search criteria
 		$search_criteria = array();
 
@@ -149,9 +149,25 @@ class flexmlsConnectPageCore {
 						'field' => 'MLSAreaMinor',
 						'allow_or' => true
 				),
+				array(
+						'input' => 'StatusChangeTimestamp',
+						'operator' => 'Gt',
+						'field' => 'StatusChangeTimestamp'
+				),
+				array(
+						'input' => 'OnMarketDate',
+						'operator' => 'Gt',
+						'field' => 'OnMarketDate'
+				),
+				array(
+						'input' => 'PriceChangeTimestamp',
+						'operator' => 'Gt',
+						'field' => 'PriceChangeTimestamp'
+				),
 		);
+			
+			
 
-		$possible_api_parameters = array('HotSheet','OpenHouses');
 
 		$cleaned_raw_criteria = array();
 
@@ -186,8 +202,7 @@ class flexmlsConnectPageCore {
 
 			if ( array_key_exists($f['field'], $this->standard_fields) ) {
 				$type = $this->standard_fields[ $f['field'] ][ 'Type' ];
-			}
-			else {
+			} else {
 				$type = 'Character';
 			}
 
@@ -210,7 +225,6 @@ class flexmlsConnectPageCore {
 			}
 			else {
 				$field_value_count[ $f['field'] ]++;
-
 				$formatted_value = flexmlsConnect::make_api_formatted_value($value, $type);
 				if ($formatted_value === null) {
 					continue;
@@ -289,14 +303,6 @@ class flexmlsConnectPageCore {
 		*/
 
 
-		if ($this->fetch_input_data('OnMarketDate') != null)
-			$search_criteria[]= "OnMarketDate Gt " .$this->fetch_input_data('OnMarketDate');
-
-		if ($this->fetch_input_data('PriceChangeTimestamp') != null)
-			$search_criteria[]= "PriceChangeTimestamp Gt " .$this->fetch_input_data('PriceChangeTimestamp');
-
-		if ($this->fetch_input_data('StatusChangeTimestamp') != null)
-			$search_criteria[]= "StatusChangeTimestamp Gt " .$this->fetch_input_data('StatusChangeTimestamp');
 
 		// check for ListAgentId
 		$list_agent_id = $this->fetch_input_data('ListAgentId');
@@ -339,14 +345,6 @@ class flexmlsConnectPageCore {
 			$params['_orderby'] = $orderby;
 		}
 		$cleaned_raw_criteria['OrderBy'] = $orderby;
-
-		foreach ($possible_api_parameters as $p) {
-			$v = $this->fetch_input_data($p);
-			if ($v != null) {
-				$params[$p] = $v;
-				$cleaned_raw_criteria[$p] = $v;
-			}
-		}
 
 		return array($params, $cleaned_raw_criteria, $context);
 

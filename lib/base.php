@@ -1065,7 +1065,7 @@ class flexmlsConnect {
 		elseif ($type == 'Decimal') {
 			$formatted_value = number_format($value, 2, '.', '');
 		}
-		elseif ($type == 'Date') {
+		elseif ($type == 'Date' || $type == 'Datetime') {
 			$formatted_value = trim($value); // no single quotes
 		}
 		else { }

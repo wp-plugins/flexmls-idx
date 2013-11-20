@@ -460,6 +460,10 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 
 					$is_standard_Field = false;
 					if (isset($property["Domain"]) and (isset($sf[$property["Field"]]))){
+						/* Temporary hack to prevent warnings until Field Ordering gets rewritten */
+						if (is_array($sf[$property["Field"]])){
+							continue;
+						}
 						if ($property["Domain"] == "StandardFields" and flexmlsConnect::is_not_blank_or_restricted($sf[$property["Field"]])){
 							$is_standard_Field = true;
 						}

@@ -35,7 +35,7 @@ class fmcSearch extends fmcWidget {
 		$rand = mt_rand();
 
 		// presentation variables from settings
-		$title = isset($title) ? trim($settings['title']) : null;
+		$title = isset($settings['title']) ? trim($settings['title']) : null;
 		$my_link = isset($settings['link']) ? ($settings['link']): null;
 		$buttontext = (array_key_exists('buttontext', $settings) and !empty($settings['buttontext'])) ? htmlspecialchars(trim($settings['buttontext']), ENT_QUOTES) : "Search";
 		$detailed_search = trim($settings['detailed_search']);

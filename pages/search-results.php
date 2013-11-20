@@ -12,6 +12,7 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 	protected $api;
 	protected $page_size;
 	protected $type;
+	public $title;
 
 	function __construct( $tag = null ){
 
@@ -67,6 +68,7 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 			$results = $this->api->GetListings($params, $cache_time);
 		}
 
+		$this->title = !empty($this->title) ? $this->title : "";
 		$this->search_data = $results;
 		$this->total_pages =  $this->api->total_pages;
 		$this->current_page =  $this->api->current_page;
@@ -116,6 +118,8 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		$exclude_county = false;
 		$exclude_area = false;
 
+		echo "<h1 style='font-family:sans-serif;'>".$this->title."</h1>";
+
 		if ( array_key_exists('PropertyType', $this->field_value_count) && $this->field_value_count['PropertyType'] == 1) {
 			$exclude_property_type = true;
 		}
@@ -129,7 +133,9 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 		}
 
 		echo "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-
+		
+		
+		
 		echo "<div class='flexmls_connect__page_content'>\n";
 
   	echo "	<span class='flexmls_connect__sr_matches'>\n";
@@ -198,6 +204,7 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
 
 
 			// Container
+			
 			echo "	<div class='flexmls_connect__sr_result' title='{$one_line_address} - MLS# {$sf['ListingId']}' link='{$link_to_details}'>\n";
 
 

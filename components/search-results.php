@@ -175,6 +175,7 @@ class fmcSearchResults extends fmcWidget {
 
 
 		$custom_page = new flexmlsConnectPageSearchResults;
+		$custom_page->title = $title;
 		$custom_page->input_source = 'shortcode';
 		$custom_page->input_data = $pure_conditions;
 		$custom_page->pre_tasks(null);
