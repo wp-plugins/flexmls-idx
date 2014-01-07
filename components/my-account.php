@@ -286,55 +286,59 @@ class fmcAccount extends fmcWidget {
 		$options = get_option('fmc_settings');
 		if (!$options['portal_carts'])
 			return;
-		$handler = "flexmls_portal_cart_handle";
-		$this_cart = ($fmc_api_portal->GetListingCartsWithListing($record['Id']));
-		$all_carts = $fmc_api_portal->GetListingCarts();
 
-		if (is_array($all_carts)){
-			foreach ($all_carts as $single_cart){
-				if ($single_cart['PortalCartType']=='Favorites'){
-					$favorite_id = $single_cart['Id'];
-				}
-				elseif ($single_cart['PortalCartType']=='Possibilities') {
-					$possibility_id = $single_cart['Id'];
-				}
-				elseif ($single_cart['PortalCartType']=='Rejects') {
-					$reject_id = $single_cart['Id'];
-				}
-			}
-		}
-
-		$is_favorite= '';
+		$is_favorite = '';
 		$is_possibility = '';
 		$is_reject = '';
 		$is_selected = ' selected ';
-		if (is_array($this_cart))
-		foreach($this_cart as $the_cart) {
 
-			if ($the_cart['PortalCartType'] == 'Favorites'){
-				$is_favorite = $is_selected;
+		if ($fmc_api_portal->is_logged_in()){
+
+			$this_cart = ($fmc_api_portal->GetListingCartsWithListing($record['Id']));
+			$all_carts = $fmc_api_portal->GetListingCarts();
+
+			if (is_array($all_carts)){
+				foreach ($all_carts as $single_cart){
+					if ($single_cart['PortalCartType']=='Favorites'){
+						$favorite_id = $single_cart['Id'];
+					}
+					elseif ($single_cart['PortalCartType']=='Possibilities') {
+						$possibility_id = $single_cart['Id'];
+					}
+					elseif ($single_cart['PortalCartType']=='Rejects') {
+						$reject_id = $single_cart['Id'];
+					}
+				}
 			}
-			if ($the_cart['PortalCartType'] == 'Possibilities'){
-				$is_possibility = $is_selected;
-			}
-			if ($the_cart['PortalCartType'] == 'Rejects'){
-				$is_reject = $is_selected;
+
+			if (is_array($this_cart))
+			foreach($this_cart as $the_cart) {
+
+				if ($the_cart['PortalCartType'] == 'Favorites'){
+					$is_favorite = $is_selected;
+				}
+				if ($the_cart['PortalCartType'] == 'Possibilities'){
+					$is_possibility = $is_selected;
+				}
+				if ($the_cart['PortalCartType'] == 'Rejects'){
+					$is_reject = $is_selected;
+				}
 			}
 		}
 
 		?>
 		<div class='listing_cart' value=<?php echo $record['Id']?>>
-			<span class="icon-stack Favorites flexmls_smiley <?php echo $handler; echo $is_favorite ?>" title="Mark this listing as a favorite" value='<?php echo $favorite_id ?>' >
+			<span class="icon-stack Favorites flexmls_smiley  flexmls_portal_cart_handle <?php echo $is_favorite ?>" title="Mark this listing as a favorite" value='<?php echo $favorite_id ?>' >
 				<i class="icon-circle"></i>
 				<i class="icon-smile"></i>
 			</span>
 
-			<span class="icon-stack Possibilities flexmls_smiley <?php echo $handler; echo $is_possibility ?>" title="Mark this listing as a possibility" value='<?php echo $possibility_id ?>' >
+			<span class="icon-stack Possibilities flexmls_smiley flexmls_portal_cart_handle <?php echo $is_possibility ?>" title="Mark this listing as a possibility" value='<?php echo $possibility_id ?>' >
 				<i class="icon-circle"></i>
 				<i class="icon-meh"></i>
 			</span>
 
-			<span class="icon-stack Rejects flexmls_smiley <?php echo $handler; echo $is_reject ?>" title="Mark this listing as a reject" value='<?php echo $reject_id ?>' >
+			<span class="icon-stack Rejects flexmls_smiley flexmls_portal_cart_handle <?php echo $is_reject ?>" title="Mark this listing as a reject" value='<?php echo $reject_id ?>' >
 				<i class="icon-circle"></i>
 				<i class="icon-frown"></i>
 			</span>
