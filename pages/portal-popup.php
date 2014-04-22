@@ -73,7 +73,7 @@ class flexmlsPortalPopup{
 			<input id="portal_position_x" type=hidden value="<?php echo $options['portal_position_x'];?>" />
 			<input id="portal_position_y" type=hidden value="<?php echo $options['portal_position_y'];?>" />
 			<input id="portal_link" type=hidden value="<?php echo $Link;?>" />
-			<div id="fmc_dialog" style="display:none; padding:13px; line-height: 150%" title="Create A Real Estate Portal">
+			<div id="fmc_dialog" style="display:none; padding:13px; line-height: 150%" title="Create A Portal">
 
 			<?php echo $options["portal_text"]; ?>
 			</div>

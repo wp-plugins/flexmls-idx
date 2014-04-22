@@ -110,6 +110,7 @@ class flexmlsConnect {
 	function plugin_deactivate() {
 
 		flexmlsConnect::clear_temp_cache();
+		flexmlsAPI_WordPressCache::clearDB();
 		delete_transient('fmc_api');
 
 	}
@@ -483,6 +484,10 @@ class flexmlsConnect {
 
 		if (!empty($query_url)) {
 			$show_link = $query_url;
+		}
+
+		if(strpos($show_link, 'StreetAddress')){
+			 $show_link = str_replace('StreetAddress', 'streetaddress', $show_link);
 		}
 
 		return "<iframe src='{$show_link}' width='{$attr['width']}' height='{$attr['height']}' frameborder='0'></iframe>";

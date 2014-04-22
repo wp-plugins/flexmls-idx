@@ -1,9 +1,9 @@
 === flexmls&reg; IDX Plugin ===
 Tags: flexmls, IDX, MLS search
 Contributors: flexmls
-Requires at least: 3.0.0
-Tested up to: 3.8
-Stable tag: 3.4.8
+Requires at least: 3.8
+Tested up to: 3.9
+Stable tag: 3.4.9
 
 Add flexmls IDX listings, market statistics, IDX searches, and a contact form on your web site.
 
@@ -55,6 +55,15 @@ Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a hre
 
 
 == Changelog ==
+
+= 3.4.9 =
+
+* Made shortcodes work with new tinyMCE api
+* Fixed street address parameters for smart frame results
+* Agent website links now open in a new window
+* Property type is now included in 1-Click location searches
+* Updated CSS for search fields
+* Now caching portal api service
 
 = 3.4.8 =
 

@@ -195,7 +195,7 @@ class flexmlsConnectAgentSearchResults extends flexmlsConnectPageCore {
 					if ($fmc_agent_email)
 						echo "<span> <a href='mailto:".$fmc_agent_email."'>".$fmc_agent_email."</a> </span><br />";
 					if ($fmc_agent_website)
-						echo "<span> <a href='".$fmc_agent_website."'>".$fmc_agent_website."</a></span><br />";
+						echo "<span> <a href='".$fmc_agent_website."' target='_blank'>".$fmc_agent_website."</a></span><br />";
 					?>
 					</div>
 			</div>

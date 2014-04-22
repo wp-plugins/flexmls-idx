@@ -219,7 +219,6 @@ class flexmlsAPI_Core {
 		$request = $this->sign_request($request);
 
 		$served_from_cache = false;
-
 		if ($this->cache and $method == "GET" and $a_retry != true and $seconds_to_cache > 0) {
 			$response = $this->cache->get( $this->make_cache_key($request) );
 			if ($response !== null) {
@@ -679,7 +678,7 @@ class flexmlsAPI_Core {
 	}
 
     function GetPortal($params=array()){
-        return $this->return_all_results( $this->MakeAPICall("GET", "portal",0,$params));
+        return $this->return_all_results( $this->MakeAPICall("GET", "portal",'5h',$params));
     }
 
 }

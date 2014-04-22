@@ -39,6 +39,9 @@ class fmcNeighborhoods extends fmcWidget {
 		$location = html_entity_decode(flexmlsConnect::clean_comma_list($settings['location']));
 		$template = trim($settings['template']);
 
+		//Find and remove & to display {Location} name from shortcode.
+		$location_return = substr($location,strpos($location, "&") + 1);
+
 		$page_content = flexmlsConnect::get_neighborhood_template_content($template);
 
 		if ($page_content === false) {
@@ -46,7 +49,7 @@ class fmcNeighborhoods extends fmcWidget {
 			return "<span style='color:red;'>flexmls&reg; IDX: This neighborhood feature requires a template to be selected from the Settings > flexmls IDX dashboard within WordPress.</span>";
 		}
 		
-		$page_content = str_replace("{Location}", $title, $page_content);
+		$page_content = str_replace("{Location}", $location_return, $page_content);
 
 		// parse the location search setting for this page
 		$locations = flexmlsConnect::parse_location_search_string($location);

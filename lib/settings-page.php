@@ -2,7 +2,6 @@
 
 class flexmlsConnectSettings {
 
-
 	function settings_init() {
 		global $wp_rewrite;
 		global $fmc_api;
@@ -110,9 +109,7 @@ class flexmlsConnectSettings {
 				add_settings_field('fmc_portal_checkboxes', 'Pages to show', array('flexmlsConnectSettings','settings_field_portal_checkboxes') ,        'flexmls_connect', 'fmc_settings_portal');
 				add_settings_field('fmc_portal_numbers', 'When to show', array('flexmlsConnectSettings','settings_field_portal_numbers') ,             'flexmls_connect', 'fmc_settings_portal');
 				add_settings_field('fmc_portal_position', 'Location on page', array('flexmlsConnectSettings','settings_field_portal_location') , 'flexmls_connect', 'fmc_settings_portal');
-				//wp_editor function is only available with version 3.3 and up
-				if (get_bloginfo('version') >= 3.3)
-					add_settings_field('fmc_portal_text', 'Portal Registration Text', array('flexmlsConnectSettings','settings_field_portal_text') , 'flexmls_connect', 'fmc_settings_portal');
+				add_settings_field('fmc_portal_text', 'Portal Registration Text', array('flexmlsConnectSettings','settings_field_portal_text') , 'flexmls_connect', 'fmc_settings_portal');
 			}
 			$wp_rewrite->flush_rules(true);
 		}
@@ -212,6 +209,7 @@ class flexmlsConnectSettings {
 				// but don't do anything else since we aren't saving the state of this particular checkbox
 
 				flexmlsConnect::clear_temp_cache();
+				flexmlsAPI_WordPressCache::clearDB();
 			}
 
 		}
@@ -614,14 +612,15 @@ function settings_field_listing() {
     }
 
 	function settings_field_portal_text() {
-
+		//Remove shortcode generator icon from portal tab
+		remove_filter( 'mce_buttons', array('flexmlsConnect', 'filter_mce_button' ) );
+		remove_filter( 'mce_external_plugins', array('flexmlsConnect', 'filter_mce_plugin' ) );
 		$options = get_option('fmc_settings');
 		$content = $options["portal_text"];
 		$id = "fmc_portal_text_field";
 		$edit_settings = array(
 			'textarea_name'=>'fmc_settings[portal_text]',
 			'media_buttons'=>false,
-			'editor_css' => '<style>#fmc_portal_text_field_fmc_button{display:none}</style>'
 			);
 		wp_editor( $content, $id, $edit_settings );
 

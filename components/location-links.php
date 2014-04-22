@@ -103,7 +103,7 @@ class fmcLocationLinks extends fmcWidget {
 			$final_target = null;
 			
 			if ($settings['destination'] == 'local') {
-				$final_destination = flexmlsConnect::make_nice_tag_url('search', array('SavedSearch' => $valid_links[$my_link]['SearchId'], $loc['f'] => $loc['v']) );
+				$final_destination = flexmlsConnect::make_nice_tag_url('search', array('SavedSearch' => $valid_links[$my_link]['SearchId'], $loc['f'] => $loc['v'], 'PropertyType' => $property_type) );
 			}
 			else {
 				// start replacing the placeholders in the link with the real values for this link

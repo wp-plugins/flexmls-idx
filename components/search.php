@@ -183,7 +183,7 @@ class fmcSearch extends fmcWidget {
 			}
 		}
 		if ($property_type_enabled == "on" and count($good_prop_types) > 0) {
-		  $property_type_return .= "<div class='label'>Property Type</div>";
+		  $property_type_return .= "<div class='flexmls-idx-label'>Property Type</div>";
           $property_type_return .= "<select name='PropertyType' class='property-type' size='1'>";
 			foreach ($good_prop_types as $type) {
 				$property_type_return .= "\t\t<option value='{$type}' ".($_GET["PropertyType"]==$type?" selected":"").">". flexmlsConnect::nice_property_type_label($type) ."</option>\n";
@@ -204,7 +204,7 @@ class fmcSearch extends fmcWidget {
 
         if ($destination == "local" and $user_sorting == "on")
         {
-            $order = "<div class='label'>Sort By</div>
+            $order = "<div class='flexmls-idx-label'>Sort By</div>
                 <select name='OrderBy' size='1'>
                     <option value='-ListPrice'>List price (High to Low)</option>
                     <option value='ListPrice'>List price (Low to High)</option>
@@ -234,7 +234,7 @@ class fmcSearch extends fmcWidget {
 
   		// Location Search
   		if ($location_search == "on") {
-  		  $return .= "<div class='label'>Location</div>";
+  		  $return .= "<div class='flexmls-idx-label'>Location</div>";
   			$return .= "<input type='text' data-connect-url='{$api_location_search_api}' class='flexmls_connect__location_search' autocomplete='off' value='City, Zip, Address or Other Location' />\n";
   			$search_fields[] = "Location";
   		}
@@ -251,7 +251,7 @@ class fmcSearch extends fmcWidget {
 
   			if ( $fi == "list_price" ) {
   				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Price'>\n";
-  				$return .= "  <div class='label'><label for='MinPrice'>Price Range</label></div>\n";
+  				$return .= "  <div class='flexmls-idx-label'><label for='MinPrice'>Price Range</label></div>\n";
   				$return .= "  <input type='text' class='text left_float' value='".($_GET["MinPrice"]?$_GET["MinPrice"]:"")."' name='MinPrice' id='{$rand}-MinPrice' data-connect-default='Min' onChange=\"this.value =  this.value.replace(/,/g,'').replace(/\\\$/g,'')\" />\n";
   				$return .= "  <label for='MaxPrice'>to</label>\n";
   				$return .= "  <input type='text' class='text right_float' value='".($_GET["MaxPrice"]?$_GET["MaxPrice"]:"")."' name='MaxPrice' id='{$rand}-MaxPrice' data-connect-default='Max' onChange=\"this.value =  this.value.replace(/,/g,'').replace(/\\\$/g,'')\" />\n";
@@ -261,7 +261,7 @@ class fmcSearch extends fmcWidget {
 
   			if ( $fi == "beds" ) {
   				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Beds'>\n";
-  				$return .= "  <div class='label'><label for='MinBeds'>Bedrooms</label></div>\n";
+  				$return .= "  <div class='flexmls-idx-label'><label for='MinBeds'>Bedrooms</label></div>\n";
   				$return .= "  <input type='text' class='text left_float' value='".($_GET["MinBeds"]?$_GET["MinBeds"]:"")."' name='MinBeds' id='{$rand}-MinBeds' data-connect-default='Min' />\n";
   				$return .= "  <label for='MaxBeds'>to</label>\n";
   				$return .= "  <input type='text' class='text right_float' value='".($_GET["MaxBeds"]?$_GET["MaxBeds"]:"")."' name='MaxBeds' id='{$rand}-MaxBeds' data-connect-default='Max' />\n";
@@ -271,7 +271,7 @@ class fmcSearch extends fmcWidget {
 
   			if ( $fi == "baths" ) {
   				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Baths'>\n";
-  				$return .= "  <div class='label'><label for='MinBaths'>Bathroom</label></div>\n";
+  				$return .= "  <div class='flexmls-idx-label'><label for='MinBaths'>Bathroom</label></div>\n";
   				$return .= "  <input type='text' class='text left_float' value='".($_GET["MinBaths"]?$_GET["MinBaths"]:"")."' name='MinBaths' id='{$rand}-MinBaths' data-connect-default='Min' />\n";
   				$return .= "  <label for='MaxBaths'>to</label>\n";
   				$return .= "  <input type='text' class='text right_float' value='".($_GET["MaxBaths"]?$_GET["MaxBaths"]:"")."' name='MaxBaths' id='{$rand}-MaxBaths' data-connect-default='Max' />\n";
@@ -281,7 +281,7 @@ class fmcSearch extends fmcWidget {
 
   			if ( $fi == "square_footage" ) {
   				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='SqFt'>\n";
-  				$return .= "  <div class='label'><label for='MinSqFt'>Square Feet</label></div>\n";
+  				$return .= "  <div class='flexmls-idx-label'><label for='MinSqFt'>Square Feet</label></div>\n";
   				$return .= "  <input type='text' class='text left_float' value='".($_GET["MinSqFt"]?$_GET["MinSqFt"]:"")."' name='MinSqFt' id='{$rand}-MinSqFt' data-connect-default='Min' />\n";
   				$return .= "  <label for='MaxSqFt'>to</label>\n";
   				$return .= "  <input type='text' class='text right_float' value='".($_GET["MaxSqFt"]?$_GET["MaxSqFt"]:"")."' name='MaxSqFt' id='{$rand}-MaxSqFt' data-connect-default='Max' />\n";
@@ -291,7 +291,7 @@ class fmcSearch extends fmcWidget {
 
   			if ( $fi == "age" ) {
   				$return .= "<div class='search_field {$right_float}' data-connect-type='number' data-connect-field='Year'>\n";
-  				$return .= "  <div class='label'><label for='MinYear'>Year Built</label></div>\n";
+  				$return .= "  <div class='flexmls-idx-label'><label for='MinYear'>Year Built</label></div>\n";
   				$return .= "  <input type='text' class='text left_float' value='".($_GET["MinYear"]?$_GET["MinYear"]:"")."' name='MinYear' id='{$rand}-MinYear' data-connect-default='Min' />\n";
   				$return .= "  <label for='MaxYear'>to</label>\n";
   				$return .= "  <input type='text' class='text right_float' value='".($_GET["MaxYear"]?$_GET["MaxYear"]:"")."' name='MaxYear' id='{$rand}-MaxYear' data-connect-default='Max' />\n";
@@ -746,6 +746,11 @@ class fmcSearch extends fmcWidget {
 
 		// forward the user on if we have someplace for them to go
 		if (!empty($outbound_link)) {
+
+		//change StreetAddress parameter to streetname for Smart Frame URL
+				    if(strpos($outbound_link, 'StreetAddress')){
+				         $outbound_link = str_replace('StreetAddress', 'streetaddress', $outbound_link);
+				    }
 			header("Location: {$outbound_link}");
 			exit;
 		}

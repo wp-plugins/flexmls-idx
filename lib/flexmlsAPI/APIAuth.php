@@ -42,7 +42,7 @@ class flexmlsAPI_APIAuth extends flexmlsAPI_Core  {
 			if ( empty($this->last_token) ) {
 				// attempt to pull this from the cache if it's turned on
 				if ($this->cache) {
-					$cached_token = $this->cache->get($this->cache_prefix . 'authtoken');
+					$cached_token = $this->cache->getDB($this->cache_prefix . 'authtoken');
 					if ($cached_token != null) {
 						$this->SetAuthToken($cached_token);
 					}
@@ -93,7 +93,7 @@ class flexmlsAPI_APIAuth extends flexmlsAPI_Core  {
 			$this->last_token_expire = $response['results'][0]['Expires'];
 			
 			if ($this->cache) {
-				$this->cache->set($this->cache_prefix . 'authtoken', $this->last_token, 86400);
+				$this->cache->setDB($this->cache_prefix . 'authtoken', $this->last_token, 86400);
 			}
 			
 			if ( is_callable($this->access_change_callback) ) {
