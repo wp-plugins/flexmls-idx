@@ -2,8 +2,8 @@
 Tags: flexmls, IDX, MLS search
 Contributors: flexmls
 Requires at least: 3.8
-Tested up to: 3.9
-Stable tag: 3.4.9
+Tested up to: 4.0
+Stable tag: 3.5.0
 
 Add flexmls IDX listings, market statistics, IDX searches, and a contact form on your web site.
 
@@ -55,6 +55,20 @@ Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a hre
 
 
 == Changelog ==
+
+= 3.5.0 =
+
+* All widgets are now responsive
+* IDX Slideshow widget will now fade to the next set of listings
+* Property Types are now check boxes in the IDX Search widget, which will allow users to select multiple property types  
+* Added Sub-Types to IDX Search widget and the shortcode generator
+* New favorites icons  
+* Added mouse rollover text displays to explain each favorite icon
+* IDX Listing Summary widget can now select multiple values from the Location Search box in the shortcode generator
+* New color selector box in the shortcode generator
+* Fixed displaying fields multiple times in the listing detail pages
+* Remove curly brace from 1-Click Location Search HTML Title Attribute(minor)
+* IDX List Number Search Property Type is no longer restricted
 
 = 3.4.9 =
 

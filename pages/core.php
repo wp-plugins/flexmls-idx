@@ -53,6 +53,12 @@ class flexmlsConnectPageCore {
 						'allow_or' => true
 				),
 				array(
+						'input' => 'PropertySubType',
+						'operator' => 'Eq',
+						'field' => 'PropertySubType',
+						'allow_or' => true
+				),
+				array(
 						'input' => 'MapOverlay',
 						'operator' => 'Eq',
 						'field' => 'MapOverlay'
@@ -232,7 +238,16 @@ class flexmlsConnectPageCore {
 				$condition = $f['field'] .' '. $f['operator'] .' '. $formatted_value;
 			}
 
-			$search_criteria[] = $condition;
+
+			// If the listing id is included in the search criteria, ignore all the
+			// criteria and stop here.
+			if ($f['input'] == "ListingId"){
+				$search_criteria = array($condition);
+				break;
+			} else {
+				$search_criteria[] = $condition;
+			}
+			
 		}
 
     /*
@@ -358,7 +373,11 @@ class flexmlsConnectPageCore {
 			// pull values from $this->input_data rather than $_REQUEST
 			return ( array_key_exists($key, $this->input_data) ) ? $this->input_data[$key] : null;
 		}
-		else {
+		else if (is_array($_GET[$key])) {
+			return implode(',', $_GET[$key]);
+		} else if (is_array($_POST[$key])) {
+			return implode(',', $_POST[$key]);
+		} else {
 			return flexmlsConnect::wp_input_get_post($key);
 		}
 

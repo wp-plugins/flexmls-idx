@@ -9,8 +9,10 @@ class fmcSearchResults extends fmcWidget {
 
 		$widget_info = $fmc_widgets[ get_class($this) ];
 
+		// set the view template for the form
+		$this->admin_page_view = $widget_info['admin_page_view'];
+
 		$widget_ops = array( 'description' => $widget_info['description'] );
-//		$this->WP_Widget( get_class($this) , $widget_info['title'], $widget_ops);
 
 		// have WP replace instances of [first_argument] with the return from the second_argument function
 		add_shortcode($widget_info['shortcode'], array(&$this, 'shortcode'));
@@ -21,11 +23,12 @@ class fmcSearchResults extends fmcWidget {
 
 	}
 
-
+	// Called by shortcode() to create the content
 	function jelly($args, $settings, $type) {
 		global $fmc_api;
 		global $fmc_plugin_url;
 
+		// sets up $before_title, $after_title, $before_widget, $after_widget
 		extract($args);
 
 		if ($type == "widget" && empty($settings['title']) && flexmlsConnect::use_default_titles()) {
@@ -34,18 +37,23 @@ class fmcSearchResults extends fmcWidget {
 
 		$encoded_settings = urlencode( serialize($settings) );
 
-		$return = '';
+		$title 							= isset($settings['title']) ? ($settings['title']) : '';
+		$source 						= isset($settings['source']) ? trim($settings['source']) : '';
+		$display 						= isset($settings['display']) ? trim($settings['display']) : '';
+		$days 							= isset($settings['days']) ? trim($settings['days']) :  '';
+		$property_type 			= isset($settings['property_type']) ? trim($settings['property_type']): '';
+		$property_sub_type 	= isset($settings['property_sub_type']) ? trim($settings['property_sub_type']): '';
+		$link 							= isset($settings['link']) ? trim($settings['link']) : '';
+		$sort 							= isset($settings['sort']) ? trim($settings['sort']) : '';
+		$agent 							= isset($settings['agent']) ? trim($settings['agent']) : '';
 
+		$locations = ''; 
 
-		$title = isset($settings['title']) ? ($settings['title']) : '';
-		$source = isset($settings['source']) ? trim($settings['source']) : '';
-		$display = isset($settings['display']) ? trim($settings['display']) : '';
-		$days = isset($settings['days']) ? trim($settings['days']) :  '';
-		$property_type = isset($settings['property_type']) ? trim($settings['property_type']): '';
-		$link = isset($settings['link']) ? trim($settings['link']) : '';
-		$location = isset($settings['location']) ? html_entity_decode(flexmlsConnect::clean_comma_list($settings['location'])):'';
-		$sort = isset($settings['sort']) ? trim($settings['sort']) : '';
-		$agent = isset($settings['agent']) ? trim($settings['agent']) : '';
+		if ( isset($settings['location']) ) { 
+			//html_entity_decode(flexmlsConnect::clean_comma_list($settings['location']));
+			$locations = html_entity_decode( flexmlsConnect::clean_comma_list( stripslashes( $settings['location'] )	) );
+		}
+
 
 		if ($link == "default") {
 			$link = flexmlsConnect::get_default_idx_link();
@@ -69,7 +77,6 @@ class fmcSearchResults extends fmcWidget {
 			if (date("l") == "Monday")
 				$days = 3;
 		}
-
 
 
 		$flexmls_temp_date = date_default_timezone_get();
@@ -124,25 +131,30 @@ class fmcSearchResults extends fmcWidget {
 		}
 
 		// parse location search settings
-		$locations = flexmlsConnect::parse_location_search_string($location);
+		$locations = flexmlsConnect::parse_location_search_string($locations);
 
 		$location_conditions = array();
 		$location_field_names = array();
 
+
+
 		foreach ($locations as $loc) {
 			$location_conditions[] = "{$loc['f']} Eq '{$loc['v']}'";
-			$pure_conditions[$loc['f']] = $loc['v'];
+
+			if(array_key_exists($loc['f'], $pure_conditions)) {
+				$pure_conditions[$loc['f']] .=  ',' . $loc['v'];
+			} else {
+				$pure_conditions[$loc['f']] = $loc['v'];
+			}
+
 			$location_field_names[] = $loc['f'];
 		}
 
 		$uniq_location_field_names = array_unique($location_field_names);
 
-		if (count($location_conditions) > 1) {
-			return "<span style='color:red;'>flexmls&reg; IDX: This widget is configured with too many location search criteria options.  Please reduce to 1.</span>";
-		}
-
 		if ($apply_property_type and !empty($property_type)) {
 			$pure_conditions['PropertyType'] = $property_type;
+			$pure_conditions['PropertySubType'] = $property_sub_type;
 		}
 
 		if ($link) {
@@ -170,10 +182,6 @@ class fmcSearchResults extends fmcWidget {
 		}
 		else { }
 
-
-
-
-
 		$custom_page = new flexmlsConnectPageSearchResults;
 		$custom_page->title = $title;
 		$custom_page->input_source = 'shortcode';
@@ -182,7 +190,6 @@ class fmcSearchResults extends fmcWidget {
 		return $custom_page->generate_page(true);
 
 	}
-
 
 	function widget($args, $instance) {
 		echo $this->jelly($args, $instance, "widget");
@@ -205,19 +212,21 @@ class fmcSearchResults extends fmcWidget {
 
 	function settings_form($instance) {
 		global $fmc_api;
+		global $fmc_plugin_dir;
 
-		$title = esc_attr($instance['title']);
-		$source = esc_attr($instance['source']);
-		$display = esc_attr($instance['display']);
-		$days = esc_attr($instance['days']);
-		$property_type = esc_attr($instance['property_type']);
-		$link = esc_attr($instance['link']);
-		$location = $instance['location'];
-		$sort = esc_attr($instance['sort']);
-		$agent = esc_attr($instance['agent']);
+		$title 					= esc_attr($instance['title']);
+		$source 				= esc_attr($instance['source']);
+		$display 				= esc_attr($instance['display']);
+		$days 					= esc_attr($instance['days']);
+		$property_type 	= esc_attr($instance['property_type']);
+		// $property_sub_type 	= esc_attr($instance['property_sub_type']);
+		$link 					= esc_attr($instance['link']);
+		$location 			= $instance['location'];
+		$sort 					= esc_attr($instance['sort']);
+		$agent 					= esc_attr($instance['agent']);
 
-		$selected_code = " selected='selected'";
-		$checked_code = " checked='checked'";
+		$selected_code 	= " selected='selected'";
+		$checked_code 	= " checked='checked'";
 
 		$source_options = array();
 		$roster_feature = false;
@@ -285,6 +294,9 @@ class fmcSearchResults extends fmcWidget {
 		}
 
 		$api_property_type_options = $fmc_api->GetPropertyTypes();
+
+		$api_property_sub_type_options = $fmc_api->GetPropertySubTypes();
+		
 		$api_system_info = $fmc_api->GetSystemInfo();
 		$api_location_search_api = flexmlsConnect::get_locationsearch_url();
 		$api_my_account = $fmc_api->GetMyAccount();
@@ -306,169 +318,30 @@ class fmcSearchResults extends fmcWidget {
 			$special_neighborhood_title_ability = flexmlsConnect::special_location_tag_text();
 		}
 
-
-		$return = "";
-
-
-		// widget title
-		$return .= "<p>\n";
-		$return .= "<label for='".$this->get_field_id('title')."'>" . __('Title:') . "</label>\n";
-		$return .= "<input fmc-field='title' fmc-type='text' type='text' class='widefat' id='".$this->get_field_id('title')."' name='".$this->get_field_name('title')."' value='{$title}'>\n";
-		$return .= $special_neighborhood_title_ability;
-		$return .= "</p>\n";
-
-
-		// IDX link
-		$api_links = flexmlsConnect::get_all_idx_links(true);
-
-		$return .= "<p>\n";
-		$return .= "<label for='".$this->get_field_id('link')."'>" . __('Saved Search:') . "</label>\n";
-		$return .= "<select fmc-field='link' fmc-type='select' id='".$this->get_field_id('link')."' name='".$this->get_field_name('link')."'>\n";
-
-		$is_selected = ($link == "") ? $selected_code : "";
-		$return .= "<option value=''{$is_selected}>(None)</option>\n";
-
-		$is_selected = ($link == "default") ? $selected_code : "";
-		$return .= "<option value='default'{$is_selected}>(Use Saved Default)</option>\n";
-
-		foreach ($api_links as $my_l) {
-			$is_selected = ($my_l['LinkId'] == $link) ? $selected_code : "";
-			$return .= "<option value='{$my_l['LinkId']}'{$is_selected}{$is_disabled}>{$my_l['Name']}</option>\n";
-		}
-
-		$return .= "</select><br /><span class='description'>flexmls Saved Search to apply</span>\n";
-		$return .= "</p>\n";
-
-
-		// filter by
-		$return .= "<p>\n";
-		$return .= "<label for='".$this->get_field_id('source')."'>" . __('Filter by:') . "</label>\n";
-		$return .= "<select fmc-field='source' fmc-type='select' id='".$this->get_field_id('source')."' name='".$this->get_field_name('source')."' class='flexmls_connect__listing_source'>\n";
-
-		foreach ($source_options as $k => $v) {
-			$is_selected = ($k == $source) ? $selected_code : "";
-			$return .= "<option value='{$k}'{$is_selected}{$is_disabled}>{$v}</option>\n";
-		}
-
-		$hidden_location = ($source != "location") ? " style='display:none;'" : "";
-		$hidden_roster = ($source != "agent") ? " style='display:none;'" : "";
-
-		$return .= "</select><br /><span class='description'>Which listings to display</span>\n";
-		$return .= "</p>\n";
-
-
-		// property type
-		$return .= "<p class='flexmls_connect__location_property_type_p' {$hidden_location}>\n";
-		$return .= "<label for='".$this->get_field_id('property_type')."'>" . __('Property Type:') . "</label>\n";
-		$return .= "<select fmc-field='property_type' class='flexmls_connect__property_type' fmc-type='select' id='".$this->get_field_id('property_type')."' name='".$this->get_field_name('property_type')."'>\n";
-
-		foreach ($api_property_type_options as $k => $v) {
-			$is_selected = ($k == $property_type) ? $selected_code : "";
-			$return .= "<option value='{$k}'{$is_selected}{$is_disabled}>{$v}</option>\n";
-		}
-
-		$return .= "</select>\n";
-		$return .= "</p>\n";
-
-
-		// location
-		$return .= "<div class='flexmls_connect__location'{$hidden_location}>\n";
-		$return .= "<p>\n";
-		$return .= "<label for='horizontal'>Location:</label>\n";
-		$return .= "<input type='text' name='location_input' data-connect-url='{$api_location_search_api}' class='flexmls_connect__location_search' autocomplete='off' value='City, Postal Code, etc.' />\n";
-		$return .= "<a href='javascript:void(0);' title='Click here to browse through available locations' class='flexmls_connect__location_browse'>Browse &raquo;</a>\n";
-		$return .= "<div class='flexmls_connect__location_list' data-connect-multiple='false'>\n";
-		$return .= "	<p>All Locations Included</p>\n";
-		$return .= "</div>\n";
-		$return .= "<input type='hidden' name='tech_id' class='flexmls_connect__tech_id' value=\"x'{$api_system_info['Id']}'\" />\n";
-		$return .= "<input type='hidden' name='ma_tech_id' class='flexmls_connect__ma_tech_id' value=\"x'". flexmlsConnect::fetch_ma_tech_id() ."'\" />\n";
-		$return .= "<input fmc-field='location' fmc-type='text' type='hidden' name='".$this->get_field_name('location')."' class='flexmls_connect__location_fields' value=\"{$location}\" />\n";
-		$return .= "</p>\n";
-		$return .= "</div>\n";
-
-
-		// roster
-		$return .= "<div class='flexmls_connect__roster'{$hidden_roster}>\n";
-		$return .= "<p>\n";
-		$return .= "<label for='".$this->get_field_id('agent')."'>" . __('Agent:') . "\n";
-		$return .= "<select fmc-field='agent' fmc-type='select' id='".$this->get_field_id('agent')."' name='".$this->get_field_name('agent')."'>\n";
-		$return .= "<option value=''>  - Select One -  </option>\n";
-
-		foreach ($office_roster as $a) {
-			$is_selected = ($a['Id'] == $agent) ? $selected_code : "";
-			$return .= "<option value='{$a['Id']}'{$is_selected}>". htmlspecialchars($a['Name']) ."</option>";
-		}
-
-		$return .= "</select>\n";
-		$return .= "</label>\n";
-		$return .= "</p>\n";
-		$return .= "</div>\n";
-
-
-		// display
-		$return .= "<p>\n";
-		$return .= "<label for='".$this->get_field_id('display')."'>" . __('Display:') . "\n";
-		$return .= "<select class='photos_display' fmc-field='display' fmc-type='select' id='".$this->get_field_id('display')."' name='".$this->get_field_name('display')."'>\n";
-
-		foreach ($display_options as $k => $v) {
-			$is_selected = ($k == $display) ? $selected_code : "";
-			$return .= "<option value='{$k}'{$is_selected}{$is_disabled}>{$v}</option>\n";
-		}
-
-		$return .= "</select>\n";
-		$return .= "</label>\n";
-		$return .= "</p>\n";
-
-		 $return .= "<p>
-                 <label class='photos_days' style='display:none' for='".$this->get_field_id('day')."'>" . __('Number of Days:') . "
-                     <select fmc-field='day' fmc-type='select' id='".$this->get_field_id('days')."' name='".$this->get_field_name('days')."'>
-                         ";
-		foreach ($display_day_options as $k => $v) {
-            $is_selected = ($k == $days) ? $selected_code : "";
-            $return .= "<option value='{$k}'{$is_selected}{$is_disabled}>{$v}</option>\n";
-        }
-
-		$return .= "</select> </label> </p>";
-
-		// sort
-		$return .= "<p>\n";
-		$return .= "<label for='".$this->get_field_id('sort')."'>" . __('Sort by:') . "\n";
-		$return .= "<select fmc-field='sort' fmc-type='select' id='".$this->get_field_id('sort')."' name='".$this->get_field_name('sort')."'>\n";
-
-		foreach ($sort_options as $k => $v) {
-			$is_selected = ($k == $sort) ? $selected_code : "";
-			$return .= "<option value='{$k}'{$is_selected}{$is_disabled}>{$v}</option>\n";
-		}
-
-		$return .= "</select>\n";
-		$return .= "</label>\n";
-		$return .= "</p>\n";
-
-
-
-		$return .= "<img src='x' class='flexmls_connect__bootloader' onerror='flexmls_connect.location_setup(this);' />\n";
-
-
-		$return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,source,property_type,location,display,sort,agent,days' />\n";
-		$return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />\n";
-
+		// output html from the template
+		ob_start();
+			require_once($this->admin_page_view);
+			$return = ob_get_contents();
+		ob_end_clean();
+		
 		return $return;
 
 	}
 
-
+	// TODO: find out if this is being used anywhere
 	function update($new_instance, $old_instance) {
 		$instance = $old_instance;
 
-		$instance['title'] = strip_tags($new_instance['title']);
-		$instance['source'] = strip_tags($new_instance['source']);
-		$instance['display'] = strip_tags($new_instance['display']);
-		$instance['days'] = strip_tags($new_instance['days']);
-		$instance['property_type'] = strip_tags($new_instance['property_type']);
-		$instance['link'] = strip_tags($new_instance['link']);
-		$instance['location'] = strip_tags($new_instance['location']);
-		$instance['sort'] = strip_tags($new_instance['sort']);
-		$instance['agent'] = strip_tags($new_instance['agent']);
+		$instance['title'] 							= strip_tags($new_instance['title']);
+		$instance['source'] 						= strip_tags($new_instance['source']);
+		$instance['display'] 						= strip_tags($new_instance['display']);
+		$instance['days'] 							= strip_tags($new_instance['days']);
+		$instance['property_type'] 			= strip_tags($new_instance['property_type']);
+		//$instance['property_sub_type'] 	= strip_tags($new_instance['property_sub_type']);
+		$instance['link'] 							= strip_tags($new_instance['link']);
+		$instance['location'] 					= strip_tags($new_instance['location']);
+		$instance['sort'] 							= strip_tags($new_instance['sort']);
+		$instance['agent'] 							= strip_tags($new_instance['agent']);
 
 		return $instance;
 	}

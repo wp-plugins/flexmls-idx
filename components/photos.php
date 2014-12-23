@@ -356,7 +356,15 @@ class fmcPhotos extends fmcWidget {
 
 
 		if ($type != "ajax") {
-			$div_box = "<div class='{$carousel_class}' data-connect-vertical='{$vertical}' data-connect-horizontal='{$horizontal}' data-connect-autostart='{$auto_rotate}' data-connect-settings=\"{$encoded_settings}\" data-connect-total-pages='{$total_js_pages}'>\n";
+
+			// set the width
+			if ($settings['image_size'] > 0) {
+				$container_style = "style='width: {$settings['image_size']}px '";
+			}
+
+			$div_box = "<div class='{$carousel_class}' {$container_style} data-connect-vertical='{$vertical}' 
+				data-connect-horizontal='{$horizontal}' data-connect-autostart='{$auto_rotate}' 
+				data-connect-settings=\"{$encoded_settings}\" data-connect-total-pages='{$total_js_pages}'>\n";
 
 			if ( !empty($title) ) {
 				$title_line = "\t" . $before_title . $title . $after_title . "\n";
@@ -511,17 +519,10 @@ class fmcPhotos extends fmcWidget {
 				}
 
 				if (empty($main_photo_uri640)) {
-					$main_photo_uri640 = "{$fmc_plugin_url}/images/nophoto.gif";
+					$main_photo_uri640 = "{$fmc_plugin_url}/assets/images/nophoto.gif";
 					$listing['Photos'][0]['UriLarge'] = $main_photo_uri640;
 					$main_photo_caption = "No Photo Available";
 				}
-
-
-                //Resize image to fit nicely on slideshow according to image_size setting which is the width in pixels
-                $image_width = $settings['image_size'];
-                if (! $image_width)
-                    $image_width = "134";
-                $image_height = $image_width * 0.75;
 
 				//Check setting to have details pop up on photo click.
 				$fmc_send_to = "<a href='{$listing['Photos'][0]['UriLarge']}' class='popup' rel='{$rand}-{$listing['ListingKey']}' title='{$main_photo_caption}'>";
@@ -530,10 +531,30 @@ class fmcPhotos extends fmcWidget {
 				}
 				$photo_link = "{$listing['Photos'][0]['UriLarge']}";
 
+
+				// add a wrappers for pagination and rows
+				if (($result_count-1) % ($horizontal * $vertical) == 0) {
+					// if there is already a page div open, close the row and the page before adding another div
+					if ($result_count > 1) {
+						$return .= "</div></div>";
+					}
+					$return .= "<div class='flexmls_connect__slide_page'>
+									<div class='flexmls_connect__slide_row columns{$horizontal} clearfix'>";
+
+				} elseif (($result_count-1) % $horizontal == 0) { // add a wrapper div for rows
+					// if there is already a row open, close it before adding another row
+					if ($result_count > 1) {
+						$return .= "</div>";
+					}
+					$return .= "<div class='flexmls_connect__slide_row columns{$horizontal} clearfix'>";
+				}
+
 				$return .= "<!-- Listing -->
-						<div title='{$one_line_address} | MLS #: {$listing['ListingId']} | {$price}{$extra_title_line}' link='{$this_link}' target=\"{$this_target}\">
+						<div class='flexmls_connect__listing'
+							title='{$one_line_address} | MLS #: {$listing['ListingId']} | {$price}{$extra_title_line}' 
+							link='{$this_link}' target=\"{$this_target}\">
                         $fmc_send_to
-								<img src='{$main_photo_uri640}' style='width:{$image_width}px;height:{$image_height}px;max-width:none' alt='' />
+								<img class='flexmls_connect__slideshow_image' src='{$main_photo_uri640}' alt='' />
 							</a>
 							<p class='caption'>
 								{$link_to_start}
@@ -550,7 +571,10 @@ class fmcPhotos extends fmcWidget {
 
 				$return .= "			</div>
 						</div>\n\n";
-			}
+			} // end foreach
+
+			// close the wrapper div for the row and for the page
+			$return .= "</div></div>";
 		}
 
 		if ($type != "ajax") {
@@ -570,7 +594,10 @@ class fmcPhotos extends fmcWidget {
 			$return .= "</div>\n";
 
 			if ($total_listings > 0) {
-				$return .= "<a href='#' class='previous'>previous</a><a href='#' class='next'>next</a>";
+				$return .= "<div class='flexmls_connect__carousel_nav clearfix'>
+								<a href='#' class='previous'>previous</a>
+								<a href='#' class='next'>next</a>
+							</div>";
 
 				if ($source != "my" && $source != "my_office") {
 					$return .= "<p class='flexmls_connect__disclaimer'>\n";
@@ -648,13 +675,13 @@ class fmcPhotos extends fmcWidget {
 
 		$vertical_options = array(1, 2, 3, 4, 5, 6, 7, 8);
 
-        $image_size_options = array(
-            134 => "Small",
-            204 => "Medium",
-            360 => "Large",
-            640 => "Extra Large",
-        );
-
+    $image_size_options = array(
+      0   => "Flexible",
+      134 => "Small",
+      204 => "Medium",
+      360 => "Large",
+      640 => "Extra Large"
+    );
 
 		$auto_rotate_options = array(
 				0 => "Off",
@@ -844,7 +871,7 @@ class fmcPhotos extends fmcWidget {
              </p>
 
              <p>
-                 <label for='".$this->get_field_id('image_size')."'>" . __('Size of Image:') . "
+                 <label for='".$this->get_field_id('image_size')."'>" . __('Size of Slideshow:') . "
                      <select fmc-field='image_size' fmc-type='select' id='".$this->get_field_id('image_size')."' name='".$this->get_field_name('image_size')."'>
                          ";
          foreach ($image_size_options as $k => $v) {
@@ -948,14 +975,13 @@ class fmcPhotos extends fmcWidget {
         }
 
 
-			$do_not_display= ($display == 'all') ? "style='display:none'" : '';
          $return .= "
                      </select>
                  </label>
              </p>
 
              <p>
-                 <label class='photos_days' $do_not_display for='".$this->get_field_id('day')."'>" . __('Number of Days:') . "
+                 <label class='photos_days' style='display:none;' for='".$this->get_field_id('day')."'>" . __('Number of Days:') . "
                      <select fmc-field='day' fmc-type='select' id='".$this->get_field_id('days')."' name='".$this->get_field_name('days')."'>
                          ";
 
@@ -1049,11 +1075,11 @@ class fmcPhotos extends fmcWidget {
 		$instance['title'] = strip_tags($new_instance['title']);
 		$instance['horizontal'] = strip_tags($new_instance['horizontal']);
 		$instance['vertical'] = strip_tags($new_instance['vertical']);
-        $instance['image_size'] = strip_tags($new_instance['image_size']);
+    $instance['image_size'] = strip_tags($new_instance['image_size']);
 		$instance['auto_rotate'] = strip_tags($new_instance['auto_rotate']);
 		$instance['source'] = strip_tags($new_instance['source']);
-        $instance['display'] = strip_tags($new_instance['display']);
-        $instance['days'] = strip_tags($new_instance['days']);
+    $instance['display'] = strip_tags($new_instance['display']);
+    $instance['days'] = strip_tags($new_instance['days']);
 		$instance['property_type'] = strip_tags($new_instance['property_type']);
 		$instance['link'] = strip_tags($new_instance['link']);
 		$instance['location'] = strip_tags($new_instance['location']);

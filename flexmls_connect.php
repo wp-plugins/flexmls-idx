@@ -4,11 +4,11 @@ Plugin Name: flexmls&reg; IDX
 Plugin URI: http://www.flexmls.com/wpdemo/
 Description: Provides flexmls&reg; Customers with flexmls&reg; IDX features on their WordPress blog. <strong>Tips:</strong> <a href="options-general.php?page=flexmls_connect">Activate your flexmls IDX plugin</a> on the settings page; <a href="widgets.php">add widgets to your sidebar</a> using the Widgets Admin under Appearance; and include widgets on your posts or pages using the flexmls IDX Widget Short-Code Generator on the Visual page editor.
 Author: FBS
-Version: 3.4.9
+Version: 3.5.0
 Author URI: http://www.flexmls.com/
 */
 
-$fmc_version = '3.4.9';
+$fmc_version = '3.5.0';
 $fmc_plugin_dir = dirname(realpath(__FILE__));
 $fmc_plugin_url = plugins_url() .'/flexmls-idx';
 
@@ -42,7 +42,8 @@ $fmc_widgets = array(
 				'requires_key' => true,
 				'shortcode' => 'idx_search',
 				'max_cache_time' => 0,
-				'widget' => true
+				'widget' => true,
+				'page_view' => $fmc_plugin_dir . "/pages/search_widget/search_widget.php"
 				),
 		'fmcLocationLinks' => array(
 				'component' => 'location-links.php',
@@ -69,7 +70,8 @@ $fmc_widgets = array(
 				'requires_key' => true,
 				'shortcode' => 'lead_generation',
 				'max_cache_time' => 0,
-				'widget' => true
+				'widget' => true,
+				'page_view' => $fmc_plugin_dir . "/pages/lead-generation.php"
 				),
 		'fmcNeighborhoods' => array(
 				'component' => 'neighborhoods.php',
@@ -96,7 +98,8 @@ $fmc_widgets = array(
 				'requires_key' => true,
 				'shortcode' => 'idx_listing_summary',
 				'max_cache_time' => 0,
-				'widget' => false
+				'widget' => false,
+				'admin_page_view' => $fmc_plugin_dir . "/pages/admin/shortcode_generator/idx_listing_summary.php"
 				),
 		/*The agent search widget is only available to Offices and Mls's (not of usertype member)*/
 		'fmcAgents' => array(

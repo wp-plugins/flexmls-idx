@@ -21,36 +21,66 @@ class flexmlsConnect {
 
 			wp_enqueue_script('jquery');
 
-			wp_register_script('fmc_connect', $fmc_plugin_url .'/includes/connect.min.js', array('jquery'));
-			wp_enqueue_script('fmc_connect');
-
-			wp_register_style('fmc_connect', $fmc_plugin_url .'/includes/connect.min.css');
-			wp_enqueue_style('fmc_connect');
+			if ( flexmlsConnect::in_dev_mode() ) {
+				wp_enqueue_script('fmc_connect', $fmc_plugin_url .'/assets/js/connect.js', array('jquery'));
+				wp_enqueue_script('fmc_colorbox', $fmc_plugin_url .'/assets/js/colorbox.js', array('jquery'));
+				wp_enqueue_script('fmc_loopedCarousel', $fmc_plugin_url .'/assets/js/loopedCarousel.js', array('jquery'));
+				wp_enqueue_script('fmc_flot', $fmc_plugin_url .'/assets/js/flot.js', array('jquery'));
+				wp_enqueue_script('fmc_flot_resize', $fmc_plugin_url .'/assets/js/jquery.flot.resize.js', 
+					array('jquery', 'fmc_flot'));
+				wp_enqueue_script('fmc_autoSuggest', $fmc_plugin_url .'/assets/js/autoSuggest.js', array('jquery'));
+			} else {
+				wp_enqueue_script('fmc_connect', $fmc_plugin_url .'/assets/minified/connect.min.js', array('jquery'));
+			}
 
 			wp_register_style('font-awesome', "http://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css");
 			wp_enqueue_style('font-awesome');
+			
+			wp_register_style('fmc_connect', $fmc_plugin_url .'/assets/css/style.css');
+			wp_enqueue_style('fmc_connect');
 
-            wp_enqueue_script( 'jquery-ui-dialog' );
-            wp_enqueue_style('wp-jquery-ui-dialog');
+			wp_enqueue_script( 'jquery-ui-dialog' );
+			wp_enqueue_style('wp-jquery-ui-dialog');
 
-			wp_register_script('fmc_portal', $fmc_plugin_url .'/includes/portal.min.js', array('jquery', 'fmc_connect'));
-			wp_enqueue_script('fmc_portal');
+			if ( flexmlsConnect::in_dev_mode() ) {
+				wp_enqueue_script('fmc_portal', $fmc_plugin_url .'/assets/js/portal.js', array('jquery', 'fmc_connect'));
+			} else {
+				wp_enqueue_script('fmc_portal', $fmc_plugin_url .'/assets/minified/portal.min.js', array('jquery', 'fmc_connect'));
+			}
 
 			if (flexmlsConnect::is_ie() && flexmlsConnect::ie_version() < 9) {
-				wp_register_script('fmc_excanvas', $fmc_plugin_url .'/includes/excanvas.min.js');
+				wp_register_script('fmc_excanvas', $fmc_plugin_url .'/assets/minified/excanvas.min.js');
 				wp_enqueue_script('fmc_excanvas');
 			}
 
 		}
 		else {
 
+			// wp-admin
+
 			wp_enqueue_script('jquery-ui-core');
 			wp_enqueue_script('jquery-ui-sortable');
 
-			wp_register_script('fmc_connect', $fmc_plugin_url .'/includes/connect_admin.min.js', array('jquery','jquery-ui-core'));
-			wp_enqueue_script('fmc_connect');
+			if ( flexmlsConnect::in_dev_mode() ) {
+				wp_enqueue_script('fmc_dependent_dropdowns', $fmc_plugin_url .'/assets/js/vendor/jquery.dependent_dropdowns.js', 
+					array('jquery'));
+				wp_enqueue_script('fmc_connect', $fmc_plugin_url .'/assets/js/connect_admin.js', 
+					array('jquery','jquery-ui-core', 'wp-color-picker'));
+				wp_enqueue_script('fmc_location', $fmc_plugin_url .'/assets/js/location.js', 
+					array('jquery','jquery-ui-core'));				
+				wp_enqueue_script('fmc_spotlight', $fmc_plugin_url .'/assets/js/spotlight.js', 
+					array('jquery','jquery-ui-core'));				
+				wp_enqueue_script('fmc_chosen', $fmc_plugin_url .'/assets/js/vendor/chosen.jquery.min.js', array('jquery'));
+				wp_enqueue_script('fmc_search_results_fields', $fmc_plugin_url .'/assets/js/admin/admin_search_results_fields.js', 
+					array('jquery', 'jquery-ui-core', 'jquery-ui-sortable'));
+			} else {
+				wp_enqueue_script('fmc_connect', $fmc_plugin_url .'/assets/minified/connect_admin.min.js', 
+					array('jquery','jquery-ui-core', 'wp-color-picker'));
+			}
 
-			wp_register_style('fmc_connect', $fmc_plugin_url .'/includes/connect_admin.min.css');
+			wp_enqueue_style( 'wp-color-picker' );
+
+			wp_register_style('fmc_connect', $fmc_plugin_url .'/assets/css/style_admin.css');
 			wp_enqueue_style('fmc_connect');
 
 			wp_register_style('fmc_jquery_ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.6/themes/ui-lightness/jquery-ui.css');
@@ -63,6 +93,14 @@ class flexmlsConnect {
 		add_shortcode("idx_frame", array('flexmlsConnect', 'shortcode'));
 
 
+	}
+
+	function in_dev_mode() {
+		if (defined('FMC_DEV') && FMC_DEV) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	function widget_init() {
@@ -329,7 +367,11 @@ class flexmlsConnect {
 
 	function filter_mce_plugin($plugins) {
 		global $fmc_plugin_url;
-		$plugins['fmc'] = $fmc_plugin_url . '/includes/tinymce_plugin.min.js';
+		if ( flexmlsConnect::in_dev_mode() ) {
+			$plugins['fmc'] = $fmc_plugin_url . '/assets/js/tinymce_plugin.js';
+		} else {
+			$plugins['fmc'] = $fmc_plugin_url . '/assets/minified/tinymce_plugin.min.js';
+		}
 		return $plugins;
 	}
 
@@ -368,23 +410,15 @@ class flexmlsConnect {
 
 	// called to put the start of the form on the shortcode generator page
 	function shortcode_header() {
-		$return = "\n\n";
-		$return .= "<form fmc-shortcode-form='true'>\n";
-
-		return $return;
+		return "<form fmc-shortcode-form='true'>";
 	}
 
 	// called to put the end of the form and submit button on the shortcode generator page
 	function shortcode_footer() {
-		$return = "";
-		$return .= "<p><input type='button' class='fmc_shortcode_submit button-primary' value='Insert Widget' /></p>\n";
-		$return .= "</form>\n";
-
-		$return .= "\n\n";
-
+		$return = "<p><input type='button' class='fmc_shortcode_submit button-primary' value='Insert Widget' /></p>";
+		$return .= "</form>";
 		return $return;
 	}
-
 
 
 	function clean_spaces_and_trim($value) {
@@ -974,8 +1008,18 @@ class flexmlsConnect {
 	}
 
 	static function is_not_blank_or_restricted($val) {
-		$val = trim($val);
-		return ( empty($val) or $val == "********") ? false : true;
+		if (!is_array($val)) {
+			$val = trim($val);
+			return ( empty($val) or $val == "********") ? false : true;
+		} else {
+			$result = true;
+			foreach ($val as $v) {
+				if (!flexmlsConnect::is_not_blank_or_restricted($v)){
+					$result = false;
+				}
+			}
+			return $result;
+		}
 	}
 
 	static function generate_nice_urls() {
@@ -1048,11 +1092,11 @@ class flexmlsConnect {
 	static function format_date ($format,$date){
 		//Format Last Modified Date
 		//search for "php date" for format specs
-                $LastModifiedDate= "";
-                if (flexmlsConnect::is_not_blank_or_restricted($date)){
-                        $Seconds = strtotime($date);
-                        $LastModifiedDate=date($format,$Seconds);
-                }
+		$LastModifiedDate= "";
+		if (flexmlsConnect::is_not_blank_or_restricted($date)){
+			$Seconds = strtotime($date);
+			$LastModifiedDate=date($format,$Seconds);
+		}
 		return $LastModifiedDate;
 	}
 
@@ -1359,6 +1403,7 @@ class flexmlsConnect {
 	}
 
 	static function hexLighter($hex, $factor = 20) {
+    $hex = str_replace('#', '', $hex);
     $new_hex = '';
     $base['R'] = hexdec($hex{0}.$hex{1});
     $base['G'] = hexdec($hex{2}.$hex{3});
@@ -1377,12 +1422,12 @@ class flexmlsConnect {
       $new_hex .= $new_hex_component;
     }
 
-    return $new_hex;
+    return '#' . $new_hex;
 	}
 
 	function hexDarker($color, $dif=20){
     $color = str_replace('#', '', $color);
-    if (strlen($color) != 6){ return '000000'; }
+    if (strlen($color) != 6){ return '#000000'; }
     $rgb = '';
 
     for ($x=0;$x<3;$x++){
@@ -1391,7 +1436,7 @@ class flexmlsConnect {
         $rgb .= (strlen($c) < 2) ? '0'.$c : $c;
     }
 
-    return $rgb;
+    return '#' . $rgb;
   }
 
     public static function allowMultipleLists() {

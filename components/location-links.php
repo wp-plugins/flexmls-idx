@@ -26,8 +26,8 @@ class fmcLocationLinks extends fmcWidget {
 		global $fmc_api;
 		extract($args);
 
-        //fixing locations to work with url - removing slashes WP-149
-        $settings['locations'] = stripslashes($settings['locations']);
+		//fixing locations to work with url - removing slashes WP-149
+		$settings['locations'] = stripslashes($settings['locations']);
 
 		// set default title if a widget, none given, and the default_titles setting is turned on
 		if ($type == "widget" && empty($settings['title']) && flexmlsConnect::use_default_titles()) {
@@ -121,7 +121,7 @@ class fmcLocationLinks extends fmcWidget {
 			}
 
 			
-			$links_to_show .= "<li><a href=\"{$final_destination}\" title=\"{$valid_links[$my_link]['Name']} - {$loc['l']}\"{$final_target}}>{$loc['l']}</a></li>\n";
+			$links_to_show .= "<li><a href=\"{$final_destination}\" title=\"{$valid_links[$my_link]['Name']} - {$loc['l']}\"{$final_target}>{$loc['l']}</a></li>\n";
 		}
 
 		if (empty($links_to_show)) {

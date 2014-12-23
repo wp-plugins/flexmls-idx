@@ -284,6 +284,7 @@ class fmcAccount extends fmcWidget {
 	static function write_carts(&$record){
 		global $fmc_api_portal;
 		$options = get_option('fmc_settings');
+
 		if (!$options['portal_carts'])
 			return;
 
@@ -328,22 +329,21 @@ class fmcAccount extends fmcWidget {
 
 		?>
 		<div class='listing_cart' value=<?php echo $record['Id']?>>
-			<span class="icon-stack Favorites flexmls_smiley  flexmls_portal_cart_handle <?php echo $is_favorite ?>" title="Mark this listing as a favorite" value='<?php echo $favorite_id ?>' >
-				<i class="icon-circle"></i>
-				<i class="icon-smile"></i>
+			<span class="Favorites flexmls_portal_cart_handle <?php echo $is_favorite ?>" 
+				title="Mark this listing as a favorite (Login required)" value='<?php echo $favorite_id ?>' >
+				<i class="icon-heart"></i>
 			</span>
 
-			<span class="icon-stack Possibilities flexmls_smiley flexmls_portal_cart_handle <?php echo $is_possibility ?>" title="Mark this listing as a possibility" value='<?php echo $possibility_id ?>' >
-				<i class="icon-circle"></i>
-				<i class="icon-meh"></i>
+			<span class="Possibilities flexmls_portal_cart_handle <?php echo $is_possibility ?>" 
+				title="Like (Login required)" value='<?php echo $possibility_id ?>' >
+				<i class="icon-thumb_up"></i>
 			</span>
 
-			<span class="icon-stack Rejects flexmls_smiley flexmls_portal_cart_handle <?php echo $is_reject ?>" title="Mark this listing as a reject" value='<?php echo $reject_id ?>' >
-				<i class="icon-circle"></i>
-				<i class="icon-frown"></i>
+			<span class="Rejects flexmls_portal_cart_handle <?php echo $is_reject ?>" 
+				title="No Interest (Login required)" value='<?php echo $reject_id ?>' >
+				<i class="icon-thumb_down"></i>
 			</span>
 		</div>
-		<br>
 	<?php
 	}
 

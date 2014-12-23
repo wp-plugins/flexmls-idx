@@ -121,7 +121,7 @@ class flexmlsConnectAgentSearchResults extends flexmlsConnectPageCore {
 		
 		$fmc_agent_image = isset($agent['Images'][0]['Uri']) ? $agent['Images'][0]['Uri']:false;
 		if (!$fmc_agent_image)
-			$fmc_agent_image = $fmc_plugin_url."/images/placeholder.png";
+			$fmc_agent_image = $fmc_plugin_url."/assets/images/placeholder.png";
 
 		$fmc_agent_name = $agent['Name'];
 		

@@ -64,7 +64,7 @@ class flexmlsConnectPage {
 			$custom_page->pre_tasks($tag);
 			$fmc_special_page_caught['fmc-page'] = $custom_page;
 
-
+			add_filter('body_class', array('flexmlsConnectPage', 'custom_body_class') );
 			add_filter('wp_title', array('flexmlsConnectPage', 'custom_page_title') );
 			add_filter('the_post', array('flexmlsConnectPage', 'custom_post_title') );
 			add_filter('the_content', array('flexmlsConnectPage', 'custom_post_content') );
@@ -93,9 +93,13 @@ class flexmlsConnectPage {
 				add_action('wp_head', array('flexmlsConnectPage', 'my_rel_canonical') );
 			}
 		}
+	}
 
-
-
+	function custom_body_class($classes) {
+		// add a class to the body tag based on what type of page it is.
+		global $fmc_special_page_caught;
+		$classes[] = 'flexmls_connect__' . str_replace('-', '_', $fmc_special_page_caught['type']) . '_page';
+		return $classes;
 	}
 
 	function custom_page_title() {
@@ -118,15 +122,12 @@ class flexmlsConnectPage {
 
 	function custom_post_content($page) {
 		global $fmc_special_page_caught;
-		$return  = "\n";
+		// TODO: replace this style line with normal css, now that each page has a special body class.
 		// disable the "Comments are disabled" text on the page
-		$return .= "<style type='text/css'>\n  .nocomments { display:none; }\n</style>\n\n\n";
+		$return = "<style type='text/css'> .nocomments { display:none; }</style>";
 		$return .= $fmc_special_page_caught['fmc-page']->generate_page();
-
 		return $return;
-
 	}
-
 
 	/**
 	 * Custom canonical links
@@ -135,8 +136,5 @@ class flexmlsConnectPage {
 		global $fmc_special_page_caught;
 		echo "<link rel='canonical' href='" . $fmc_special_page_caught['page-url'] . "' />\n";
 	}
-
-
-
 
 }

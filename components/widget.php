@@ -3,13 +3,16 @@
 
 class fmcWidget extends WP_Widget {
 
+	// holds the path for the view templates
+	protected $page_view;
+	protected $admin_page_view;
+
 	function shortcode_form() {
 		global $fmc_widgets;
 
 		$widget_info = $fmc_widgets[ get_class($this) ];
 
 		$settings_content = $this->settings_form( array('_instance_type' => 'shortcode') );
-		$settings_content = $settings_content;
 
 		$response = array(
 				'title' => $widget_info['title'] .' widget',

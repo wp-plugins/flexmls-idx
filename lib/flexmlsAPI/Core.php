@@ -620,6 +620,16 @@ class flexmlsAPI_Core {
 		}
 	}
 
+	function GetPropertySubTypes() {
+		$response = $this->MakeAPICall("GET", "standardfields/PropertySubType", '24h');
+		
+		if ($response['success'] == true) {
+			return $response['results'][0]['PropertySubType']['FieldList'];
+		} else {
+			return false;
+		}
+	}
+
 
 	/*
 	 * Standard Fields services
