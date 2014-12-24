@@ -797,6 +797,9 @@ function settings_field_listing() {
 	}
 
 	function set_default_search_results_fields() {
+
+		$options = get_option('fmc_settings');
+
 		$default_fields = array(
 				'PropertyType' => 'Property Type',
 				'BedsTotal' => '# of Bedrooms',
