@@ -2,7 +2,7 @@
 
 interface flexmlsAPI_CacheInterface {
 
-	function get($key);
-	function set($key, $value, $expire);
+  function get($key);
+  function set($key, $value, $expire);
 
 }

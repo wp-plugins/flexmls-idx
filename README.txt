@@ -3,7 +3,7 @@ Tags: flexmls, IDX, MLS search
 Contributors: flexmls
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 3.5.1
+Stable tag: 3.5.2
 
 Add flexmls IDX listings, market statistics, IDX searches, and a contact form on your web site.
 
@@ -55,6 +55,17 @@ Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a hre
 
 
 == Changelog ==
+
+= 3.5.2 =
+
+* Captcha to the contact me widget to prevent spam
+* If your association allows sold listings in IDX, you can now allow your users to search for sold listings in the IDX Search widget.
+* IDX Slideshow will properly format the listing address (if shown)
+* Added Line Height value to the location search box. This could only be seen on Internet Explorer
+* PHP warnings property sub-type field have been removed from the IDX Search widget.
+* For those that were experiencing a problem with your theme using font awesome the conflict has been resolved in this version.
+* Location Search box line-height added to prevent placeholder text cut-off in IE
+* Add box-sizing: content-box to CSS file to prevent the close button and navigation arrows from being hidden.
 
 = 3.5.1 =
 

@@ -3,10 +3,10 @@
 class flexmlsAPI_CoreTransport {
 
 
-	function __construct() {
-		
-	}
-	
-	
+  function __construct() {
+    
+  }
+  
+  
 
 }

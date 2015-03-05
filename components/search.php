@@ -5,14 +5,18 @@
 class fmcSearch extends fmcWidget {
 
   protected $widget_settings;
+  protected $instance;
+  protected $options;
 
   function fmcSearch() {
+
+    parent::__construct();
+
     global $fmc_widgets;
 
     $widget_info = $fmc_widgets[ get_class($this) ];
 
-    // set the view template for the widget
-    $this->page_view = $widget_info['page_view'];
+    $this->options = new Fmc_Settings;
 
     $widget_ops = array( 'description' => $widget_info['description'] );
     $this->WP_Widget( get_class($this) , $widget_info['title'], $widget_ops);
@@ -54,6 +58,8 @@ class fmcSearch extends fmcWidget {
     $property_types_selected = explode(",", $property_type);
     $std_fields = isset($settings['std_fields'])? trim($settings['std_fields']) : null;
     $std_fields_selected = explode(",", $std_fields);
+    $allow_sold_searching = isset($settings['allow_sold_searching']) ? $settings['allow_sold_searching'] : null;
+
     // theme="vert_round_dark"
     $orientation = (array_key_exists('orientation', $settings)) ? trim($settings['orientation']) : "horizontal" ;
     
@@ -203,13 +209,15 @@ class fmcSearch extends fmcWidget {
 
     // set up prop sub types in a way that will be easy to output in the view
     $property_sub_types = array();
-    foreach ($api_property_sub_types as $sub_type) {
-      if ($sub_type['Name'] != "Select One") {
-        foreach($sub_type['AppliesTo'] as $property_code) {
-          if (array_key_exists($property_code, $property_sub_types)) {
-            $property_sub_types[$property_code][] = $sub_type;
-          } else  {
-            $property_sub_types[$property_code] = array($sub_type);
+    if ($api_property_sub_types) {
+      foreach ($api_property_sub_types as $sub_type) {
+        if ($sub_type['Name'] != "Select One") {
+          foreach($sub_type['AppliesTo'] as $property_code) {
+            if (array_key_exists($property_code, $property_sub_types)) {
+              $property_sub_types[$property_code][] = $sub_type;
+            } else  {
+              $property_sub_types[$property_code] = array($sub_type);
+            }
           }
         }
       }
@@ -246,237 +254,13 @@ class fmcSearch extends fmcWidget {
 
 
   function settings_form($instance) {
-    global $fmc_api;
-
-    $selected_code = " selected='selected'";
-    $hidden_code = " style='display:none;'";
-
-    $hide_section = array();
-
-    $setting_fields = fmcSearch::settings_fields();
-    $settings = array();
-    // pull, clean and compile all relevant settings for this form
-    foreach ($setting_fields as $name => $details) {
-      $value = null;
-
-      if ( array_key_exists('default', $details) ) {
-        $settings[$name] = $details['default'];
-      }
-
-      switch($details['type']) {
-
-        case "color":
-        case "select":
-        case "text":
-          $value = esc_attr($instance[$name]);
-          break;
-
-        case "list":
-          $this_val = esc_attr( trim($instance[$name]) );
-
-          if ( strlen($this_val) === 0 ) {
-            $value = array();
-          }
-          else {
-            $value = explode(",", $this_val);
-          }
-          break;
-
-        case "enabler":
-          $value = ($instance[$name] == "off") ? "off" : "on";
-          $hide_section[$name] = ($value == "off") ? $hidden_code : null;
-          break;
-      }
-
-      if ($value != null) {
-        $settings[$name] = $value;
-      }
-
-    }
-
-
-    $current_standard_fields = $settings['std_fields'];
-    $possible_standard_fields = array(
-        'age' => "Year Built",
-        'baths' => "Bathrooms",
-        'beds' => "Bedrooms",
-        'square_footage' => "Square Footage",
-        'list_price' => "Price"
-    );
-
-
-    $api_property_type_options = $fmc_api->GetPropertyTypes();
-
-    $current_property_types = $settings['property_type'];
-    $possible_property_types = $api_property_type_options;
-
-    if ($api_property_type_options === false || $api_links === false) {
-      return flexmlsConnect::widget_not_available($fmc_api, true);
-    }
-
-
-    $new_return = "";
-
-    $on_section = null;
-
-    foreach ($setting_fields as $name => $details) {
-
-      $this_section = ( array_key_exists('section', $details) ) ? $details['section'] : null;
-
-      // show section headings if we've switched to a new section
-      if ($on_section != $this_section) {
-        $new_return .= "<br/><div style='width:95%; background-color:white; margin:0px 0px 5px 0px; padding:5px 0px 5px 5px; border: 1px solid grey;'><b>{$this_section}</b></div>";
-      }
-
-      $group_show = null;
-      $group_class = null;
-      if ( !empty($details['field_grouping']) ) {
-        $group_class = " class='flexmls_connect__disable_group_{$details['field_grouping']}'";
-        $group_show = $hide_section[$details['field_grouping']];
-      }
-
-      $new_return .= "<div{$group_class}{$group_show}>";
-      $new_return .= "<p>";
-
-      $input_class = null;
-      if ($details['input_width'] == 'full') {
-        $details['input_width'] = null;
-        $details['class'] .= " widefat";
-      }
-
-      // shortcut overrides
-      // change enabler into a standard select box with preset options
-      if ($details['type'] == "enabler") {
-        $details['type'] = "select";
-        $details['options'] = array(
-            'on' => 'Enabled',
-            'off' => 'Disabled'
-        );
-        $details['class'] = "flexmls_connect__setting_enabler_{$name}";
-      }
-
-      $input_value = htmlspecialchars($settings[$name], ENT_QUOTES);
-
-      // change a color box into a standard text field with a few added options
-      if ($details['type'] == "color") {
-        $details['type'] = "text";
-        $details['input_width'] = 6;
-        $details['class'] = "wp-color-picker";
-
-        if ($instance['_instance_type'] == 'shortcode')
-          $label_class = "fmc_shortcode_field_label";
-        else
-          $label_class = "fmc_widget_field_label";
-
-        if($input_value and strpos($input_value, '#') === false) {
-          $input_value = '#' . $input_value;
-        }
-      }
-
-      $input_class = null;
-      if ( !empty($details['class']) ) {
-        $input_class = " class='{$details['class']}'";
-      }
-
-      $new_return .= "<label for='".$this->get_field_id($name)."' class='{$label_class}'>" . 
-        __($details['label']. ':') . "</label>";
-
-      // text box
-      if ($details['type'] == "text") {
-        $new_return .= "<input fmc-field='{$name}' fmc-type='text' size='{$details['input_width']}' 
-        type='text'{$input_class} id='".$this->get_field_id($name)."' name='".$this->get_field_name($name)."' 
-        value='". $input_value . "'>";
-      }
-      // select box
-      elseif ($details['type'] == "select") {
-        $new_return .= "<select fmc-field='{$name}' fmc-type='select'{$input_class} id='".$this->get_field_id($name)."' name='".$this->get_field_name($name)."'>";
-        foreach ($details['options'] as $k => $v) {
-          $is_selected = ( $settings[$name] == $k ) ? $selected_code : null;
-          $new_return .= "<option value='{$k}'{$is_selected}>{$v}</option>";
-        }
-        $new_return .= "</select>";
-      }
-      // sortable list selection
-      elseif ($details['type'] == "list") {
-        if ($name == "property_type") {
-          $possible_list = $possible_property_types;
-          $current_list = $current_property_types;
-          $available_class = "available_types";
-          $add_button_text = "Add Type";
-          $add_button_class = "add_property_type";
-        }
-        elseif ($name == "std_fields") {
-          $possible_list = $possible_standard_fields;
-          $current_list = $current_standard_fields;
-          $available_class = "available_fields";
-          $add_button_text = "Add Field";
-          $add_button_class = "add_std_field";
-        }
-
-        if ( !is_array($current_list) ) {
-          $current_list = array();
-        }
-
-        $new_return .= "<div>";
-
-        $new_return .= "<input fmc-field='{$name}' fmc-type='text' type='hidden' name='".$this->get_field_name($name)."' class='flexmls_connect__list_values' value='". implode(",", $current_list). "' />";
-        $new_return .= "<ul class='flexmls_connect__sortable'>";
-
-        foreach ($current_list as $k) {
-          $show_label = ($name == "property_type") ? flexmlsConnect::nice_property_type_label($k) : $possible_list[$k];
-
-          $new_return .= "<li data-connect-name='{$k}'>";
-          $new_return .= "  <span class='remove' title='Remove this from the search'>&times;</span>";
-          $new_return .= "  <span class='ui-icon ui-icon-arrowthick-2-n-s'></span>";
-          $new_return .= "  {$show_label}";
-          $new_return .= "</li>";
-        }
-
-        $new_return .= "</ul>";
-        $new_return .= "<select name='".$this->get_field_name($available_class)."' class='flexmls_connect__available'>";
-
-        foreach ($possible_list as $fk => $fv) {
-          $show_label = ($name == "property_type") ? flexmlsConnect::nice_property_type_label($fk) : $fv;
-          $new_return .= "<option value='{$fk}'>{$show_label}</option>";
-        }
-
-        $new_return .= "</select>";
-        $new_return .= "<button title='Add this to the search' class='flexmls_connect__{$add_button_class}'>{$add_button_text}</button>";
-        $new_return .= "<img src='x' class='flexmls_connect__bootloader' onerror='flexmls_connect.sortable_setup(this);' />";
-        $new_return .= "</div>";
-
-      }
-      // other
-      else {
-        $new_return .= "{$details['type']}";
-      }
-
-      $new_return .= $details['after_input'];
-
-      if ( !empty($details['description']) ) {
-        $new_return .= "<br/><span class='description'>{$details['description']}</span>";
-      }
-
-      $new_return .= "</p>";
-      $new_return .= "</div>";
-
-    }
-
-    $new_return .= "<script type='text/javascript'>
-        // set up the color picker for the search widget
-        jQuery('.wp-color-picker').wpColorPicker(); 
-    </script>";
-
-    $new_return .= "<input type='hidden' name='shortcode_fields_to_catch' value='". implode(",", array_keys($setting_fields) ) ."' />";
-    $new_return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />";
-
-    return $new_return;
-
+    $this->instance = $instance;
+    $view_vars = $this->search_admin_view_vars();
+    return $this->render_admin_view($view_vars);
   }
 
-
-
   function update($new_instance, $old_instance) {
+
     $instance = $old_instance;
 
     $setting_fields = fmcSearch::settings_fields();
@@ -678,9 +462,9 @@ class fmcSearch extends fmcWidget {
 
   }
 
-  function settings_fields() {
-    global $fmc_api;
 
+  // this function is still used by update() but should be removed
+  function settings_fields() {
 
     $api_links = flexmlsConnect::get_all_idx_links();
     $idx_links = array();
@@ -691,84 +475,88 @@ class fmcSearch extends fmcWidget {
 
 
     $settings_fields = array(
-        // main
-        'title' => array(
-         'label' => 'Title',
-         'type' => 'text',
-         'output' => 'text', // legacy
-         'input_width' => 'full',
-         ),
-        'link' => array(
-         'label' => 'IDX Link',
-         'type' => 'select',
-         'options' => $idx_links,
-         'output' => 'text', // legacy
-         'description' => 'Link used when search is executed',
-         'input_width' => 'full',
-         ),
-        'buttontext' => array(
-         'label' => 'Submit Button Text',
-         'type' => 'text',
-         'output' => 'text', // legacy
-         'input_width' => 'full',
-         'description' => '(ex. "Search for Homes")'
-         ),
-        'detailed_search' => array(
-         'label' => 'Detailed Search',
-         'type' => 'enabler',
-         'output' => 'enabler',
-         ),
-        'detailed_search_text' => array(
-         'label' => 'Detailed Search Title',
-         'type' => 'text',
-         'output' => 'text',
-         'input_width' => 'full',
-         'description' => '(ex. "More Search Options")',
-         'field_grouping' => 'detailed_search'
-         ),
-        'destination' => array(
-         'label' => 'Send users to',
-         'type' => 'select',
-         'options' => flexmlsConnect::possible_destinations(),
-         'output' => 'text',
-         ),
+      // main
+      'title' => array(
+        'label' => 'Title',
+        'type' => 'text',
+        'output' => 'text', // legacy
+        'input_width' => 'full',
+      ),
+      'link' => array(
+        'label' => 'IDX Link',
+        'type' => 'select',
+        'options' => $idx_links,
+        'output' => 'text', // legacy
+        'description' => 'Link used when search is executed',
+        'input_width' => 'full',
+      ),
+      'buttontext' => array(
+        'label' => 'Submit Button Text',
+        'type' => 'text',
+        'output' => 'text', // legacy
+        'input_width' => 'full',
+        'description' => '(ex. "Search for Homes")'
+      ),
+      'detailed_search' => array(
+        'label' => 'Detailed Search',
+        'type' => 'enabler',
+        'output' => 'enabler',
+      ),
+      'detailed_search_text' => array(
+        'label' => 'Detailed Search Title',
+        'type' => 'text',
+        'output' => 'text',
+        'input_width' => 'full',
+        'description' => '(ex. "More Search Options")',
+        'field_grouping' => 'detailed_search'
+      ),
+      'destination' => array(
+        'label' => 'Send users to',
+        'type' => 'select',
+        'options' => flexmlsConnect::possible_destinations(),
+        'output' => 'text',
+        ),
+      'user_sorting' => array(
+        'label' => 'User Sorting',
+        'type' => 'enabler',
+        'output' => 'enabler',
+        'section' => 'Sorting',
+        ),
 
-            'user_sorting' => array(
-                'label' => 'User Sorting',
-                'type' => 'enabler',
-                'output' => 'enabler',
-                'section' => 'Sorting',
-            ),
+      // filters
+      'location_search' => array(
+        'label' => 'Location Search',
+        'type' => 'enabler',
+        'output' => 'enabler', // legacy
+        'section' => 'Filters',
+      ),
+      'allow_sold_searching' => array(
+        'label' => 'Allow Sold Searching',
+        'type' => 'enabler',
+        'output' => 'enabler',
+      ),
+      'property_type_enabled' => array(
+        'label' => 'Property Type',
+        'type' => 'enabler',
+        'output' => 'enabler',
+      ),
+      'property_type' => array(
+        'label' => 'Property Types',
+        'type' => 'list',
+        'output' => 'text', // legacy
+        'field_grouping' => 'property_type_enabled'
+      ),
+      'std_fields' => array(
+        'label' => 'Fields',
+        'type' => 'list',
+        'output' => 'text', // legacy
+        ),
 
-        // filters
-        'location_search' => array(
-         'label' => 'Location Search',
-         'type' => 'enabler',
-         'output' => 'enabler', // legacy
-         'section' => 'Filters',
-         ),
-        'property_type_enabled' => array(
-         'label' => 'Property Type',
-         'type' => 'enabler',
-         'output' => 'enabler',
-         ),
-        'property_type' => array(
-         'label' => 'Property Types',
-         'type' => 'list',
-         'output' => 'text', // legacy
-         'field_grouping' => 'property_type_enabled'
-         ),
-        'std_fields' => array(
-         'label' => 'Fields',
-         'type' => 'list',
-         'output' => 'text', // legacy
-         ),
-
-        // theme
-        'theme' => array(
-         'label' => 'Select a Theme',
-         'type' => 'select',
-         'options' => array(
+      // theme
+      'theme' => array(
+        'label' => 'Select a Theme',
+        'type' => 'select',
+        'options' => array(
           '' => '(Select One)',
           'vert_round_light' => 'Vertical Rounded Light',
           'vert_round_dark' => 'Vertical Rounded Dark',
@@ -778,114 +566,115 @@ class fmcSearch extends fmcWidget {
           'hori_round_dark' => 'Horizontal Rounded Dark',
           'hori_square_light' => 'Horizontal Square Light',
           'hori_square_dark' => 'Horizontal Square Dark',
-         ),
-         'output' => 'text',
-         'description' => 'Selecting a theme will override your current layout, style and color settings.
-           The default width of a vertical theme is 300px and 730px for horizontal.',
-         'input_width' => 'full',
-         'class' => 'flexmls_connect__theme_selector'
-         ),
+        ),
+        'output' => 'text',
+        'description' => 'Selecting a theme will override your current layout, style and color settings.
+         The default width of a vertical theme is 300px and 730px for horizontal.',
+        'input_width' => 'full',
+        'class' => 'flexmls_connect__theme_selector'
+        ),
 
-        // layout
-        'orientation' => array(
-         'label' => 'Orientation',
-         'type' => 'select',
-         'options' => array(
+      // layout
+      'orientation' => array(
+        'label' => 'Orientation',
+        'type' => 'select',
+        'options' => array(
           'horizontal' => 'Horizontal',
           'vertical' => 'Vertical',
-          ),
-         'output' => 'text',
-         'section' => 'Layout',
-         ),
-        'width' => array(
-         'label' => 'Widget Width',
-         'type' => 'text',
-         'output' => 'text', // legacy
-         'input_width' => 5,
-         'after_input' => ' px'
-         ),
+        ),
+        'output' => 'text',
+        'section' => 'Layout',
+      ),
+      'width' => array(
+        'label' => 'Widget Width',
+        'type' => 'text',
+        'output' => 'text', // legacy
+        'input_width' => 5,
+        'after_input' => ' px'
+        ),
 
-        // style
-        'title_font' => array(
-         'label' => 'Title Font',
-         'type' => 'select',
-         'options' => flexmlsConnect::possible_fonts(),
-         'output' => 'text',
-         'section' => 'Style',
-         ),
-        'field_font' => array(
-         'label' => 'Field Font',
-         'type' => 'select',
-         'options' => flexmlsConnect::possible_fonts(),
-         'output' => 'text',
-         ),
-        'border_style' => array(
-         'label' => 'Border Style',
-         'type' => 'select',
-         'options' => array(
+      // style
+      'title_font' => array(
+        'label' => 'Title Font',
+        'type' => 'select',
+        'options' => flexmlsConnect::possible_fonts(),
+        'output' => 'text',
+        'section' => 'Style',
+      ),
+      'field_font' => array(
+        'label' => 'Field Font',
+        'type' => 'select',
+        'options' => flexmlsConnect::possible_fonts(),
+        'output' => 'text',
+      ),
+      'border_style' => array(
+        'label' => 'Border Style',
+        'type' => 'select',
+        'options' => array(
           'squared' => 'Squared',
           'rounded' => 'Rounded'
-          ),
-         'output' => 'text',
-         ),
-        'widget_drop_shadow' => array(
-         'label' => 'Widget Drop Shadow',
-         'type' => 'enabler',
-         'output' => 'enabler',
-         ),
+        ),
+        'output' => 'text',
+      ),
+      'widget_drop_shadow' => array(
+        'label' => 'Widget Drop Shadow',
+        'type' => 'enabler',
+        'output' => 'enabler',
+        ),
 
-        // color
-        'background_color' => array(
-         'label' => 'Background',
-         'type' => 'color',
-         'output' => 'text',
-         'section' => 'Color',
-         ),
-        'title_text_color' => array(
-         'label' => 'Title Text',
-         'type' => 'color',
-         'output' => 'text',
-         'default' => '000000'
-         ),
-        'field_text_color' => array(
-         'label' => 'Field Text',
-         'type' => 'color',
-         'output' => 'text',
-         'default' => '000000'
-         ),
-        'detailed_search_text_color' => array(
-         'label' => 'Detailed Search',
-         'type' => 'color',
-         'output' => 'text',
-         'default' => '000000'
-         ),
-        'submit_button_shine' => array(
-         'label' => 'Submit Button',
-         'type' => 'select',
-         'options' => array(
+      // color
+      'background_color' => array(
+        'label' => 'Background',
+        'type' => 'color',
+        'output' => 'text',
+        'section' => 'Color',
+      ),
+      'title_text_color' => array(
+        'label' => 'Title Text',
+        'type' => 'color',
+        'output' => 'text',
+        'default' => '000000'
+      ),
+      'field_text_color' => array(
+        'label' => 'Field Text',
+        'type' => 'color',
+        'output' => 'text',
+        'default' => '000000'
+      ),
+      'detailed_search_text_color' => array(
+        'label' => 'Detailed Search',
+        'type' => 'color',
+        'output' => 'text',
+        'default' => '000000'
+      ),
+      'submit_button_shine' => array(
+        'label' => 'Submit Button',
+        'type' => 'select',
+        'options' => array(
           'shine' => 'Shine',
           'gradient' => 'Gradient',
           'none' => 'None'
-          ),
-         'output' => 'text',
-         ),
-        'submit_button_background' => array(
-         'label' => 'Submit Button Background',
-         'type' => 'color',
-         'output' => 'text',
-         'default' => '000000'
-         ),
-        'submit_button_text_color' => array(
-         'label' => 'Submit Button Text',
-         'type' => 'color',
-         'output' => 'text',
-         'description' => 'Select a color shine that compliments your website or select a custom color.'
-         ),
+        ),
+        'output' => 'text',
+      ),
+      'submit_button_background' => array(
+        'label' => 'Submit Button Background',
+        'type' => 'color',
+        'output' => 'text',
+        'default' => '000000'
+      ),
+      'submit_button_text_color' => array(
+        'label' => 'Submit Button Text',
+        'type' => 'color',
+        'output' => 'text',
+        'description' => 'Select a color shine that compliments your website or select a custom color.'
+        ),
     );
 
     return $settings_fields;
 
   }
+  
 
   private function get_setting_color($property) {
 
@@ -903,6 +692,340 @@ class fmcSearch extends fmcWidget {
       $color = '#' . str_replace('#', '', trim($this->widget_settings[$property]));
     }
     return $color;
+  }
+
+  static function create_min_max_row($field) {
+
+    $rand = mt_rand();
+
+    $all_fields = array(
+      'list_price' => array(
+        'data_connect_field' => 'Price',
+        'field_for' => 'MinPrice',
+        'field_label' => 'Price Range',
+        'min_input_value' => array_key_exists("MinPrice", $_GET) ? $_GET["MinPrice"] : "",
+        'min_input_name' => 'MinPrice',
+        'min_input_id' => $rand . "-MinPrice",
+        'min_data_connect_default' => 'Min',
+        'min_input_js' => "onChange=\"this.value =  this.value.replace(/,/g,'').replace(/\\\$/g,'')\"",
+        'max_input_value' => array_key_exists("MaxPrice", $_GET) ? $_GET["MaxPrice"] : "",
+        'max_input_name' => 'MaxPrice',
+        'max_input_id' => $rand . "-MaxPrice",
+        'max_data_connect_default' => 'Max',
+        'max_input_js' => "onChange=\"this.value =  this.value.replace(/,/g,'').replace(/\\\$/g,'')\"",
+        'search_field' => "ListPrice"
+      ),
+
+      'beds' => array(
+        'data_connect_field' => 'Beds',
+        'field_for' => 'MinBeds',
+        'field_label' => 'Bedrooms',
+        'min_input_value' => array_key_exists("MinBeds", $_GET) ? $_GET["MinBeds"] : "",
+        'min_input_name' => 'MinBeds',
+        'min_input_id' => $rand . "-MinBeds",
+        'min_data_connect_default' => 'Min',
+        'min_input_js' => "",
+        'max_input_value' => array_key_exists("MaxBeds", $_GET) ? $_GET["MaxBeds"] : "",
+        'max_input_name' => 'MaxBeds',
+        'max_input_id' => $rand . "-MaxBeds",
+        'max_data_connect_default' => 'Max',
+        'max_input_js' => "",
+        'search_field' => "BedsTotal"
+      ),
+
+      'baths' => array(
+        'data_connect_field' => 'Baths',
+        'field_for' => 'MinBaths',
+        'field_label' => 'Bathrooms',
+        'min_input_value' => array_key_exists("MinBaths", $_GET) ? $_GET["MinBaths"] : "",
+        'min_input_name' => 'MinBaths',
+        'min_input_id' => $rand . "-MinBaths",
+        'min_data_connect_default' => 'Min',
+        'min_input_js' => "",
+        'max_input_value' => array_key_exists("MaxBaths", $_GET) ? $_GET["MaxBaths"] : "",
+        'max_input_name' => 'MaxBaths',
+        'max_input_id' => $rand . "-MaxBaths",
+        'max_data_connect_default' => 'Max',
+        'max_input_js' => "",
+        'search_field' => "BathsTotal"
+      ),
+
+      'square_footage' => array(
+        'data_connect_field' => 'Sqft',
+        'field_for' => 'MinSqFt',
+        'field_label' => 'Square Feet',
+        'min_input_value' => array_key_exists("MinSqFt", $_GET) ? $_GET["MinSqFt"] : "",
+        'min_input_name' => 'MinSqFt',
+        'min_input_id' => $rand . "-MinSqFt",
+        'min_data_connect_default' => 'Min',
+        'min_input_js' => "",
+        'max_input_value' => array_key_exists("MaxSqFt", $_GET) ? $_GET["MaxSqFt"] : "",
+        'max_input_name' => 'MaxSqFt',
+        'max_input_id' => $rand . "-MaxSqFt",
+        'max_data_connect_default' => 'Max',
+        'max_input_js' => "",
+        'search_field' => "BuildingAreaTotal"
+      ),
+
+      'age' => array(
+        'data_connect_field' => 'Year',
+        'field_for' => 'MinYear',
+        'field_label' => 'Year Built',
+        'min_input_value' => array_key_exists("MinYear", $_GET) ? $_GET["MinYear"] : "",
+        'min_input_name' => 'MinYear',
+        'min_input_id' => $rand . "-MinYear",
+        'min_data_connect_default' => 'Min',
+        'min_input_js' => "",
+        'max_input_value' => array_key_exists("MaxYear", $_GET) ? $_GET["MaxYear"] : "",
+        'max_input_name' => 'MaxYear',
+        'max_input_id' => $rand . "-MaxYear",
+        'max_data_connect_default' => 'Max',
+        'max_input_js' => "",
+        'search_field' => "Year Built"
+      )
+    );
+
+    extract($all_fields[$field]);
+
+    ?>
+
+    <div class='flexmls_connect__search_field' data-connect-type='number' 
+      data-connect-field='<?php echo $data_connect_field; ?>'>
+      
+      <label class='flexmls_connect__search_new_label' for='<?php echo $field_for; ?>'>
+        <?php echo $field_label; ?>
+      </label>
+    
+      <input type='text' class='text' value="<?php echo $min_input_value; ?>" name="<?php echo $min_input_name; ?>"
+        id="<?php echo $min_input_id; ?>" data-connect-default="<?php echo $min_data_connect_default; ?>" 
+        <?php echo $min_input_js; ?> />
+
+      <span class='flexmls_connect__search_new_to'>to</span>
+
+      <input type='text' class='text' value="<?php echo $max_input_value; ?>" name="<?php echo $max_input_name; ?>"
+        id="<?php echo $max_input_id; ?>" data-connect-default="<?php echo $max_data_connect_default; ?>" 
+        <?php echo $max_input_js; ?> />
+    
+    </div>
+    
+    <?php
+
+      $search_fields[] = $search_field;
+
+  }
+
+  static function mls_allows_sold_searching() {
+    global $fmc_api;
+    $standard_status = $fmc_api->GetStandardField("StandardStatus");
+    if (is_array($standard_status)) {
+      $field_list = $standard_status[0]["StandardStatus"]["FieldList"];
+      foreach ($field_list as $field) {
+        if ($field["Name"] == "Closed"){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private function search_admin_view_vars() {
+
+    $vars = array();
+
+    $vars["idx_links"] = flexmlsConnect::get_all_idx_links(); 
+    $vars["idx_links_default"] = $this->options->default_link();
+    $vars["property_types"] = $this->get_view_property_types();
+    $vars["selected_property_types"] = $this->get_selected_property_types();
+    $vars["on_off_options"] = $this->on_off_options();
+    $vars['destination_options'] = $this->destination_options();
+    $vars['available_fields'] = $this->get_available_fields();
+    $vars['selected_std_fields'] = $this->get_selected_std_fields();
+    $vars['theme_options'] = $this->theme_options();
+    $vars["orientation_options"] = $this->orientation_options();
+    $vars["fonts"] = flexmlsConnect::possible_fonts();
+    $vars["border_style_options"] = $this->border_style_options();
+    $vars["submit_button_options"] = $this->submit_button_options();
+    $vars["mls_allows_sold_searching"] = fmcSearch::mls_allows_sold_searching();
+    $vars["allow_sold_searching_default"] = $this->allow_sold_searching_default();
+
+    return $vars;
+  }
+
+  private function on_off_options() {
+    return array(
+      array('value' => "on",  'display_text' => 'Enabled'),
+      array('value' => "off", 'display_text' => 'Disabled'),
+    );
+  }
+
+  private function destination_options() {
+    return array(
+      array('value' => "local",  'display_text' => "my search results"),
+      array('value' => "remote", 'display_text' => "a flexmls IDX frame")
+    );
+  }
+
+  private function theme_options() {
+    return array(
+      array('value' => "",                  'display_text' => "(Select One)"),
+      array('value' => "vert_round_light",  'display_text' => "Vertical Rounded Light"),
+      array('value' => "vert_round_dark",   'display_text' => "Vertical Rounded Dark"),
+      array('value' => "vert_square_light", 'display_text' => "Vertical Square Light"),
+      array('value' => "vert_square_dark",  'display_text' => "Vertical Square Dark"),
+      array('value' => "hori_round_light",  'display_text' => "Horizontal Rounded Light"),
+      array('value' => "hori_round_dark",   'display_text' => "Horizontal Rounded Dark"),
+      array('value' => "hori_square_light", 'display_text' => "Horizontal Square Light"),
+      array('value' => "hori_square_dark",  'display_text' => "Horizontal Square Dark")
+    );
+  }
+
+  private function orientation_options() {
+    return array(
+      array('value' => "horizontal",  'display_text' => "Horizontal"),
+      array('value' => "vertical",    'display_text' => "Vertical")
+    );
+  }
+
+  private function border_style_options() {
+    return array(
+      array('value' => "squared", 'display_text' => "Squared"),
+      array('value' => "rounded", 'display_text' => "Rounded")
+    );
+  }
+
+  private function submit_button_options() {
+    return array(
+      array('value' => "shine",     'display_text' => "Shine"),
+      array('value' => "gradient",  'display_text' => "Gradient"),
+      array('value' => "none",      'display_text' => "None")
+    );
+  }
+
+  private function get_available_fields() {
+    return array(
+      array('value' => "age",            'display_text' => "Year Built"),
+      array('value' => "baths",          'display_text' => "Bathrooms"),
+      array('value' => "beds",           'display_text' => "Bedrooms"),
+      array('value' => "square_footage", 'display_text' => "Square Footage"),
+      array('value' => "list_price",     'display_text' => "Price")
+    );
+  }
+
+  private function get_view_property_types() {
+    global $fmc_api;
+    $output = array();
+    $types = $fmc_api->GetPropertyTypes();
+    if (is_array($types)) {
+      foreach ($types as $id => $name) {
+        $output[$id] = flexmlsConnect::nice_property_type_label($id);
+      }
+    }
+    return $output;
+  }
+
+  private function get_selected_property_types() {
+    $output = array();
+    $property_type = $this->get_field_value("property_type");
+    if ($property_type) {
+      $ids = explode(",", $property_type);
+      foreach ($ids as $id) {
+        $output[$id] = flexmlsConnect::nice_property_type_label($id);
+      }
+      return $output;
+    } else {
+      return false;
+    }
+  }
+
+  private function get_selected_std_fields() {
+    $output = array();
+    $std_fields = $this->get_field_value("std_fields");
+    if ($std_fields) {
+      $ids = explode(",", $std_fields);
+      
+      foreach ($ids as $id) {
+        $output[$id] = $this->available_field_name_for($id);
+      }
+      return $output;
+    } else {
+      return false;
+    }
+  }
+
+  private function available_field_name_for($id) {
+    $available_fields = $this->get_available_fields();
+    foreach ($available_fields as $field) {
+      if($field["value"] == $id) {
+        return $field["display_text"];
+      }
+    }
+    return false;
+  }
+
+  protected function color_field_tag($for, $default) {
+
+    // For backwards compatibility with the old color picker, make sure the 
+    // color value includes the # with the color code.
+    $value = $this->get_field_value($for);
+
+    if($value && strpos($value, '#') === false) {
+      $value = '#' . $value;
+      $this->instance[$for] = $value;
+    }
+
+    $this->text_field_tag($for, array('class' => 'wp-color-picker', 'size' => '6', 'default' => $default));  
+  }
+
+  protected function select_tag($args) {
+
+    $fmc_field = array_key_exists('fmc_field', $args) ? $args['fmc_field'] : null;
+    $collection = array_key_exists('collection', $args) ? $args['collection'] : null;
+    $option_value_attr = array_key_exists('option_value_attr', $args) ? $args['option_value_attr'] : null;
+    $option_display_attr = array_key_exists('option_display_attr', $args) ? $args['option_display_attr'] : null;
+    $class = array_key_exists('class', $args) ? $args['class'] : null;
+    $default = array_key_exists('default', $args) ? $args['default'] : null;
+
+    $instance_value = $this->get_field_value($fmc_field);
+    $selected_value = $instance_value != false ? $instance_value : $default;
+
+    $output = "<select fmc-field=\"{$fmc_field}\" fmc-type='select' class='{$class}' 
+      id='{$this->get_field_id($fmc_field)}' name='{$this->get_field_name($fmc_field)}'>";
+
+    foreach ($collection as $item) {
+
+      $value = $option_value_attr == null ? $item : $item[$option_value_attr];
+      $display_text = $option_display_attr == null ? $item : $item[$option_display_attr];
+
+      $selected = $selected_value == $value ? 'selected="selected"' : null;
+      $output .= "<option value='{$value}' {$selected}>";
+      $output .= $display_text;
+      $output .= "</option>";
+    }
+
+    $output .= "</select>";
+    echo $output;
+  }
+
+  protected function sortable_list($collection) {
+    $output = '<ul class="flexmls_connect__sortable loaded ui-sortable">';
+
+    if(is_array($collection)) {
+      foreach ($collection as $id => $display_text) {
+        $output .= "<li data-connect-name='" . $id . "'>";
+        $output .= "<span class='remove' title='Remove this from the search'>&times;</span>";
+        $output .= "<span class='ui-icon ui-icon-arrowthick-2-n-s'></span>";
+        $output .= $display_text;
+        $output .= "</li>";
+      }
+    }
+
+    $output .= "</ul>";
+    echo $output;
+  }
+
+  protected function allow_sold_searching_default() {
+    $sold_searching = $this->options->allow_sold_searching();
+    return $sold_searching != false ? $sold_searching : 'off';
   }
 
 }

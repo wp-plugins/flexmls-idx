@@ -4,265 +4,264 @@
 
 class fmcSearchResults extends fmcWidget {
 
-	function fmcSearchResults() {
-		global $fmc_widgets;
+  function fmcSearchResults() {
 
-		$widget_info = $fmc_widgets[ get_class($this) ];
+    parent::__construct();
 
-		// set the view template for the form
-		$this->admin_page_view = $widget_info['admin_page_view'];
+    global $fmc_widgets;
 
-		$widget_ops = array( 'description' => $widget_info['description'] );
+    $widget_info = $fmc_widgets[ get_class($this) ];
 
-		// have WP replace instances of [first_argument] with the return from the second_argument function
-		add_shortcode($widget_info['shortcode'], array(&$this, 'shortcode'));
+    $widget_ops = array( 'description' => $widget_info['description'] );
 
-		// register where the AJAX calls should be routed when they come in
-		add_action('wp_ajax_'.get_class($this).'_shortcode', array(&$this, 'shortcode_form') );
-		add_action('wp_ajax_'.get_class($this).'_shortcode_gen', array(&$this, 'shortcode_generate') );
+    // have WP replace instances of [first_argument] with the return from the second_argument function
+    add_shortcode($widget_info['shortcode'], array(&$this, 'shortcode'));
 
-	}
+    // register where the AJAX calls should be routed when they come in
+    add_action('wp_ajax_'.get_class($this).'_shortcode', array(&$this, 'shortcode_form') );
+    add_action('wp_ajax_'.get_class($this).'_shortcode_gen', array(&$this, 'shortcode_generate') );
 
-	// Called by shortcode() to create the content
-	function jelly($args, $settings, $type) {
-		global $fmc_api;
-		global $fmc_plugin_url;
+  }
 
-		// sets up $before_title, $after_title, $before_widget, $after_widget
-		extract($args);
+  // Called by shortcode() to create the content
+  function jelly($args, $settings, $type) {
+    global $fmc_api;
+    global $fmc_plugin_url;
 
-		if ($type == "widget" && empty($settings['title']) && flexmlsConnect::use_default_titles()) {
-			$settings['title'] = "Listings";
-		}
+    // sets up $before_title, $after_title, $before_widget, $after_widget
+    extract($args);
 
-		$encoded_settings = urlencode( serialize($settings) );
+    if ($type == "widget" && empty($settings['title']) && flexmlsConnect::use_default_titles()) {
+      $settings['title'] = "Listings";
+    }
 
-		$title 							= isset($settings['title']) ? ($settings['title']) : '';
-		$source 						= isset($settings['source']) ? trim($settings['source']) : '';
-		$display 						= isset($settings['display']) ? trim($settings['display']) : '';
-		$days 							= isset($settings['days']) ? trim($settings['days']) :  '';
-		$property_type 			= isset($settings['property_type']) ? trim($settings['property_type']): '';
-		$property_sub_type 	= isset($settings['property_sub_type']) ? trim($settings['property_sub_type']): '';
-		$link 							= isset($settings['link']) ? trim($settings['link']) : '';
-		$sort 							= isset($settings['sort']) ? trim($settings['sort']) : '';
-		$agent 							= isset($settings['agent']) ? trim($settings['agent']) : '';
+    $encoded_settings = urlencode( serialize($settings) );
 
-		$locations = ''; 
+    $title              = isset($settings['title']) ? ($settings['title']) : '';
+    $source             = isset($settings['source']) ? trim($settings['source']) : '';
+    $display            = isset($settings['display']) ? trim($settings['display']) : '';
+    $days               = isset($settings['days']) ? trim($settings['days']) :  '';
+    $property_type      = isset($settings['property_type']) ? trim($settings['property_type']): '';
+    $property_sub_type  = isset($settings['property_sub_type']) ? trim($settings['property_sub_type']): '';
+    $link               = isset($settings['link']) ? trim($settings['link']) : '';
+    $sort               = isset($settings['sort']) ? trim($settings['sort']) : '';
+    $agent              = isset($settings['agent']) ? trim($settings['agent']) : '';
 
-		if ( isset($settings['location']) ) { 
-			//html_entity_decode(flexmlsConnect::clean_comma_list($settings['location']));
-			$locations = html_entity_decode( flexmlsConnect::clean_comma_list( stripslashes( $settings['location'] )	) );
-		}
+    $locations = ''; 
 
-
-		if ($link == "default") {
-			$link = flexmlsConnect::get_default_idx_link();
-		}
-
-		$source = (empty($source)) ? "my" : $source;
-
-		$filter_conditions = array();
-		$pure_conditions = array();
+    if ( isset($settings['location']) ) { 
+      //html_entity_decode(flexmlsConnect::clean_comma_list($settings['location']));
+      $locations = html_entity_decode( flexmlsConnect::clean_comma_list( stripslashes( $settings['location'] )  ) );
+    }
 
 
-		if (isset($settings['days'])){
-			$days = $settings['days'];
-		}
-		elseif ($display == "open_houses"){
-			//For backward compatibility. Set # of days for open house default to 10
-			$days = 10;
-		}
-		else{
-			$days = 1;
-			if (date("l") == "Monday")
-				$days = 3;
-		}
+    if ($link == "default") {
+      $link = flexmlsConnect::get_default_idx_link();
+    }
+
+    $source = (empty($source)) ? "my" : $source;
+
+    $filter_conditions = array();
+    $pure_conditions = array();
 
 
-		$flexmls_temp_date = date_default_timezone_get();
-		date_default_timezone_set('America/Chicago');
-		$specific_time = date("Y-m-d\TH:i:s.u",strtotime("-".$days." days"));
-		date_default_timezone_set($flexmls_temp_date);
-		$flexmls_hours = $days*24;
+    if (isset($settings['days'])){
+      $days = $settings['days'];
+    }
+    elseif ($display == "open_houses"){
+      //For backward compatibility. Set # of days for open house default to 10
+      $days = 10;
+    }
+    else{
+      $days = 1;
+      if (date("l") == "Monday")
+        $days = 3;
+    }
 
-		if ($display == "all") {
-			// nothing to do
-		}
-		elseif ($display == "new") {
+
+    $flexmls_temp_date = date_default_timezone_get();
+    date_default_timezone_set('America/Chicago');
+    $specific_time = date("Y-m-d\TH:i:s.u",strtotime("-".$days." days"));
+    date_default_timezone_set($flexmls_temp_date);
+    $flexmls_hours = $days*24;
+
+    if ($display == "all") {
+      // nothing to do
+    }
+    elseif ($display == "new") {
             $params['_pagination'] = 1;
             $filter_conditions[] = "OnMarketDate Ge {$specific_time}";
             $outbound_criteria .= "&listingevent=new&listingeventhours={$flexmls_hours}";
             $pure_conditions["OnMarketDate"] = $specific_time;
-		}
-		elseif ($display == "open_houses") {
-			$params['OpenHouses'] = $days;
-			$pure_conditions['OpenHouses'] = $days;
-			$params['_expand'] .= ',OpenHouses';
-			$outbound_criteria .= "&openhouse={$days}";
-		}
-		elseif ($display == "price_changes") {
+    }
+    elseif ($display == "open_houses") {
+      $params['OpenHouses'] = $days;
+      $pure_conditions['OpenHouses'] = $days;
+      $params['_expand'] .= ',OpenHouses';
+      $outbound_criteria .= "&openhouse={$days}";
+    }
+    elseif ($display == "price_changes") {
             $params['_pagination'] = 1;
             $filter_conditions[] = "PriceChangeTimestamp Gt {$specific_time}";
             $outbound_criteria .= "&listingevent=price&listingeventhours={$flexmls_hours}";
             $pure_conditions["PriceChangeTimestamp"] = $specific_time;
-		}
-		elseif ($display == "recent_sales") {
+    }
+    elseif ($display == "recent_sales") {
             $params['_pagination'] = 1;
             $filter_conditions[] = "StatusChangeTimestamp Gt {$specific_time}";
-			$outbound_criteria .= "&status=C&listingevent=status&listingeventhours={$flexmls_hours}";
-			$pure_conditions["StatusChangeTimestamp"] = $specific_time;
-		}
+      $outbound_criteria .= "&status=C&listingevent=status&listingeventhours={$flexmls_hours}";
+      $pure_conditions["StatusChangeTimestamp"] = $specific_time;
+    }
 
-		if ($sort == "recently_changed") {
-			$pure_conditions['OrderBy'] = "-ModificationTimestamp"; // special tag caught later
-		}
-		elseif ($sort == "price_low_high") {
-			$pure_conditions['OrderBy'] = "+ListPrice";
-		}
-		elseif ($sort == "price_high_low") {
-			$pure_conditions['OrderBy'] = "-ListPrice";
-		}
-
-
-		$apply_property_type = ($source == 'location') ? true : false;
-
-		if ($source == 'agent') {
-			$pure_conditions['ListAgentId'] = $agent;
-		}
-
-		// parse location search settings
-		$locations = flexmlsConnect::parse_location_search_string($locations);
-
-		$location_conditions = array();
-		$location_field_names = array();
+    if ($sort == "recently_changed") {
+      $pure_conditions['OrderBy'] = "-ModificationTimestamp"; // special tag caught later
+    }
+    elseif ($sort == "price_low_high") {
+      $pure_conditions['OrderBy'] = "+ListPrice";
+    }
+    elseif ($sort == "price_high_low") {
+      $pure_conditions['OrderBy'] = "-ListPrice";
+    }
 
 
+    $apply_property_type = ($source == 'location') ? true : false;
 
-		foreach ($locations as $loc) {
-			$location_conditions[] = "{$loc['f']} Eq '{$loc['v']}'";
+    if ($source == 'agent') {
+      $pure_conditions['ListAgentId'] = $agent;
+    }
 
-			if(array_key_exists($loc['f'], $pure_conditions)) {
-				$pure_conditions[$loc['f']] .=  ',' . $loc['v'];
-			} else {
-				$pure_conditions[$loc['f']] = $loc['v'];
-			}
+    // parse location search settings
+    $locations = flexmlsConnect::parse_location_search_string($locations);
 
-			$location_field_names[] = $loc['f'];
-		}
-
-		$uniq_location_field_names = array_unique($location_field_names);
-
-		if ($apply_property_type and !empty($property_type)) {
-			$pure_conditions['PropertyType'] = $property_type;
-			$pure_conditions['PropertySubType'] = $property_sub_type;
-		}
-
-		if ($link) {
-			$link_details = $fmc_api->GetIDXLinkFromTinyId($link);
-			if ($link_details['LinkType'] == "SavedSearch") {
-					$pure_conditions['SavedSearch'] = $link_details['SearchId'];
-				}
-		}
-
-		if ($source == "my") {
-			$outbound_criteria .= "&my_listings=true";
-			$pure_conditions['My'] = 'listings';
-			// make a simple request to /my/listings with no _filter's
-		}
-		elseif ($source == "office") {
-			$outbound_criteria .= "&office=". flexmlsConnect::get_office_id();
-			$pure_conditions['My'] = 'office';
-		}
-		elseif ($source == "company") {
-			$outbound_criteria .= "&office=". flexmlsConnect::get_company_id();
-			$pure_conditions['My'] = 'company';
-		}
-		elseif ($source == 'agent') {
-			$outbound_criteria .= "&agent={$agent}";
-		}
-		else { }
-
-		$custom_page = new flexmlsConnectPageSearchResults;
-		$custom_page->title = $title;
-		$custom_page->input_source = 'shortcode';
-		$custom_page->input_data = $pure_conditions;
-		$custom_page->pre_tasks(null);
-		return $custom_page->generate_page(true);
-
-	}
-
-	function widget($args, $instance) {
-		echo $this->jelly($args, $instance, "widget");
-	}
+    $location_conditions = array();
+    $location_field_names = array();
 
 
-	function shortcode($attr = array()) {
 
-		$args = array(
-				'before_title' => '<h3>',
-				'after_title' => '</h3>',
-				'before_widget' => '',
-				'after_widget' => ''
-				);
+    foreach ($locations as $loc) {
+      $location_conditions[] = "{$loc['f']} Eq '{$loc['v']}'";
 
-		return $this->jelly($args, $attr, "shortcode");
+      if(array_key_exists($loc['f'], $pure_conditions)) {
+        $pure_conditions[$loc['f']] .=  ',' . $loc['v'];
+      } else {
+        $pure_conditions[$loc['f']] = $loc['v'];
+      }
 
-	}
+      $location_field_names[] = $loc['f'];
+    }
+
+    $uniq_location_field_names = array_unique($location_field_names);
+
+    if ($apply_property_type and !empty($property_type)) {
+      $pure_conditions['PropertyType'] = $property_type;
+      $pure_conditions['PropertySubType'] = $property_sub_type;
+    }
+
+    if ($link) {
+      $link_details = $fmc_api->GetIDXLinkFromTinyId($link);
+      if ($link_details['LinkType'] == "SavedSearch") {
+          $pure_conditions['SavedSearch'] = $link_details['SearchId'];
+        }
+    }
+
+    if ($source == "my") {
+      $outbound_criteria .= "&my_listings=true";
+      $pure_conditions['My'] = 'listings';
+      // make a simple request to /my/listings with no _filter's
+    }
+    elseif ($source == "office") {
+      $outbound_criteria .= "&office=". flexmlsConnect::get_office_id();
+      $pure_conditions['My'] = 'office';
+    }
+    elseif ($source == "company") {
+      $outbound_criteria .= "&office=". flexmlsConnect::get_company_id();
+      $pure_conditions['My'] = 'company';
+    }
+    elseif ($source == 'agent') {
+      $outbound_criteria .= "&agent={$agent}";
+    }
+    else { }
+
+    $custom_page = new flexmlsConnectPageSearchResults;
+    $custom_page->title = $title;
+    $custom_page->input_source = 'shortcode';
+    $custom_page->input_data = $pure_conditions;
+    $custom_page->pre_tasks(null);
+    return $custom_page->generate_page(true);
+
+  }
+
+  function widget($args, $instance) {
+    echo $this->jelly($args, $instance, "widget");
+  }
 
 
-	function settings_form($instance) {
-		global $fmc_api;
-		global $fmc_plugin_dir;
+  function shortcode($attr = array()) {
 
-		$title 					= esc_attr($instance['title']);
-		$source 				= esc_attr($instance['source']);
-		$display 				= esc_attr($instance['display']);
-		$days 					= esc_attr($instance['days']);
-		$property_type 	= esc_attr($instance['property_type']);
-		// $property_sub_type 	= esc_attr($instance['property_sub_type']);
-		$link 					= esc_attr($instance['link']);
-		$location 			= $instance['location'];
-		$sort 					= esc_attr($instance['sort']);
-		$agent 					= esc_attr($instance['agent']);
+    $args = array(
+        'before_title' => '<h3>',
+        'after_title' => '</h3>',
+        'before_widget' => '',
+        'after_widget' => ''
+        );
 
-		$selected_code 	= " selected='selected'";
-		$checked_code 	= " checked='checked'";
+    return $this->jelly($args, $attr, "shortcode");
 
-		$source_options = array();
-		$roster_feature = false;
+  }
 
-		$my_company_id = flexmlsConnect::get_company_id();
 
-		if ( flexmlsConnect::is_agent() ) {
-			$source_options['my'] = "My Listings";
-			$source_options['office'] = "My Office's Listings";
-			if ( !empty($my_company_id) ) {
-				$source_options['company'] = "My Company's Listings";
-			}
-		}
+  function settings_form($instance) {
+    global $fmc_api;
+    global $fmc_plugin_dir;
 
-		if ( flexmlsConnect::is_office() ) {
-			$source_options['office'] = "My Office's Listings";
-			if ( !empty($my_company_id) ) {
-				$source_options['company'] = "My Company's Listings";
-			}
-			$source_options['agent'] = "Specific agent";
-			$roster_feature = true;
-		}
+    require_once('search_results_settings.php');
 
-		if ( flexmlsConnect::is_company() ) {
-			$source_options['company'] = "My Company's Listings";
-		}
+    $settings = new Search_Results_Settings($instance);
 
-		$display_options = array(
-				"all" => "All Listings",
-				"new" => "New Listings",
-				"open_houses" => "Open Houses",
-				"price_changes" => "Recent Price Changes",
-				"recent_sales" => "Recent Sales"
-		);
+    $attributes = array('title', 'source', 'display', 'days', 'property_type', 'link', 'location', 'sort', 'agent');
 
-		$display_day_options = array(
+    foreach ($attributes as $variable) {
+      $$variable = $settings->$variable;
+    }
+
+    $selected_code  = " selected='selected'";
+    $checked_code   = " checked='checked'";
+
+    $source_options = array();
+    $roster_feature = false;
+
+    $my_company_id = flexmlsConnect::get_company_id();
+
+    if ( flexmlsConnect::is_agent() ) {
+      $source_options['my'] = "My Listings";
+      $source_options['office'] = "My Office's Listings";
+      if ( !empty($my_company_id) ) {
+        $source_options['company'] = "My Company's Listings";
+      }
+    }
+
+    if ( flexmlsConnect::is_office() ) {
+      $source_options['office'] = "My Office's Listings";
+      if ( !empty($my_company_id) ) {
+        $source_options['company'] = "My Company's Listings";
+      }
+      $source_options['agent'] = "Specific agent";
+      $roster_feature = true;
+    }
+
+    if ( flexmlsConnect::is_company() ) {
+      $source_options['company'] = "My Company's Listings";
+    }
+
+    $display_options = array(
+        "all" => "All Listings",
+        "new" => "New Listings",
+        "open_houses" => "Open Houses",
+        "price_changes" => "Recent Price Changes",
+        "recent_sales" => "Recent Sales"
+    );
+
+    $display_day_options = array(
             null => "1 (3 on Monday)",
             1 => 1,
             2 => 2,
@@ -281,69 +280,69 @@ class fmcSearchResults extends fmcWidget {
             15 => 15,
         );
 
-		$sort_options = array(
-				"recently_changed" => "Recently changed first",
-				"price_low_high" => "Price, low to high",
-				"price_high_low" => "Price, high to low"
-		);
+    $sort_options = array(
+        "recently_changed" => "Recently changed first",
+        "price_low_high" => "Price, low to high",
+        "price_high_low" => "Price, high to low"
+    );
 
-		$possible_destinations = flexmlsConnect::possible_destinations();
+    $possible_destinations = flexmlsConnect::possible_destinations();
 
-		if (empty($destination)) {
-			$destination = 'remote';
-		}
+    if (empty($destination)) {
+      $destination = 'remote';
+    }
 
-		$api_property_type_options = $fmc_api->GetPropertyTypes();
+    $api_property_type_options = $fmc_api->GetPropertyTypes();
 
-		$api_property_sub_type_options = $fmc_api->GetPropertySubTypes();
-		
-		$api_system_info = $fmc_api->GetSystemInfo();
-		$api_location_search_api = flexmlsConnect::get_locationsearch_url();
-		$api_my_account = $fmc_api->GetMyAccount();
+    $api_property_sub_type_options = $fmc_api->GetPropertySubTypes();
+    
+    $api_system_info = $fmc_api->GetSystemInfo();
+    $api_location_search_api = flexmlsConnect::get_locationsearch_url();
+    $api_my_account = $fmc_api->GetMyAccount();
 
-		if ($api_property_type_options === false || $api_system_info === false || $api_location_search_api === false || $api_my_account === false) {
-			return flexmlsConnect::widget_not_available($fmc_api, true);
-		}
+    if ($api_property_type_options === false || $api_system_info === false || $api_location_search_api === false || $api_my_account === false) {
+      return flexmlsConnect::widget_not_available($fmc_api, true);
+    }
 
-		if (!$fmc_api->HasBasicRole()) {
-			$source_options['location'] = "Location";
-		}
+    if (!$fmc_api->HasBasicRole()) {
+      $source_options['location'] = "Location";
+    }
 
-		$office_roster = ($roster_feature) ? $fmc_api->GetAccountsByOffice( $api_my_account['Id'] ) : array();
+    $office_roster = ($roster_feature) ? $fmc_api->GetAccountsByOffice( $api_my_account['Id'] ) : array();
 
-		$source = (empty($source)) ? "location" : $source;
+    $source = (empty($source)) ? "location" : $source;
 
-		$special_neighborhood_title_ability = null;
-		if (array_key_exists('_instance_type', $instance) && $instance['_instance_type'] == "shortcode") {
-			$special_neighborhood_title_ability = flexmlsConnect::special_location_tag_text();
-		}
+    $special_neighborhood_title_ability = null;
+    if (array_key_exists('_instance_type', $instance) && $instance['_instance_type'] == "shortcode") {
+      $special_neighborhood_title_ability = flexmlsConnect::special_location_tag_text();
+    }
 
-		// output html from the template
-		ob_start();
-			require_once($this->admin_page_view);
-			$return = ob_get_contents();
-		ob_end_clean();
-		
-		return $return;
+    // output html from the template
+    ob_start();
+      require_once($this->admin_page_view);
+      $return = ob_get_contents();
+    ob_end_clean();
+    
+    return $return;
 
-	}
+  }
 
-	// TODO: find out if this is being used anywhere
-	function update($new_instance, $old_instance) {
-		$instance = $old_instance;
+  // TODO: find out if this is being used anywhere
+  function update($new_instance, $old_instance) {
+    $instance = $old_instance;
 
-		$instance['title'] 							= strip_tags($new_instance['title']);
-		$instance['source'] 						= strip_tags($new_instance['source']);
-		$instance['display'] 						= strip_tags($new_instance['display']);
-		$instance['days'] 							= strip_tags($new_instance['days']);
-		$instance['property_type'] 			= strip_tags($new_instance['property_type']);
-		//$instance['property_sub_type'] 	= strip_tags($new_instance['property_sub_type']);
-		$instance['link'] 							= strip_tags($new_instance['link']);
-		$instance['location'] 					= strip_tags($new_instance['location']);
-		$instance['sort'] 							= strip_tags($new_instance['sort']);
-		$instance['agent'] 							= strip_tags($new_instance['agent']);
+    $instance['title']              = strip_tags($new_instance['title']);
+    $instance['source']             = strip_tags($new_instance['source']);
+    $instance['display']            = strip_tags($new_instance['display']);
+    $instance['days']               = strip_tags($new_instance['days']);
+    $instance['property_type']      = strip_tags($new_instance['property_type']);
+    //$instance['property_sub_type']  = strip_tags($new_instance['property_sub_type']);
+    $instance['link']               = strip_tags($new_instance['link']);
+    $instance['location']           = strip_tags($new_instance['location']);
+    $instance['sort']               = strip_tags($new_instance['sort']);
+    $instance['agent']              = strip_tags($new_instance['agent']);
 
-		return $instance;
-	}
+    return $instance;
+  }
 
 }
