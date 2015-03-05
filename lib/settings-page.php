@@ -62,18 +62,23 @@ class flexmlsConnectSettings {
     // register our settings with WordPress so it can automatically handle saving them
     register_setting('fmc_settings_group', 'fmc_settings', array('flexmlsConnectSettings', 'settings_validate') );
 
-    $current_tab = flexmlsConnect::wp_input_get('tab');
-    if ( empty($current_tab) ) {
-      $current_tab = 'settings';
-    }
+    $current_page = flexmlsConnect::wp_input_get('page');
+    
+    if($current_page == "flexmls_connect") {
+      
+      $current_tab = flexmlsConnect::wp_input_get('tab');
+      if ( empty($current_tab) ) {
+        $current_tab = 'settings';
+      }
 
-    $add_section_function = "add_{$current_tab}_section";
-    if ($current_tab == 'behavior') {
-      $args = array( "mls_allows_sold_searching" => fmcSearch::mls_allows_sold_searching() );
-    } else {
-      $args = null;
+      $add_section_function = "add_{$current_tab}_section";
+      if ($current_tab == 'behavior') {
+        $args = array( "mls_allows_sold_searching" => fmcSearch::mls_allows_sold_searching() );
+      } else {
+        $args = null;
+      }
+      $this->$add_section_function($args);
     }
-    $this->$add_section_function($args);
 
   }
 
