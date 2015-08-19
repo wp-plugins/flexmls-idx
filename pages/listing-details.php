@@ -4,22 +4,12 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
 
   private $listing_data;
   protected $search_criteria;
-  protected $api;
   protected $type;
   protected $property_detail_values;
 
-  function __construct( $tag = '' ){
-
-    if ($tag == 'fmc_vow_tag'){
-      global $fmc_api_portal;
-      $this->api = $fmc_api_portal;
-      $this->type = $tag;
-    }
-    else {
-      global $fmc_api;
-      $this->api = $fmc_api;
-      $this->type = 'fmc_tag';
-    }
+  function __construct( $api, $type = 'fmc_tag' ){
+    parent::__construct($api);
+    $this->type = $type;
   }
 
   function pre_tasks($tag) {
@@ -43,10 +33,10 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
     $params = array(
         '_filter' => $filterstr,
         '_limit' => 1,
-        '_expand' => 'Photos,Videos,OpenHouses,VirtualTours,Documents,Rooms,CustomFields'
+        '_expand' => 'Photos,Videos,OpenHouses,VirtualTours,Documents,Rooms,CustomFields,Supplement'
     );
     $result = $this->api->GetListings($params);
-    $listing = $result[0];
+    $listing = (count($result) > 0) ? $result[0] : null;
 
     $fmc_special_page_caught['type'] = "listing-details";
     $this->listing_data = $listing;
@@ -294,20 +284,24 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
       echo "<button class='print_click' onclick='flexmls_connect.print(this);'><img src='{$fmc_plugin_url}/assets/images/print.png'align='absmiddle' /> Print</button>";
 
       $api_my_account = $this->api->GetMyAccount();
-      
+
       if (isset($api_my_account['Name']) && isset($api_my_account['Emails'][0]['Address'])) : ?>
         <button onclick="flexmls_connect.scheduleShowing('<?php addslashes($sf['ListingKey']) ?>',
           '<?php echo addslashes($one_line_address) ?> - MLS# <?php echo addslashes($sf['ListingId']) ?>',
           '<?php echo addslashes($api_my_account['Name'])?>',
-          '<?php echo addslashes($api_my_account['Emails'][0]['Address']) ?>');">
+          '<?php echo $this->contact_form_agent_email($sf); ?>');">
           <img src='<?php echo $fmc_plugin_url ?>/assets/images/showing.png' align='absmiddle' /> Schedule a Showing
         </button>
       <?php endif ?>
-      <button onclick="flexmls_connect.contactForm('Ask a Question',
-        '<?php echo addslashes($one_line_address); ?> - MLS# <?php echo addslashes($sf['ListingId'])?> ',
-        '<?php echo addslashes($sf['ListAgentEmail']);?>',
-        '<?php echo addslashes($sf['ListOfficeEmail']); ?>',
-        '<?php echo addslashes($sf['ListingId']); ?>');"> <img src='<?php echo $fmc_plugin_url ?>/assets/images/admin_16.png'align='absmiddle' /> Ask a Question
+      <button onclick="flexmls_connect.contactForm({
+        'title': 'Ask a Question',
+        'subject': '<?php echo addslashes($one_line_address); ?> - MLS# <?php echo addslashes($sf['ListingId'])?> ',
+        'agentEmail': '<?php echo $this->contact_form_agent_email($sf); ?>',
+        'officeEmail': '<?php echo $this->contact_form_office_email($sf); ?>',
+        'id': '<?php echo addslashes($sf['ListingId']); ?>'
+      });">
+        <img src='<?php echo $fmc_plugin_url ?>/assets/images/admin_16.png'align='absmiddle' /> 
+        Ask a Question
       </button>
     </div>
     <?php
@@ -556,6 +550,17 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
         }
       echo "</div>";
     echo "</div>";
+
+    if ($sf["Supplement"]) {
+      echo "<div class='flexmls_connect__ld_detail_table'>";
+        echo "<div class='flexmls_connect__detail_header'>Supplements</div>";
+        echo "<div class='flexmls_connect__ld_property_detail_body'>";
+          echo "<div class='flexmls_connect__ld_property_detail_row'>";
+            echo "<div class='flexmls_connect__ld_property_detail'>{$sf["Supplement"]}</div>";
+          echo "</div>";
+        echo "</div>";
+      echo "</div>";
+    }
 
     // build the Room Information portion of the page
     $room_fields = $this->api->GetRoomFields($sf['MlsId']);

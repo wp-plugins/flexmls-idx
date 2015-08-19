@@ -6,14 +6,15 @@ class fmcWidget extends WP_Widget {
   // holds the path for the view templates
   public $page_view;
   public $admin_page_view;
+  public $admin_view_vars;
 
   public function __construct() {
     global $fmc_plugin_dir;
 
     // set the view template for the widget
     $class_name = get_class($this);
-    $this->page_view = $fmc_plugin_dir . "/pages/{$class_name}.php";
-    $this->admin_page_view = $fmc_plugin_dir . "/pages/admin/shortcode_generator/{$class_name}.php";
+    $this->page_view = $fmc_plugin_dir . "/views/{$class_name}.php";
+    $this->admin_page_view = $fmc_plugin_dir . "/views/admin/{$class_name}.php";
 
     $this->options = new Fmc_Settings;
   }
@@ -70,6 +71,11 @@ class fmcWidget extends WP_Widget {
     echo "</div>";
   }
 
+  function settings_form($instance) {
+    $this->instance = $instance;
+    $this->admin_view_vars = $this->admin_view_vars();
+    return $this->render_admin_view();
+  }
 
   function shortcode_generate() {
     global $fmc_widgets;
@@ -107,17 +113,16 @@ class fmcWidget extends WP_Widget {
     );
 
     echo flexmlsJSON::json_encode($response);
-    
-    exit;
 
+    wp_die();
   }
 
   function render_view($view_vars = null) {
     return $this->render($this->page_view, $view_vars);
   }
 
-  function render_admin_view($view_vars = null) {
-    return $this->render($this->admin_page_view, $view_vars);
+  function render_admin_view() {
+    return $this->render($this->admin_page_view, $this->admin_view_vars);
   }
 
   private function render($path_to_view, $view_vars) {

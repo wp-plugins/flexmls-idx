@@ -14,18 +14,9 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
   protected $type;
   public $title;
 
-  function __construct( $tag = null ){
-
-    if ($tag == 'fmc_vow_tag'){
-      global $fmc_api_portal;
-      $this->api = $fmc_api_portal;
-      $this->type = $tag;
-    }
-    else {
-      global $fmc_api;
-      $this->api = $fmc_api;
-      $this->type = 'fmc_tag';
-    }
+  function __construct( $api, $type = 'fmc_tag' ){
+    parent::__construct($api);
+    $this->type = $type;
   }
 
   public function pre_tasks($tag) {
@@ -255,11 +246,15 @@ class flexmlsConnectPageSearchResults extends flexmlsConnectPageCore {
       echo "<div class='flexmls_connect__sr_details_buttons'>";
         echo "<button href='{$link_to_details}'>View Details</button>";
         ?>
-        <button onclick="flexmls_connect.contactForm('Ask a Question',
-          '<?php echo addslashes($one_line_address); ?> - MLS# <?php echo addslashes($sf['ListingId'])?> ',
-          '<?php echo addslashes($sf['ListAgentEmail']);?>',
-          '<?php echo addslashes($sf['ListOfficeEmail']); ?>',
-          '<?php echo addslashes($sf['ListingId']); ?>');"> Ask Question</button>
+        <button onclick="flexmls_connect.contactForm({
+          'title': 'Ask a Question',
+          'subject': '<?php echo addslashes($one_line_address); ?> - MLS# <?php echo addslashes($sf['ListingId'])?> ',
+          'agentEmail': '<?php echo $this->contact_form_agent_email($sf); ?>',
+          'officeEmail': '<?php echo $this->contact_form_office_email($sf); ?>',
+          'listingId': '<?php echo addslashes($sf['ListingId']); ?>'
+          });"> 
+          Ask Question
+        </button>
         <?php
       echo "</div>";
 

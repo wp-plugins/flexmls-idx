@@ -99,13 +99,7 @@ class fmcLeadGen extends fmcWidget {
 
   }
 
-  function settings_form($instance) {
-    $this->instance = $instance;
-    $view_vars = $this->lead_gen_admin_view_vars();
-    return $this->render_admin_view($view_vars);
-  }
-
-  function lead_gen_admin_view_vars() {
+  function admin_view_vars() {
     $view_vars = array();
 
     $view_vars["special_neighborhood_title_ability"] = null;

@@ -4,11 +4,11 @@ Plugin Name: flexmls&reg; IDX
 Plugin URI: http://www.flexmls.com/wpdemo/
 Description: Provides flexmls&reg; Customers with flexmls&reg; IDX features on their WordPress blog. <strong>Tips:</strong> <a href="options-general.php?page=flexmls_connect">Activate your flexmls IDX plugin</a> on the settings page; <a href="widgets.php">add widgets to your sidebar</a> using the Widgets Admin under Appearance; and include widgets on your posts or pages using the flexmls IDX Widget Short-Code Generator on the Visual page editor.
 Author: FBS
-Version: 3.5.3
+Version: 3.5.4
 Author URI: http://www.flexmls.com/
 */
 
-$fmc_version = '3.5.3';
+$fmc_version = '3.5.4';
 $fmc_plugin_dir = dirname(realpath(__FILE__));
 $fmc_plugin_url = plugins_url() .'/flexmls-idx';
 
@@ -16,6 +16,7 @@ $fmc_plugin_url = plugins_url() .'/flexmls-idx';
 * Define widget information
 */
 
+global $fmc_widgets;
 $fmc_widgets = array(
     'fmcMarketStats' => array(
         'component' => 'market-statistics.php',
@@ -53,7 +54,7 @@ $fmc_widgets = array(
         'max_cache_time' => 0,
         'widget' => true
         ),
-    'fmcIDXLinks' => array(
+    'fmcIDXLinksWidget' => array(
         'component' => 'idx-links.php',
         'title' => "flexmls&reg;: 1-Click Custom Searches",
         'description' => "Share popular searches with your users",
@@ -134,6 +135,9 @@ require_once('lib/flexmlsAPI/WordPressCache.php');
 require_once('lib/oauth-api.php');
 require_once('lib/apiauth-api.php');
 require_once('lib/fmc_settings.php');
+require_once('lib/fmcStandardStatus.php');
+require_once('lib/account.php');
+require_once('lib/idx-links.php');
 require_once('pages/portal-popup.php');
 require_once('components/widget.php');
 require_once('components/photo_settings.php');

@@ -10,6 +10,9 @@
 class fmcAccount extends fmcWidget {
 
   function fmcAccount() {
+    
+    parent::__construct();
+
     global $fmc_widgets;
 
     $widget_info = $fmc_widgets[ get_class($this) ];
@@ -123,38 +126,27 @@ class fmcAccount extends fmcWidget {
 
   }
 
+  function admin_view_vars() {
+    $vars = array();
 
-  function settings_form($instance) {
-    global $fmc_api;
-    $api_my_account = $fmc_api->GetMyAccount();
-    $selected_code = " selected='selected'";
-    $checked_code = " checked='checked'";
-    $additional_fields = array_key_exists('show_fields', $instance) ? esc_attr($instance['shown_fields']) : null;
-    $additional_fields_selected = array();
-    if (!empty($additional_fields)) {
-      $additional_fields_selected = explode(",", $additional_fields);
+    $vars["values_to_catch"] = implode(",", array_keys($this->additional_field_options()));
+
+    if (array_key_exists('shown_fields', $this->instance)){
+      $vars["selected_fields"] = explode(",", esc_attr($this->instance['shown_fields']));
+    } else {
+      $vars["selected_fields"] = array();
     }
 
-    $additional_field_options = array(
-      'log_in' => 'Log in prompt when not signed in',
-      'name' => "Visitor Name and Sign-out Button",
-      'searches' => "Saved Searches",
-      'carts' => "Listing Carts"
+    return $vars;
+  }
+
+  function additional_field_options() {
+    return array(
+      'log_in'    => 'Log in prompt when not signed in',
+      'name'      => "Visitor Name and Sign-out Button",
+      'searches'  => "Saved Searches",
+      'carts'     => "Listing Carts"
     );
-    $return = "<p><label for='".$this->get_field_id('shown_fields')."'>" . __('Sections to Show:') . "</label>";
-
-    foreach ($additional_field_options as $k => $v) {
-      $return .= "<div>";
-      $this_checked = (in_array($k, $additional_fields_selected)) ? $checked_code : "";
-      $return .= " &nbsp; &nbsp; &nbsp; <input fmc-field='shown_fields' $this_checked fmc-type='checkbox' type='checkbox' name='".$this->get_field_name('shown_fields')."[{$k}]' value='{$k}' id='".$this->get_field_id('shown_fields')."-".$k."' /> ";
-      $return .= "<label for='".$this->get_field_id('shown_fields')."-".$k."'>{$v}</label>";
-      $return .= "</div>\n";
-    }
-    $return .= "<input type='hidden' name='shortcode_fields_to_catch' value='shown_fields' />\n";
-    $return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />\n";
-
-    return $return;
-
   }
 
   function update($new_instance, $old_instance) {
@@ -288,10 +280,14 @@ class fmcAccount extends fmcWidget {
     if (!$options->portal_carts())
       return;
 
-    $is_favorite = '';
-    $is_possibility = '';
-    $is_reject = '';
+    $is_favorite = null;
+    $is_possibility = null;
+    $is_reject = null;
     $is_selected = ' selected ';
+
+    $favorite_id = null;
+    $possibility_id = null;
+    $reject_id = null;
 
     if ($fmc_api_portal->is_logged_in()){
 
@@ -348,5 +344,3 @@ class fmcAccount extends fmcWidget {
   }
 
 }
-
-?>

@@ -13,6 +13,7 @@ class flexmlsConnectSettings {
     global $wp_rewrite;
     global $fmc_api;
     global $fmc_version;
+    
     $options = get_option('fmc_settings');
 
     if ( current_user_can( 'edit_posts' ) && current_user_can( 'edit_pages' ) ) {
@@ -73,7 +74,8 @@ class flexmlsConnectSettings {
 
       $add_section_function = "add_{$current_tab}_section";
       if ($current_tab == 'behavior') {
-        $args = array( "mls_allows_sold_searching" => fmcSearch::mls_allows_sold_searching() );
+        $standard_status = new fmcStandardStatus($fmc_api->GetStandardField("StandardStatus"));
+        $args = array( "mls_allows_sold_searching" => $standard_status->allow_sold_searching() );
       } else {
         $args = null;
       }
@@ -319,10 +321,10 @@ class flexmlsConnectSettings {
       $options['oauth_key'] = trim($input['oauth_key']);
       $options['oauth_secret'] = trim($input['oauth_secret']);
 
-      $options['portal_search'] = ($input['portal_search']==true);
-      $options['portal_carts'] = ($input['portal_carts']==true);
-      $options['portal_listing'] = ($input['portal_listing']==true);
-      $options['portal_force'] = ($input['portal_force']==true);
+      $options['portal_search'] = (array_key_exists('portal_search', $input) && $input['portal_search']==true);
+      $options['portal_carts'] = (array_key_exists('portal_carts', $input) && $input['portal_carts']==true);
+      $options['portal_listing'] = (array_key_exists('portal_listing', $input) && $input['portal_listing']==true);
+      $options['portal_force'] = (array_key_exists('portal_force', $input) && $input['portal_force']==true);
 
       //the following 4 fields are checked to be positive integers, if they are not then they are null
       $options['portal_mins'] = ((is_numeric($input['portal_mins']) and $input['portal_mins']>=0) ? intval($input['portal_mins']) : null);
@@ -577,7 +579,7 @@ class flexmlsConnectSettings {
 
     $selected_neigh_template = "";
     if( $options && array_key_exists('neigh_template', $options) ) {
-      $options['neigh_template'];
+     $selected_neigh_template = $options['neigh_template'];
     }
 
     $args = array(
@@ -644,10 +646,10 @@ class flexmlsConnectSettings {
     $search_checked_yes = "";
     $listing_checked_yes = "";
 
-    if (array_key_exists('portal_search', $options) and $options->portal_search() === true) {
+    if ($options->portal_search() === true) {
       $search_checked_yes = $checked_code;
     }
-    if (array_key_exists('portal_listing', $options) and $options->portal_listing() === true) {
+    if ($options->portal_listing() === true) {
       $listing_checked_yes = $checked_code;
     }
 
@@ -844,7 +846,10 @@ class flexmlsConnectSettings {
       foreach ($api_property_types as $pk => $pv) {
         $show_value = $pv;
 
-        if ( array_key_exists("property_type_label_{$pk}", $options) and !empty($options["property_type_label_{$pk}"]) ) {
+        if ( is_array($options) 
+             and array_key_exists("property_type_label_{$pk}", $options) 
+             and !empty($options["property_type_label_{$pk}"]) 
+           ) {
           $show_value = $options["property_type_label_{$pk}"];
         }
 
@@ -909,8 +914,10 @@ class flexmlsConnectSettings {
 
     echo '<select data-placeholder="Add a new field..." class="chosen-select flexmls_connect__admin_srf_add_new" 
       style="width:350px;" tabindex="4"><option value=""></option>';
-    foreach ($api_property_fields[0] as $key => $value) {
-      echo "<option value='{$key}' >{$value['Label']}</option>";
+    if (is_array($api_property_fields)) {
+      foreach ($api_property_fields[0] as $key => $value) {
+        echo "<option value='{$key}' >{$value['Label']}</option>";
+      }
     }
     echo "</select>";
 
@@ -1030,7 +1037,10 @@ class flexmlsConnectSettings {
       echo "<b>WP Parent Theme:</b> <a href='{$parent_theme_data->get('URI')}' target='_blank'>{$parent_theme_data->get('Name')}</a> (version {$parent_theme_data->get('Version')}) by {$parent_theme_data->get('Author')}<br/>";
     }
 
-    $plugin_list = array();
+    $plugin_list = array(
+      "active" => "",
+      "inactive" => ""
+    );
 
     foreach ($plugins as $plugin_file => $plugin_data) {
       $which_plugin_list = ( is_plugin_active($plugin_file) ) ? "active" : "inactive";
@@ -1041,7 +1051,6 @@ class flexmlsConnectSettings {
       }
 
       $plugin_list[$which_plugin_list] .= " &nbsp; &nbsp; &middot; <a href='{$plugin_data['PluginURI']}' target='_blank'>{$plugin_data['Name']}</a> (version {$plugin_data['Version']}) by <a href='{$plugin_data['AuthorURI']}' target='_blank'>{$plugin_data['AuthorName']}</a>{$conflict_tag}<br/>";
-
     }
 
     if ( array_key_exists('active', $plugin_list) and !empty($plugin_list['active']) ) {

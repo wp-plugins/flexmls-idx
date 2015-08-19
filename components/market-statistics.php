@@ -130,7 +130,6 @@ class fmcMarketStats extends fmcWidget {
       $return .= $before_title;
       $return .= $title;
       $return .= $after_title;
-      $return .= "\n";
     }
 
     $return .= '
@@ -155,7 +154,7 @@ class fmcMarketStats extends fmcWidget {
           }
           $stat_val[] = $st;
         }
-        $return .= "<li data-connect-label='{$label}'>".implode(",", $stat_val)."</li>\n";
+        $return .= "<li data-connect-label='{$label}'>".implode(",", $stat_val)."</li>";
       }
     }
 
@@ -268,7 +267,7 @@ class fmcMarketStats extends fmcWidget {
 
     foreach ($type_options as $k => $v) {
       $is_selected = ($k == $type) ? $selected_code : "";
-      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>\n";
+      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>";
     }
 
     $return .= "
@@ -282,7 +281,7 @@ class fmcMarketStats extends fmcWidget {
 
     foreach ($display_options as $k => $v) {
       $is_selected = (in_array($k, $display_selected)) ? $selected_code : "";
-      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>\n";
+      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>";
     }
 
     $return .= "
@@ -294,9 +293,10 @@ class fmcMarketStats extends fmcWidget {
         <select fmc-field='property_type' fmc-type='select' id='".$this->get_field_id('property_type')."' name='".$this->get_field_name('property_type')."' class='flexmls_connect__property_type'>
             ";
 
+    $return .= "<option value=''>All</option>";
     foreach ($api_property_type_options as $k => $v) {
       $is_selected = ($k == $property_type) ? $selected_code : "";
-      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>\n";
+      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>";
     }
 
     $return .= "
@@ -321,8 +321,8 @@ class fmcMarketStats extends fmcWidget {
       <img src='x' class='flexmls_connect__bootloader' onerror='flexmls_connect.location_setup(this);' />
           ";
 
-    $return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,width,height,type,display,property_type,location' />\n";
-    $return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />\n";
+    $return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,width,height,type,display,property_type,location' />";
+    $return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />";
 
     return $return;
   }

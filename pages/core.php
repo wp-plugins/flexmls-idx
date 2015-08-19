@@ -5,6 +5,13 @@ class flexmlsConnectPageCore {
   public $input_data = array();
   public $input_source = 'page';
   protected $api;
+  private $account;
+
+
+  function __construct($api) {
+    $this->api = $api;
+    $this->account = new FMC_Account($this->api->GetMyAccount());
+  }
 
   protected function parse_search_parameters_into_api_request() {
     global $fmc_api;
@@ -490,5 +497,24 @@ class flexmlsConnectPageCore {
 
   }
 
+  function contact_form_agent_email($standard_fields) {
+    $email = ($this->account->UserType == "Mls") ? $standard_fields['ListAgentEmail'] : $this->account->primary_email();
+    return addslashes($email);
+  }
+
+  function contact_form_office_email($standard_fields) {
+    
+    if($this->account->UserType == "Member") {
+      $office_id = $this->account->OfficeId;
+      $office_account = new FMC_Account($this->api->GetAccount($office_id));
+      $email = $office_account->primary_email();
+    } 
+    elseif ($this->account->UserType == "Office") {
+      $email = $this->account->primary_email();
+    } else {
+      $email = $standard_fields['ListOfficeEmail'];
+    }
+    return addslashes($email);
+  }
 
 }

@@ -175,6 +175,11 @@ class flexmlsConnect {
       <br />Please contact your webmaster and ask them to enable this.', E_USER_ERROR);
     }
 
+    if (!extension_loaded("bcmath")){
+       flexmlsConnect::br_trigger_error('Your server does not have PHP BC Math enabled.
+       <br />Please contact your webmaster and ask them to enable this.', E_USER_ERROR);
+    }
+
     flexmlsConnect::clear_temp_cache();
     $options = get_option('fmc_settings');
 
@@ -666,6 +671,7 @@ class flexmlsConnect {
     $options = get_option('fmc_settings');
 
     if (array_key_exists('default_link', $options) && !empty($options['default_link'])) {
+      // This link isn't validated. Use the FMC_IDX_Links class instead.
       return $options['default_link'];
     }
     else {
@@ -1390,11 +1396,11 @@ class flexmlsConnect {
 
   static function possible_fonts() {
     return array(
-        'Arial' => 'Arial',
-        'Lucida Sans Unicode' => 'Lucida Sans Unicode',
-        'Tahoma' => 'Tahoma',
-        'Verdana' => 'Verdana'
-        );
+      'Arial' => 'Arial',
+      'Lucida Sans Unicode' => 'Lucida Sans Unicode',
+      'Tahoma' => 'Tahoma',
+      'Verdana' => 'Verdana'
+    );
   }
 
   static function hexLighter($hex, $factor = 20) {
@@ -1542,5 +1548,16 @@ class flexmlsConnect {
     return $vorzeichen.$result ;
   }
 
+  static function show_error($error = array()){
+    $return = '<div class="fmc-error"><b>Error:</b> ';
+    if (array_key_exists("title", $error)) {
+      $return .= $error["title"] . "<br>";
+    }
+    if (array_key_exists("message", $error)) {
+      $return .= $error["message"];
+    }
+    $return .= "</div>";
+    return $return;
+  }
 }
 

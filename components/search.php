@@ -1,7 +1,5 @@
 <?php
 
-
-
 class fmcSearch extends fmcWidget {
 
   protected $widget_settings;
@@ -205,6 +203,8 @@ class fmcSearch extends fmcWidget {
 
     $user_selected_property_types = ( isset($_GET['PropertyType']) ) ? $_GET['PropertyType'] : array(); 
 
+    $user_selected_property_sub_types = (isset($_GET['PropertySubType'])) ? $_GET['PropertySubType'] : array(); 
+
     $search_fields[] = "PropertyType";
 
     // set up prop sub types in a way that will be easy to output in the view
@@ -250,13 +250,6 @@ class fmcSearch extends fmcWidget {
 
     return $this->jelly($args, $attr, "shortcode");
 
-  }
-
-
-  function settings_form($instance) {
-    $this->instance = $instance;
-    $view_vars = $this->search_admin_view_vars();
-    return $this->render_admin_view($view_vars);
   }
 
   function update($new_instance, $old_instance) {
@@ -814,21 +807,9 @@ class fmcSearch extends fmcWidget {
 
   }
 
-  static function mls_allows_sold_searching() {
+  function admin_view_vars() {
     global $fmc_api;
-    $standard_status = $fmc_api->GetStandardField("StandardStatus");
-    if (is_array($standard_status)) {
-      $field_list = $standard_status[0]["StandardStatus"]["FieldList"];
-      foreach ($field_list as $field) {
-        if ($field["Name"] == "Closed"){
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  private function search_admin_view_vars() {
+    $standard_status = new fmcStandardStatus($fmc_api->GetStandardField("StandardStatus"));
 
     $vars = array();
 
@@ -845,7 +826,7 @@ class fmcSearch extends fmcWidget {
     $vars["fonts"] = flexmlsConnect::possible_fonts();
     $vars["border_style_options"] = $this->border_style_options();
     $vars["submit_button_options"] = $this->submit_button_options();
-    $vars["mls_allows_sold_searching"] = fmcSearch::mls_allows_sold_searching();
+    $vars["mls_allows_sold_searching"] = $standard_status->allow_sold_searching();
     $vars["allow_sold_searching_default"] = $this->allow_sold_searching_default();
 
     return $vars;

@@ -25,6 +25,7 @@ class flexmlsConnectPage {
   static function catch_special_request() {
     global $fmc_special_page_caught;
     global $wp_query;
+    global $fmc_api;
     global $fmc_api_portal;
 
     $tag = get_query_var('fmc_tag');
@@ -45,9 +46,11 @@ class flexmlsConnectPage {
     if ($tag) {
       // this is the first indication that the page requested is one of our full pages
       // These full pages can be accessed with get_site_url()/[permalink_slug]/$tag
+      $api = ($type == 'fmc_vow_tag') ? $fmc_api_portal : $fmc_api;
+
       switch($tag) {
         case "search":
-          $custom_page = new flexmlsConnectPageSearchResults($type);
+          $custom_page = new flexmlsConnectPageSearchResults($api, $type);
           break;
         case "next-listing":
           $custom_page = new flexmlsConnectPageNextListing($type);
@@ -58,7 +61,7 @@ class flexmlsConnectPage {
 
         default:
           // request for listing details assumed
-          $custom_page = new flexmlsConnectPageListingDetails($type);
+          $custom_page = new flexmlsConnectPageListingDetails($api, $type);
           break;
       }
       $custom_page->pre_tasks($tag);

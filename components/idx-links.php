@@ -2,9 +2,9 @@
 
 
 
-class fmcIDXLinks extends fmcWidget {
+class fmcIDXLinksWidget extends fmcWidget {
 
-  function fmcIDXLinks() {
+  function fmcIDXLinksWidget() {
     global $fmc_widgets;
     
     $widget_info = $fmc_widgets[ get_class($this) ];

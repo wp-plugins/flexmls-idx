@@ -163,6 +163,21 @@ class fmcPhotos extends fmcWidget {
     elseif ($sort == "price_high_low") {
       $params['_orderby'] = "-ListPrice";
     }
+    elseif ($sort == "open_house"){
+      $params['_orderby'] = "+OpenHouses";
+    }
+    elseif ($sort == "sqft_low_high"){
+      $params['_orderby'] = "+BuildingAreaTotal";
+    }
+    elseif ($sort == "sqft_high_low"){
+      $params['_orderby'] = "-BuildingAreaTotal";
+    }
+    elseif ($sort == "year_built_high_low") {
+      $params['_orderby'] = "-YearBuilt";
+    }
+    elseif ($sort == "year_built_low_high") {
+      $params['_orderby'] = "+YearBuilt";
+    }
 
     $pure_conditions['OrderBy'] = ($params['_orderby']) ? $params['_orderby'] : 'natural';
     $pure_conditions['Limit'] = $params['_limit'];
@@ -402,10 +417,10 @@ class fmcPhotos extends fmcWidget {
 
         if ($source != "my" and $source != "my_office" and flexmlsConnect::get_office_id() != $listing['ListOfficeId'] ) {
           if (array_key_exists('IdxLogoSmall', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogoSmall'])) {
-            $show_idx_badge = "<img src='{$api_system_info['Configuration'][0]['IdxLogoSmall']}' class='flexmls_connect__badge_image' title='{$listing['ListOfficeName']}' />\n";
+            $show_idx_badge = "<img src='{$api_system_info['Configuration'][0]['IdxLogoSmall']}' class='flexmls_connect__badge_image' title='{$listing['ListOfficeName']}' />";
           }
           else {
-            $show_idx_badge = "<span class='flexmls_connect__badge' title='{$listing['ListOfficeName']}'>IDX</span>\n";
+            $show_idx_badge = "<span class='flexmls_connect__badge' title='{$listing['ListOfficeName']}'>IDX</span>";
           }
         }
 
@@ -424,7 +439,7 @@ class fmcPhotos extends fmcWidget {
 
         if ( flexmlsConnect::mls_requires_office_name_in_search_results() and !$only_our_listings ) {
           // swap some of them around to make room for a dim Listing Office
-          $address_line = "<small>Listing office: {$listing['ListOfficeName']}</small>\n";
+          $address_line = "<small>Listing office: {$listing['ListOfficeName']}</small>";
           $tall_line = "<small class='dark'>{$first_line_address}<br />{$second_line_address}</small>";
         }
         elseif ($tall_carousel) {
@@ -483,7 +498,7 @@ class fmcPhotos extends fmcWidget {
             continue;
           }
           $caption = htmlspecialchars($photo['Caption'], ENT_QUOTES);
-          $photo_return .= "<a href='{$photo['UriLarge']}' class='popup' rel='{$rand}-{$listing['ListingKey']}' title='{$caption}'></a>\n";
+          $photo_return .= "<a href='{$photo['UriLarge']}' class='popup' rel='{$rand}-{$listing['ListingKey']}' title='{$caption}'></a>";
 
           if ($photo['Primary'] == true) {
             $main_photo_caption = $caption;
@@ -554,7 +569,7 @@ class fmcPhotos extends fmcWidget {
               $return .= $photo_return;
 
         $return .= "      </div>
-            </div>\n\n";
+            </div>";
       } // end foreach
 
       // close the wrapper div for the row and for the page
@@ -567,17 +582,17 @@ class fmcPhotos extends fmcWidget {
 // now that we use AJAX to load more, no need for the View All Listings slide
 // removed as a part of WP-7 by Brandon Medenwald on 3/8/2011
 //      if ($fmc_api->last_count > count($api_listings) && !empty($destination_link)) {
-//        $return .= "\t<div title='Click to View All Listings'>\n";
+//        $return .= "\t<div title='Click to View All Listings'>";
 //        $this_target = "";
 //        if (flexmlsConnect::get_destination_window_pref() == "new") {
 //          $this_target = " target='_blank'";
 //        }
-//        $return .= "\t\t<p class='caption'><a href='".flexmlsConnect::make_destination_link($destination_link)."' class='flexmls_connect__more_anchor'{$this_target}>View All Listings<small>All ".number_format($fmc_api->last_count)." Listings</small></a>\n";
-//        $return .= "\t</div>\n";
+//        $return .= "\t\t<p class='caption'><a href='".flexmlsConnect::make_destination_link($destination_link)."' class='flexmls_connect__more_anchor'{$this_target}>View All Listings<small>All ".number_format($fmc_api->last_count)." Listings</small></a>";
+//        $return .= "\t</div>";
 //      }
 
-      $return .= "</div>\n";
-      $return .= "</div>\n";
+      $return .= "</div>";
+      $return .= "</div>";
 
       if ($total_listings > 0) {
         $return .= "<div class='flexmls_connect__carousel_nav clearfix'>
@@ -586,26 +601,26 @@ class fmcPhotos extends fmcWidget {
               </div>";
 
         if ($source != "my" && $source != "my_office") {
-          $return .= "<p class='flexmls_connect__disclaimer'>\n";
+          $return .= "<p class='flexmls_connect__disclaimer'>";
 
           if (array_key_exists('IdxLogoSmall', $api_system_info['Configuration'][0]) && !empty($api_system_info['Configuration'][0]['IdxLogoSmall'])) {
-            $return .= "<img src='{$api_system_info['Configuration'][0]['IdxLogoSmall']}' class='flexmls_connect__badge_image' title='Read the full IDX Listings Disclosure' />\n";
+            $return .= "<img src='{$api_system_info['Configuration'][0]['IdxLogoSmall']}' class='flexmls_connect__badge_image' title='Read the full IDX Listings Disclosure' />";
           }
           else {
-            $return .= "  <span class='flexmls_connect__badge' title='Read the full IDX Listings Disclosure'>IDX</span>\n";
+            $return .= "  <span class='flexmls_connect__badge' title='Read the full IDX Listings Disclosure'>IDX</span>";
           }
 
-          $return .= "  <a title='Read the full IDX Listings Disclosure'>MLS IDX Listing Disclosure &copy; ".date("Y")."</a>\n";
-          $return .= "</p>\n";
-          $return .= "<p class='flexmls_connect__hidden flexmls_connect__disclaimer_text'>\n";
+          $return .= "  <a title='Read the full IDX Listings Disclosure'>MLS IDX Listing Disclosure &copy; ".date("Y")."</a>";
+          $return .= "</p>";
+          $return .= "<p class='flexmls_connect__hidden flexmls_connect__disclaimer_text'>";
           $return .= $api_system_info['Configuration'][0]['IdxDisclaimer'];
-          $return .= "\n";
-          $return .= "</p>\n";
+          $return .= "";
+          $return .= "</p>";
         }
 
       }
 
-      $return .= "</div>\n";
+      $return .= "</div>";
 
       $return .= $after_widget;
     }
@@ -737,7 +752,12 @@ class fmcPhotos extends fmcWidget {
     $sort_options = array(
         "recently_changed" => "Recently changed first",
         "price_low_high" => "Price, low to high",
-        "price_high_low" => "Price, high to low"
+        "price_high_low" => "Price, high to low",
+	"open_house" => "Open House",
+	"year_built_low_high" => "Year Built, low to high",
+        "year_built_high_low" => "Year Built, high to low",
+        "sqft_low_high" => "SqFt, low to high",
+        "sqft_high_low" => "SqFt, high to low"
     );
 
     $additional_field_options = array(
@@ -809,11 +829,11 @@ class fmcPhotos extends fmcWidget {
               ";
 
       $is_selected = ($link == "default") ? $selected_code : "";
-      $return .= "<option value='default'{$is_selected}>(Use Saved Default)</option>\n";
+      $return .= "<option value='default'{$is_selected}>(Use Saved Default)</option>";
 
       foreach ($api_links as $my_l) {
         $is_selected = ($my_l['LinkId'] == $link) ? $selected_code : "";
-        $return .= "<option value='{$my_l['LinkId']}'{$is_selected}>{$my_l['Name']}</option>\n";
+        $return .= "<option value='{$my_l['LinkId']}'{$is_selected}>{$my_l['Name']}</option>";
       }
 
       $return .= "
@@ -831,7 +851,7 @@ class fmcPhotos extends fmcWidget {
 
     foreach ($horizontal_options as $k) {
       $is_selected = ($k == $horizontal) ? $selected_code : "";
-      $return .= "<option value='{$k}'{$is_selected}>{$k}</option>\n";
+      $return .= "<option value='{$k}'{$is_selected}>{$k}</option>";
     }
 
     $return .= "
@@ -840,7 +860,7 @@ class fmcPhotos extends fmcWidget {
 
     foreach ($vertical_options as $k) {
       $is_selected = ($k == $vertical) ? $selected_code : "";
-      $return .= "<option value='{$k}'{$is_selected}>{$k}</option>\n";
+      $return .= "<option value='{$k}'{$is_selected}>{$k}</option>";
     }
 
 
@@ -855,7 +875,7 @@ class fmcPhotos extends fmcWidget {
                          ";
          foreach ($image_size_options as $k => $v) {
              $is_selected = ($k == $image_size) ? $selected_code : "";
-             $return .= "<option value='{$k}'{$is_selected}>{$v}</option>\n";
+             $return .= "<option value='{$k}'{$is_selected}>{$v}</option>";
          }
 
 
@@ -871,7 +891,7 @@ class fmcPhotos extends fmcWidget {
 
     foreach ($auto_rotate_options as $k => $v) {
       $is_selected = ($k == $auto_rotate) ? $selected_code : "";
-      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>\n";
+      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>";
     }
 
     $return .= "
@@ -886,7 +906,7 @@ class fmcPhotos extends fmcWidget {
 
     foreach ($source_options as $k => $v) {
       $is_selected = ($k == $source) ? $selected_code : "";
-      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>\n";
+      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>";
     }
 
     $hidden_location = ($source != "location") ? " style='display:none;'" : "";
@@ -901,9 +921,10 @@ class fmcPhotos extends fmcWidget {
         <select fmc-field='property_type' class='flexmls_connect__property_type' fmc-type='select' id='".$this->get_field_id('property_type')."' name='".$this->get_field_name('property_type')."'>
             ";
 
+    $return .= "<option value=''>All</option>";
     foreach ($api_property_type_options as $k => $v) {
       $is_selected = ($k == $property_type) ? $selected_code : "";
-      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>\n";
+      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>";
     }
 
     $return .= "
@@ -950,7 +971,7 @@ class fmcPhotos extends fmcWidget {
 
     foreach ($display_options as $k => $v) {
       $is_selected = ($k == $display) ? $selected_code : "";
-      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>\n";
+      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>";
         }
 
 
@@ -966,7 +987,7 @@ class fmcPhotos extends fmcWidget {
 
         foreach ($display_day_options as $k => $v) {
             $is_selected = ($k == $days) ? $selected_code : "";
-            $return .= "<option value='{$k}'{$is_selected}>{$v}</option>\n";
+            $return .= "<option value='{$k}'{$is_selected}>{$v}</option>";
         }
 
     $return .= "
@@ -982,7 +1003,7 @@ class fmcPhotos extends fmcWidget {
 
     foreach ($sort_options as $k => $v) {
       $is_selected = ($k == $sort) ? $selected_code : "";
-      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>\n";
+      $return .= "<option value='{$k}'{$is_selected}>{$v}</option>";
     }
 
     $return .= "
@@ -1000,7 +1021,7 @@ class fmcPhotos extends fmcWidget {
       $this_checked = (in_array($k, $additional_fields_selected)) ? $checked_code : "";
       $return .= " &nbsp; &nbsp; &nbsp; <input fmc-field='additional_fields' fmc-type='checkbox' type='checkbox' name='".$this->get_field_name('additional_fields')."[{$k}]' value='{$k}' id='".$this->get_field_id('additional_fields')."-".$k."'{$this_checked} /> ";
       $return .= "<label for='".$this->get_field_id('additional_fields')."-".$k."'>{$v}</label>";
-      $return .= "</div>\n";
+      $return .= "</div>";
     }
 
     $return .= "
@@ -1013,7 +1034,7 @@ class fmcPhotos extends fmcWidget {
 
     foreach ($possible_destinations as $dk => $dv) {
       $is_selected = ($dk == $destination) ? " selected='selected'" : "";
-      $return .= "<option value='{$dk}'{$is_selected}>{$dv}</option>\n";
+      $return .= "<option value='{$dk}'{$is_selected}>{$dv}</option>";
     }
 
     $return .= "
@@ -1038,8 +1059,8 @@ class fmcPhotos extends fmcWidget {
     }
 
 
-    $return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,horizontal,vertical,auto_rotate,source,property_type,location,display,sort,additional_fields,destination,agent,days,image_size,send_to' />\n";
-    $return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />\n";
+    $return .= "<input type='hidden' name='shortcode_fields_to_catch' value='title,link,horizontal,vertical,auto_rotate,source,property_type,location,display,sort,additional_fields,destination,agent,days,image_size,send_to' />";
+    $return .= "<input type='hidden' name='widget' value='". get_class($this) ."' />";
 
     return $return;
 

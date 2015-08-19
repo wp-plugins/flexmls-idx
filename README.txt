@@ -1,9 +1,9 @@
 === flexmls&reg; IDX Plugin ===
 Tags: flexmls, IDX, MLS search
 Contributors: flexmls
-Requires at least: 3.8
-Tested up to: 4.0
-Stable tag: 3.5.3
+Requires at least: 4.0
+Tested up to: 4.3
+Stable tag: 3.5.4
 
 Add flexmls IDX listings, market statistics, IDX searches, and a contact form on your web site.
 
@@ -51,10 +51,24 @@ Otherwise:
 Yes, this plugin requires an API key that is only available to approved members.
 
 = How do I obtain API credentials? =
-Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a href='mailto:idx@flexmls.com'>idx@flexmls.com</a> to purchase a key to activate your plugin.
+Please call FBS Broker Agent Services at 800-437-4232, ext. 108, or email <a href='mailto:idxwordpress@flexmls.com'>idxwordpress@flexmls.com</a> to purchase a key to activate your plugin.
 
 
 == Changelog ==
+
+= 3.5.4 =
+* Supplements Added To Listing Detail Page
+* "All" Option Added To Property Type List In Shortcode Generator
+* Listing Status Filter Added To Shortcode Generator (Displays If Your Association Allows Solds In IDX)
+* More Default Sort Options Available
+* MLS # Now Included In Location Search Box Placeholder
+
+Bugs fixed:
+* Widget Settings Not Saving Under Appearance > Widgets
+* Line Height Value Added To Location Search Box in IDX Search Widget
+* New Line Break Added After The URL In The Message Notification Email
+* Portal Registration Popup – Pages To Show Checkboxes Now Saving
+* Property Type and Property Sub Types Selected Fields Maintained For Both Search Results and Listing Detail Pages.
 
 = 3.5.3 =
 
