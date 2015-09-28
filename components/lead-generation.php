@@ -13,7 +13,7 @@ class fmcLeadGen extends fmcWidget {
     $widget_info = $fmc_widgets[ $class ];
 
     $widget_ops = array( 'description' => $widget_info['description'] );
-    $this->WP_Widget( $class , $widget_info['title'], $widget_ops);
+    WP_Widget::__construct( $class , $widget_info['title'], $widget_ops);
 
     // have WP replace instances of [first_argument] with the return from the second_argument function
     add_shortcode($widget_info['shortcode'], array(&$this, 'shortcode'));

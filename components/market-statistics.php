@@ -40,13 +40,13 @@ class fmcMarketStats extends fmcWidget {
       );
   
 
-  function fmcMarketStats() {
+  function __construct() {
     global $fmc_widgets;
 
     $widget_info = $fmc_widgets[ get_class($this) ];
 
     $widget_ops = array( 'description' => $widget_info['description'] );
-    $this->WP_Widget( get_class($this) , $widget_info['title'], $widget_ops);
+    WP_Widget::__construct( get_class($this) , $widget_info['title'], $widget_ops);
 
     // have WP replace instances of [first_argument] with the return from the second_argument function
     add_shortcode($widget_info['shortcode'], array(&$this, 'shortcode'));

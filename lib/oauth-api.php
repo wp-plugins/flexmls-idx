@@ -16,7 +16,7 @@ class flexmlsConnectPortalUser extends flexmlsAPI_OAuth {
 
     $options = get_option('fmc_settings');
     $this->SetCache( new flexmlsAPI_WordPressCache );
-    $this->SetApplicationName("flexmls WordPress Plugin/{$fmc_version}/VOW");
+    $this->SetApplicationName("flexmls-WordPress-Plugin/{$fmc_version}/VOW");
     $this->SetCachePrefix("fmc_".get_option('fmc_cache_version')."_VOW");
     $this->user_start_time();
     parent::__construct($oauth_key, $oauth_secret, $this->redirect_uri(), null);

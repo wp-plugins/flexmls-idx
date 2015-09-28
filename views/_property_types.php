@@ -35,7 +35,7 @@
         <label class='flexmls_connect__search_new_label'>Property Sub Types</label>
         <?php foreach ($sub_types as $sub_type): ?>
 	<?php $checked = (in_array($sub_type["Value"], $user_selected_property_sub_types)) ? 'checked="checked"' : ''; ?>
-          <input type='checkbox' name='PropertySubType[]' value='<?php echo $sub_type["Valued"]; ?>' class='flexmls_connect__search_new_checkboxes' <?php echo $checked; ?>>
+          <input type='checkbox' name='PropertySubType[]' value='<?php echo $sub_type["Value"]; ?>' class='flexmls_connect__search_new_checkboxes' <?php echo $checked; ?>>
           <?php echo $sub_type["Name"]; ?><br>
         <?php endforeach;  ?>
       </div>

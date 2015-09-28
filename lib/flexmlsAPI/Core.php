@@ -47,7 +47,7 @@ class flexmlsAPI_Core {
 
   function __construct() {
     $this->SetHeader("Content-Type", "application/json");
-    $this->SetHeader('User-Agent', 'flexmls API PHP Client/'. $this->api_client_version);
+    $this->SetHeader('User-Agent', "flexmls-API-PHP-Client-v{$this->api_client_version}/PHP-v" . phpversion() );
   }
 
   function SetApplicationName($name) {
@@ -396,7 +396,7 @@ class flexmlsAPI_Core {
   }
 
   function GetAccount($id) {
-    return $this->return_all_results( $this->MakeAPICall("GET", "accounts/".$id, '1h') );
+    return $this->return_first_result( $this->MakeAPICall("GET", "accounts/".$id, '1h') );
   }
 
   function GetAccountsByOffice($id, $params = array()) {

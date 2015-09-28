@@ -9,7 +9,7 @@
 */
 class fmcAccount extends fmcWidget {
 
-  function fmcAccount() {
+  function __construct() {
     
     parent::__construct();
 
@@ -18,7 +18,7 @@ class fmcAccount extends fmcWidget {
     $widget_info = $fmc_widgets[ get_class($this) ];
 
     $widget_ops = array( 'description' => $widget_info['description'] );
-    $this->WP_Widget( get_class($this) , $widget_info['title'], $widget_ops);
+    WP_Widget::__construct( get_class($this) , $widget_info['title'], $widget_ops);
     add_shortcode($widget_info['shortcode'], array(&$this, 'shortcode'));
     // have WP replace instances of [first_argument] with the return from the second_argument function
     add_action('wp_ajax_'.get_class($this).'_shortcode', array(&$this, 'shortcode_form') );

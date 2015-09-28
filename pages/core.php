@@ -230,7 +230,9 @@ class flexmlsConnectPageCore {
         foreach ($f_values as $fv) {
           $field_value_count[ $f['field'] ]++;
 
-          $formatted_value = flexmlsConnect::make_api_formatted_value($fv, $type);
+          $decoded_value = str_replace("&#44;", ",", urldecode($fv));
+
+          $formatted_value = flexmlsConnect::make_api_formatted_value($decoded_value, $type);
           if ($formatted_value === null) {
             continue;
           }
@@ -259,75 +261,6 @@ class flexmlsConnectPageCore {
       }
       
     }
-
-    /*
-    //attempt at cross mls for WP-139, removing for now
-    $db2only = false;
-    $subdivused = false;
-    $postalused = false;
-    $stateused = false;
-    foreach ($search_criteria as $sc) {
-      if (strrpos($sc, "MapOverlay")!==false ||
-          strrpos($sc, "ListingCart")!==false ||
-          strrpos($sc, "SavedSearch")!==false ||
-          strrpos($sc, "IdxParam")!==false ||
-          strrpos($sc, "EmailLink")!==false) {
-         $db2only = true;
-      }
-      if (strrpos($sc, "SubdivisionName")!==false) {
-        $subdivused = true;
-      }
-      if (strrpos($sc, "StateOrProvince")!==false) {
-        $stateused = true;
-      }
-      if (strrpos($sc, "PostalCode")!==false) {
-        $postalused = true;
-      }
-    }
-    //print_r($search_criteria);
-    //echo "<BR>";
-    //echo "<BR>";
-
-    $mlss = $fmc_api->GetStandardField('MlsId');
-    $mlss = $mlss[0]['MlsId']['FieldList'];
-
-    //print_r($mlss);
-    //echo "<BR>";
-    //echo "<BR>";
-    $mlscond = "(MlsId Eq ";
-    $dum = 0;
-    foreach ($mlss as $m) {
-      if ($m["Value"] != null) {
-        $mlssd = $fmc_api->GetStandardFieldByMls('SubdivisionName',$m["Value"]);
-        $mlssz = $fmc_api->GetStandardFieldByMls('PostalCode',$m["Value"]);
-        $mlssp = $fmc_api->GetStandardFieldByMls('StateOrProvince',$m["Value"]);
-        if (($subdivused && $mlssd[0]['SubdivisionName']['Searchable']==1 || !$subdivused) &&
-            ($postalused && $mlssz[0]['PostalCode']['Searchable']==1 || !$postalused) &&
-            ($stateused && $mlssp[0]['StateOrProvince']['Searchable']==1 || !$stateused)
-           ) {
-            if ($dum!=0)
-              $mlscond .= ",";
-            $mlscond .= "'".$m["Value"]."'";
-            $dum++;
-        }
-      }
-    }
-    $mlscond .= ")";
-
-    //print_r($mlscond);
-    //echo "<BR>";
-    //echo "<BR>";
-
-    if ($mlscond!="(MlsId Eq )" && !$db2only) {
-      $search_criteria[] = $mlscond;
-    }
-
-    //print_r($search_criteria);
-    //echo "<BR>";
-    //echo "<BR>";
-    */
-
-
 
     // check for ListAgentId
     $list_agent_id = $this->fetch_input_data('ListAgentId');
@@ -359,7 +292,7 @@ class flexmlsConnectPageCore {
 
     $params = array(
         '_filter' => implode(" And ", $search_criteria),
-        '_select' => 'MlsId,ListingId,ListPrice,Photos,ListingKey,OpenHouses,ListOfficeId,ListOfficeName,ListAgentFirstName,ListAgentLastName,Videos,VirtualTours,PropertyType,BedsTotal,BathsTotal,BuildingAreaTotal,YearBuilt,MLSAreaMinor,SubdivisionName,PublicRemarks,StreetNumber,StreetDirPrefix,StreetName,StreetSuffix,StreetDirSuffix,StreetAdditionalInfo,City,StateOrProvince,PostalCode,MapOverlay,SavedSearch,CountyOrParish,StreetAddress',
+        '_select' => 'MlsId,ListingId,ListPrice,Photos,ListingKey,OpenHouses,ListOfficeId,ListOfficeName,ListAgentFirstName,ListAgentLastName,Videos,VirtualTours,PropertyType,BedsTotal,BathsTotal,BuildingAreaTotal,YearBuilt,MLSAreaMinor,SubdivisionName,PublicRemarks,StreetNumber,StreetDirPrefix,StreetName,StreetSuffix,StreetDirSuffix,StreetAdditionalInfo,City,StateOrProvince,PostalCode,MapOverlay,SavedSearch,CountyOrParish,StreetAddress,UnparsedFirstLineAddress',
         '_pagination' => 1,
         '_limit' => $limit,
         '_page' => $pg,

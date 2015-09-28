@@ -43,7 +43,8 @@
     class="flexmls_connect__listing_source">
 
     <?php foreach ($source_options as $k => $v): ?>
-        <option value="<?php echo $k; ?>">
+    <?php $is_selected = ($k == 'location') ? 'selected' : ""; ?>
+        <option value="<?php echo $k; ?>" <?php echo $is_selected; ?>>
           <?php echo $v; ?>
         </option>
     <?php 
@@ -54,6 +55,27 @@
   <br />
   <span class='description'>Which listings to display</span>
 </p>
+
+<?php // roster ?>
+
+<?php if (isset($office_roster)): ?>
+  <div class='flexmls_connect__roster'>
+    <p>
+      <label class="flexmls-admin-field-label" for="fmc_shortcode_field_agent"><?php _e('Agent:'); ?></label>
+      <select fmc-field="agent" fmc-type='select' id="fmc_shortcode_field_agent" name="agent">
+      
+        <option value=''>  - Select One -  </option>
+
+        <?php foreach ($office_roster as $agent): ?>
+          <option value='<?php echo $agent['Id']; ?>'>
+            <?php echo htmlspecialchars($agent['Name']); ?>
+          </option>
+        <?php endforeach; ?>
+
+      </select>
+    </p>
+  </div>
+<?php endif; ?>
 
 <!-- property type -->
 <p class='flexmls_connect__location_property_type_p'>
@@ -137,28 +159,6 @@
   <input fmc-field="location" fmc-type='text' type='hidden' name="location" 
     class='flexmls_connect__location_fields' />
 </p>
-
-
-<?php // roster ?>
-
-<?php if (isset($office_roster)): ?>
-  <div class='flexmls_connect__roster'>
-    <p>
-      <label class="flexmls-admin-field-label" for="fmc_shortcode_field_agent"><?php _e('Agent:'); ?></label>
-      <select fmc-field="agent" fmc-type='select' id="fmc_shortcode_field_agent" name="agent">
-      
-        <option value=''>  - Select One -  </option>
-
-        <?php foreach ($office_roster as $agent): ?>
-          <option value='<?php echo $agent['Id']; ?>'>
-            <?php htmlspecialchars($agent['Name']); ?>
-          </option>
-        <?php endforeach; ?>
-
-      </select>
-    </p>
-  </div>
-<?php endif; ?>
 
 
 <?php // display ?>

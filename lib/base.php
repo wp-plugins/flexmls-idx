@@ -1180,13 +1180,13 @@ class flexmlsConnect {
     $AgentAddress = '';
     if (in_array('ListMemberAddress',$compList)){
         $AgentInfo  = $fmc_api->GetAccount($sf["ListAgentId"]);
-        $AgentAddress = ($AgentInfo[0]["Addresses"][0]["Address"]);
+        $AgentAddress = ($AgentInfo["Addresses"][0]["Address"]);
           }
 
           $CoAgentAddress = '';
     if (in_array('CoListAgentAddress',$compList)){
       $CoAgentInfo  = $fmc_api->GetAccount($sf["CoListAgentId"]);
-      $CoAgentAddress = ($CoAgentInfo[0]["Addresses"][0]["Address"]);
+      $CoAgentAddress = ($CoAgentInfo["Addresses"][0]["Address"]);
           }
 
     //Names

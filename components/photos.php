@@ -4,13 +4,13 @@
 
 class fmcPhotos extends fmcWidget {
 
-  function fmcPhotos() {
+  function __construct() {
     global $fmc_widgets;
 
     $widget_info = $fmc_widgets[ get_class($this) ];
 
     $widget_ops = array( 'description' => $widget_info['description'] );
-    $this->WP_Widget( get_class($this) , $widget_info['title'], $widget_ops);
+    WP_Widget::__construct( get_class($this) , $widget_info['title'], $widget_ops);
 
     // have WP replace instances of [first_argument] with the return from the second_argument function
     add_shortcode($widget_info['shortcode'], array(&$this, 'shortcode'));
@@ -445,14 +445,14 @@ class fmcPhotos extends fmcWidget {
         elseif ($tall_carousel) {
           $show_additional_field_line = array();
           foreach ($show_additional_fields as $fi) {
-            if ($fi == "beds") {
-              $show_additional_field_line[] = "{$listing['BedsTotal']} beds";
+            if ($fi == "beds" && flexmlsConnect::is_not_blank_or_restricted($listing['BedsTotal'])){
+                $show_additional_field_line[] = "{$listing['BedsTotal']} beds";
             }
-            elseif ($fi == "baths") {
-              $show_additional_field_line[] = "{$listing['BathsTotal']} baths";
+            elseif ($fi == "baths" && flexmlsConnect::is_not_blank_or_restricted($listing['BathsTotal'])){
+                 $show_additional_field_line[] = "{$listing['BathsTotal']} baths";
             }
-            elseif ($fi == "sqft") {
-              $show_additional_field_line[] = number_format($listing['BuildingAreaTotal'])." sqft";
+            elseif ($fi == "sqft" && flexmlsConnect::is_not_blank_or_restricted($listing['BuildingAreaTotal'])){
+                $show_additional_field_line[] = number_format($listing['BuildingAreaTotal'])." sqft";
             }
           }
 

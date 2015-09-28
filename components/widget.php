@@ -175,6 +175,19 @@ class fmcWidget extends WP_Widget {
   }
 
 
+  function requestVariableArray($key) {
+    if ( isset($_GET[$key]) ) {
+      if(is_array($_GET[$key])) {
+        return $_GET[$key];
+      } elseif (is_string($_GET[$key])) {
+        return explode(',', $_GET[$key]);
+      }
+    } else {
+      return array();
+    }
+  }
+  
+
   protected function label_tag($for, $display_text) {
     echo '<label for="' . $this->get_field_id($for) . '" class="flexmls-admin-field-label">';
       _e($display_text);

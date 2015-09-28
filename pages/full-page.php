@@ -35,8 +35,8 @@ class flexmlsConnectPage {
       return;
 
     if ($vow_tag) {
-      $tag=$vow_tag;
-      $type='fmc_vow_tag';
+      $tag = $vow_tag;
+      $type = 'fmc_vow_tag';
     }
     else {
       //default

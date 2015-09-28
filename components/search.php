@@ -17,7 +17,7 @@ class fmcSearch extends fmcWidget {
     $this->options = new Fmc_Settings;
 
     $widget_ops = array( 'description' => $widget_info['description'] );
-    $this->WP_Widget( get_class($this) , $widget_info['title'], $widget_ops);
+    WP_Widget::__construct( get_class($this) , $widget_info['title'], $widget_ops);
 
     // have WP replace instances of [first_argument] with the return from the second_argument function
     add_shortcode($widget_info['shortcode'], array(&$this, 'shortcode'));
@@ -201,9 +201,8 @@ class fmcSearch extends fmcWidget {
       }
     }
 
-    $user_selected_property_types = ( isset($_GET['PropertyType']) ) ? $_GET['PropertyType'] : array(); 
-
-    $user_selected_property_sub_types = (isset($_GET['PropertySubType'])) ? $_GET['PropertySubType'] : array(); 
+    $user_selected_property_types = $this->requestVariableArray('PropertyType');
+    $user_selected_property_sub_types = $this->requestVariableArray('PropertySubType');
 
     $search_fields[] = "PropertyType";
 

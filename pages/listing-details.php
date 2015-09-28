@@ -7,9 +7,10 @@ class flexmlsConnectPageListingDetails extends flexmlsConnectPageCore {
   protected $type;
   protected $property_detail_values;
 
-  function __construct( $api, $type = 'fmc_tag' ){
+  function __construct( $api, $type = null ){
+
     parent::__construct($api);
-    $this->type = $type;
+    $this->type = is_null($type) ? 'fmc_tag' : $type;
   }
 
   function pre_tasks($tag) {
